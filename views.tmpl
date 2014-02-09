@@ -1,0 +1,104 @@
+<% c++ #include "content.hpp" %>
+<% skin views %>
+
+<% view page uses content::Page %>
+<% template render() %>
+<!DOCTYPE html>
+<html>
+<head>
+<title>CSES</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="/static/cses/cses.css" type="text/css"/>
+</head>
+<a href="<% url "/" %>">
+<table>
+<tr><td>
+<img src="/static/cses/logo.png"/>
+</td><td>
+<p><i>&nbsp;&nbsp;Contest Submission Evaluation System</i></p>
+</td></tr>
+</table>
+</a>
+<hr>
+<body>
+<% include body() %>
+</body>
+</html>
+<% end template %>
+
+<% template body() %>
+<% end template %>
+<% end view %>
+
+
+<% view contests uses content::Contests extends page %>
+<% template body() %>
+<html>
+<body>
+<h1>Contests</h1>
+<% foreach c in contests %>
+<ul>
+<% item %>
+	<li><a href="<% url "contest" using c %>"><%= c %></a></li>
+<% end %>
+</ul>
+<% end %>
+</body>
+</html>
+<% end template %>
+<% end view %>
+
+
+<% view submit uses content::Submit extends page %>
+<% template body() %>
+submit
+<% end template %>
+<% end view %>
+
+
+<% view contest uses content::Contest extends page %>
+<% template body() %>
+<form method="post" action=""><%csrf%>
+<% form as_p info %>
+</form>
+<% end template %>
+<% end view %>
+
+
+<% view user uses content::User extends page %>
+<% template body() %>
+user
+<form method="post" action=""><%csrf%>
+<% form as_p info %>
+</form>
+<% end template %>
+<% end view %>
+
+
+<% view login uses content::Login extends page %>
+<% template body() %>
+<h1>Login</h1>
+<form method="post" action=""><%csrf%>
+<% form as_p info %>
+</form>
+<% end template %>
+<% end view %>
+
+
+<% view languages uses content::Languages extends page %>
+<% template body() %>
+<h1>Languages</h1>
+<% foreach l in languages %>
+	<%item%>
+	<form method="post" action=""><%csrf%>
+	<% form as_p l %>
+	</form>
+	<% end %>
+<% end %>
+<form method="post" action=""><%csrf%>
+<% form as_p newLang %>
+</form>
+<% end template %>
+<% end view %>
+
+<% end skin %>
