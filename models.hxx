@@ -164,6 +164,6 @@ struct JudgeHost: HasID {
 } // end ns models
 
 void makeDB();
-bool testLogin(std::string user, std::string pass);
-models::ID registerUser(std::string name, std::string pass);
+std::pair<bool, models::ID> testLogin(std::string user, std::string pass);
+std::pair<bool, models::ID> registerUser(std::string name, std::string pass);
 //UniqueFile makeFile();

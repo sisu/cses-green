@@ -4,6 +4,7 @@
 #include <odb/sqlite/database.hxx>
 #include <odb/schema-catalog.hxx>
 #include <openssl/sha.h>
+#include <random>
 
 using namespace std;
 using namespace odb::core;
@@ -11,7 +12,14 @@ using namespace models;
 
 unique_ptr<odb::sqlite::database> db;
 
-//int main(int argc, char* argv[]) {
+uint64_t generateTrueRandom() {
+	std::random_device device;
+	std::uniform_int_distribution<uint64_t> distribution;
+	return distribution(device);
+}
+
+static thread_local mt19937_64 rng(generateTrueRandom());
+
 void makeDB() {
 	db.reset(new odb::sqlite::database("cses.db", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
 #if 1
@@ -21,15 +29,19 @@ void makeDB() {
 		t.commit();
 	}
 #endif
-	ID id = registerUser("a", "a");
-	{
+	bool success;
+	ID userID;
+	tie(success, userID) = registerUser("a", "a");
+	if(success) {
 		transaction t(db->begin());
-		User* user = db->load<User>(id);
+		User* user = db->load<User>(userID);
 		user->admin = 1;
 		db->update(user);
 		t.commit();
 	}
 }
+
+namespace {
 
 string computeHash(string pass) {
 	string res;
@@ -38,23 +50,36 @@ string computeHash(string pass) {
 	return res;
 }
 string genSalt() {
-	return "LOL";
+	string ret;
+	std::uniform_int_distribution<int> distribution(33, 126);
+	for(int i = 0; i < 16; ++i) {
+		ret.push_back(distribution(rng));
+	}
+	return ret;
 }
-bool testLogin(string user, string pass) {
+
+}
+
+pair<bool, ID> testLogin(string user, string pass) {
 	transaction t(db->begin());
 	result<User> res = db->query<User>(query<User>::name == user);
-	if (res.empty()) return 0;
+	if (res.empty()) return pair<bool, ID>(false, 0);
 	User u = *res.begin();
-	return computeHash(u.salt + pass) == u.hash;
+	return pair<bool, ID>(computeHash(u.salt + pass) == u.hash, u.id);
 }
-ID registerUser(string name, string pass) {
+pair<bool, ID> registerUser(string name, string pass) {
 	User user;
 	user.name = name;
 	user.salt = genSalt();
 	user.hash = computeHash(user.salt + pass);
 	user.admin = 0;
-	transaction t(db->begin());
-	ID id = db->persist(user);
-	t.commit();
-	return id;
+	ID id;
+	try {
+		transaction t(db->begin());
+		id = db->persist(user);
+		t.commit();
+	} catch(object_already_persistent) {
+		return pair<bool, ID>(false, 0);
+	}
+	return pair<bool, ID>(true, id);
 }

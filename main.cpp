@@ -72,12 +72,17 @@ struct Server: cppcms::application {
 		content::Login c;
 		if(isPost() && session().is_set("prelogin")) {
 			c.info.load(context());
-			if (c.info.validate() && testLogin(c.info.name.value(), c.info.password.value())) {
-				session().reset_session();
-				session().erase("prelogin");
-				session().set("id", c.info.name.id());
-				response().set_redirect_header("/");
-				return;
+			if(c.info.validate()) {
+				bool success;
+				models::ID userID;
+				tie(success, userID) = testLogin(c.info.name.value(), c.info.password.value());
+				if(success) {
+					session().reset_session();
+					session().erase("prelogin");
+					session().set("id", userID);
+					response().set_redirect_header("/");
+					return;
+				}
 			}
 		}
 		session().set("prelogin", "");

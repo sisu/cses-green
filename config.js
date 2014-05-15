@@ -25,4 +25,7 @@
 	"logging": {
 		"level": "info",
 	},
+	"localization": {
+		"locales": ["en_US.UTF-8"],
+	}
 }
