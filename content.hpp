@@ -46,6 +46,33 @@ struct User: Page {
 	Info info;
 };
 
+struct Registration: Page {
+	struct Info: cppcms::form {
+		ws::text name;
+		ws::password password;
+		ws::submit submit;
+		Info() {
+			name.message("Name");
+			password.message("Password");
+			submit.value("Register");
+			add(name);
+			add(password);
+			add(submit);
+		}
+		
+		virtual bool validate() override {
+			if(!cppcms::form::validate()) return false;
+			if(!isValidUsername(name.value())) {
+				name.valid(false);
+				name.error_message("Invalid username. Username must contain 1-255 characters.");
+				return false;
+			}
+			return true;
+		}
+	};
+	Info info;
+};
+
 struct Login: Page {
 	struct Info: cppcms::form {
 		ws::text name;

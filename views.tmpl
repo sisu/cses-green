@@ -74,6 +74,14 @@ user
 <% end template %>
 <% end view %>
 
+<% view registration uses content::Registration extends page %>
+<% template body() %>
+<h1>Register user</h1>
+<form method="post" action=""><%csrf%>
+<% form as_p info %>
+</form>
+<% end template %>
+<% end view %>
 
 <% view login uses content::Login extends page %>
 <% template body() %>

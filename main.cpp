@@ -1,5 +1,6 @@
 #include "content.hpp"
 #include "models.hxx"
+#include <booster/log.h>
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
 #include <cppcms/service.h>
@@ -8,6 +9,7 @@
 #include <cppcms/url_mapper.h>
 #include <iostream>
 #include <fstream>
+
 using namespace std;
 
 struct Server: cppcms::application {
@@ -20,6 +22,9 @@ struct Server: cppcms::application {
 
 		dispatcher().assign("/user/.*", &Server::user, this, 1);
 		mapper().assign("user", "user/{1}");
+
+		dispatcher().assign("/register/", &Server::registration, this);
+		mapper().assign("register", "register/");
 
 		dispatcher().assign("/login/", &Server::login, this);
 		mapper().assign("login", "login/");
@@ -66,6 +71,26 @@ struct Server: cppcms::application {
 		(void)user;
 		content::User u;
 		render("user", u);
+	}
+	
+	void registration() {
+		content::Registration c;
+		if(isPost()) {
+			c.info.load(context());
+			if(c.info.validate()) {
+				bool success;
+				models::ID userID;
+				tie(success, userID) = registerUser(c.info.name.value(), c.info.password.value());
+				if(success) {
+					BOOSTER_INFO("cses_register")
+						<< "Registered user " << userID << ": \"" << c.info.name.value() << "\".";
+				} else {
+					c.info.name.valid(false);
+					c.info.name.error_message("Username already in use.");
+				}
+			}
+		}
+		render("registration", c);
 	}
 
 	void login() {
