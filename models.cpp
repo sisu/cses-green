@@ -41,6 +41,7 @@ string genSalt() {
 	return "LOL";
 }
 bool testLogin(string user, string pass) {
+	transaction t(db->begin());
 	result<User> res = db->query<User>(query<User>::name == user);
 	if (res.empty()) return 0;
 	User u = *res.begin();
