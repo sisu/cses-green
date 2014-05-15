@@ -1,10 +1,12 @@
 #include "models.hxx"
 #include "models-odb.hxx"
+#include <cppcms/encoding.h>
 #include <odb/database.hxx>
 #include <odb/sqlite/database.hxx>
 #include <odb/schema-catalog.hxx>
 #include <openssl/sha.h>
 #include <random>
+#include <stdexcept>
 
 using namespace std;
 using namespace odb::core;
@@ -41,6 +43,14 @@ void makeDB() {
 	}
 }
 
+bool isValidUsername(string name) {
+	size_t codepointCount = 0;
+	if(!cppcms::encoding::valid_utf8(name.data(), name.data() + name.size(), codepointCount)) {
+		return false;
+	}
+	return codepointCount != 0 && codepointCount <= 255;
+}
+
 namespace {
 
 string computeHash(string pass) {
@@ -49,6 +59,7 @@ string computeHash(string pass) {
 	SHA1((const unsigned char*)&pass[0], pass.size(), (unsigned char*)&res[0]);
 	return res;
 }
+
 string genSalt() {
 	string ret;
 	std::uniform_int_distribution<int> distribution(33, 126);
@@ -68,6 +79,10 @@ pair<bool, ID> testLogin(string user, string pass) {
 	return pair<bool, ID>(computeHash(u.salt + pass) == u.hash, u.id);
 }
 pair<bool, ID> registerUser(string name, string pass) {
+	if(!isValidUsername(name)) {
+		throw invalid_argument("Invalid username passed to registerUser.");
+	}
+	
 	User user;
 	user.name = name;
 	user.salt = genSalt();
