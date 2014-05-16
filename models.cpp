@@ -74,9 +74,9 @@ string genSalt() {
 pair<bool, ID> testLogin(string user, string pass) {
 	transaction t(db->begin());
 	result<User> res = db->query<User>(query<User>::name == user);
-	if (res.empty()) return pair<bool, ID>(false, 0);
+	if(res.empty()) return pair<bool, ID>(false, 0);
 	User u = *res.begin();
-	return pair<bool, ID>(computeHash(u.salt + pass) == u.hash, u.id);
+	return make_pair(computeHash(u.salt + pass) == u.hash, u.id);
 }
 pair<bool, ID> registerUser(string name, string pass) {
 	if(!isValidUsername(name)) {
@@ -97,4 +97,13 @@ pair<bool, ID> registerUser(string name, string pass) {
 		return pair<bool, ID>(false, 0);
 	}
 	return pair<bool, ID>(true, id);
+}
+pair<bool, User> getUserByID(ID id) {
+	transaction t(db->begin());
+	result<User> res = db->query<User>(query<User>::id == id);
+	if(res.empty()) {
+		return make_pair(false, User());
+	} else {
+		return make_pair(true, *res.begin());
+	}
 }

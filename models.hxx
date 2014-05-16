@@ -167,4 +167,5 @@ void makeDB();
 bool isValidUsername(std::string name);
 std::pair<bool, models::ID> testLogin(std::string user, std::string pass);
 std::pair<bool, models::ID> registerUser(std::string name, std::string pass);
+std::pair<bool, models::User> getUserByID(models::ID id);
 //UniqueFile makeFile();

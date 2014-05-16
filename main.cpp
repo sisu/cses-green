@@ -44,6 +44,14 @@ struct Server: cppcms::application {
 	}
 #endif
 	void contests() {
+		bool login;
+		models::User user;
+		tie(login, user) = getUser();
+		if(login) {
+			BOOSTER_DEBUG("cses_contests") << "User " << user.id << ": \"" << user.name << "\" visited the page.";
+		} else {
+			BOOSTER_DEBUG("cses_contests") << "Outsider visited the page.";
+		}
 //		response().out() << "<html><body>lololol</body></html>\n";
 #if 1
 		content::Contests c;
@@ -131,6 +139,18 @@ struct Server: cppcms::application {
 
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
+	}
+	
+	pair<bool, models::User> getUser() {
+		if(session().is_set("id")) {
+			auto ret = getUserByID(session().get<models::ID>("id"));
+			if(!ret.first) {
+				session().reset_session();
+				session().erase("id");
+			}
+			return ret;
+		}
+		return pair<bool, models::User>(false, models::User());
 	}
 };
 

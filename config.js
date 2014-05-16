@@ -23,7 +23,7 @@
 		},
 	},
 	"logging": {
-		"level": "info",
+		"level": "debug",
 	},
 	"localization": {
 		"locales": ["en_US.UTF-8"],
