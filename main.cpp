@@ -1,3 +1,4 @@
+#include "common.hpp"
 #include "content.hpp"
 #include "models.hxx"
 #include <booster/log.h>
@@ -10,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 
-using namespace std;
+using namespace cses;
 
 struct Server: cppcms::application {
 	Server(cppcms::service& srv): cppcms::application(srv) {
@@ -45,7 +46,7 @@ struct Server: cppcms::application {
 #endif
 	void contests() {
 		bool login;
-		models::User user;
+		User user;
 		tie(login, user) = getUser();
 		if(login) {
 			BOOSTER_DEBUG("cses_contests") << "User " << user.id << ": \"" << user.name << "\" visited the page.";
@@ -54,7 +55,7 @@ struct Server: cppcms::application {
 		}
 //		response().out() << "<html><body>lololol</body></html>\n";
 #if 1
-		content::Contests c;
+		ContestsPage c;
 		c.contests = {"a", "b"};
 		render("contests", c);
 #else
@@ -66,7 +67,7 @@ struct Server: cppcms::application {
 
 	void contest(string cnt) {
 		(void)cnt;
-		content::Contest c;
+		ContestPage c;
 #if 0
 		c.info.load(context());
 		if (c.info.validate()) {
@@ -77,17 +78,17 @@ struct Server: cppcms::application {
 
 	void user(string user) {
 		(void)user;
-		content::User u;
+		UserPage u;
 		render("user", u);
 	}
 	
 	void registration() {
-		content::Registration c;
+		RegistrationPage c;
 		if(isPost()) {
 			c.info.load(context());
 			if(c.info.validate()) {
 				bool success;
-				models::ID userID;
+				ID userID;
 				tie(success, userID) = registerUser(c.info.name.value(), c.info.password.value());
 				if(success) {
 					BOOSTER_INFO("cses_register")
@@ -102,12 +103,12 @@ struct Server: cppcms::application {
 	}
 
 	void login() {
-		content::Login c;
+		LoginPage c;
 		if(isPost() && session().is_set("prelogin")) {
 			c.info.load(context());
 			if(c.info.validate()) {
 				bool success;
-				models::ID userID;
+				ID userID;
 				tie(success, userID) = testLogin(c.info.name.value(), c.info.password.value());
 				if(success) {
 					session().reset_session();
@@ -124,11 +125,11 @@ struct Server: cppcms::application {
 
 	void languages() {
 		throw 5;
-		content::Languages c;
+		LanguagesPage c;
 		if (isPost()) {
 			c.newLang.load(context());
 			if (c.newLang.validate()) {
-				models::Language lang;
+				Language lang;
 				lang.name = c.newLang.name.value();
 				lang.suffix = c.newLang.suffix.value();
 //				lang.compiler = makeFile(c.newLang.compiler.value());
@@ -141,27 +142,27 @@ struct Server: cppcms::application {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
 	}
 	
-	pair<bool, models::User> getUser() {
+	pair<bool, User> getUser() {
 		if(session().is_set("id")) {
-			auto ret = getUserByID(session().get<models::ID>("id"));
+			auto ret = getUserByID(session().get<ID>("id"));
 			if(!ret.first) {
 				session().reset_session();
 				session().erase("id");
 			}
 			return ret;
 		}
-		return pair<bool, models::User>(false, models::User());
+		return make_pair(false, User());
 	}
 };
 
 int main() {
 	makeDB();
-	ifstream configFile("config.js");
+	std::ifstream configFile("config.js");
 	cppcms::json::value config;
 	int line=0;
 	bool ok = config.load(configFile, 1, &line);
 	if (!ok) {
-		cerr<<"Config syntax error on line "<<line<<'\n';
+		std::cerr<<"Config syntax error on line "<<line<<'\n';
 		return 1;
 	}
 	cppcms::service srv(config);

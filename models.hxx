@@ -1,19 +1,13 @@
 #pragma once
+#include "common.hpp"
 
-#include <string>
-#include <vector>
-#include <memory>
 #include <odb/core.hxx>
 #include <odb/lazy-ptr.hxx>
 #include <odb/section.hxx>
 
-namespace models {
+namespace cses {
 
-using std::string;
-using std::shared_ptr;
-using std::weak_ptr;
-using std::unique_ptr;
-using std::vector;
+extern unique_ptr<odb::database> db;
 
 struct Contest;
 struct TestCase;
@@ -161,11 +155,11 @@ struct JudgeHost: HasID {
 	StrField host;
 };
 
-} // end ns models
-
 void makeDB();
-bool isValidUsername(std::string name);
-std::pair<bool, models::ID> testLogin(std::string user, std::string pass);
-std::pair<bool, models::ID> registerUser(std::string name, std::string pass);
-std::pair<bool, models::User> getUserByID(models::ID id);
+bool isValidUsername(string name);
+pair<bool, ID> testLogin(string user, string pass);
+pair<bool, ID> registerUser(string name, string pass);
+pair<bool, User> getUserByID(ID id);
 //UniqueFile makeFile();
+
+}

@@ -1,25 +1,26 @@
 #pragma once
+#include "common.hpp"
 #include "models.hxx"
 #include <cppcms/view.h>
 #include <cppcms/form.h>
 #include <vector>
 #include <string>
 
-namespace content {
+namespace cses {
 
 struct Page: cppcms::base_content {
 };
 
-struct Contests: Page {
+struct ContestsPage: Page {
 	std::vector<std::string> contests;
 };
 
-struct Submit: Page {
+struct SubmitPage: Page {
 };
 
 namespace ws = cppcms::widgets;
 
-struct Contest: Page {
+struct ContestPage: Page {
 	struct Info: cppcms::form {
 		ws::text name;
 	};
@@ -28,7 +29,7 @@ struct Contest: Page {
 };
 
 
-struct User: Page {
+struct UserPage: Page {
 	struct Info: cppcms::form {
 		ws::text name;
 		ws::password password;
@@ -46,7 +47,7 @@ struct User: Page {
 	Info info;
 };
 
-struct Registration: Page {
+struct RegistrationPage: Page {
 	struct Info: cppcms::form {
 		ws::text name;
 		ws::password password;
@@ -73,7 +74,7 @@ struct Registration: Page {
 	Info info;
 };
 
-struct Login: Page {
+struct LoginPage: Page {
 	struct Info: cppcms::form {
 		ws::text name;
 		ws::password password;
@@ -90,7 +91,7 @@ struct Login: Page {
 	Info info;
 };
 
-struct Languages: Page {
+struct LanguagesPage: Page {
 	struct Language: cppcms::form {
 		ws::text name;
 		ws::text suffix;

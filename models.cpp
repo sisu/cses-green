@@ -8,11 +8,13 @@
 #include <random>
 #include <stdexcept>
 
-using namespace std;
-using namespace odb::core;
-using namespace models;
+namespace cses {
 
-unique_ptr<odb::sqlite::database> db;
+using namespace odb::core;
+
+unique_ptr<odb::database> db;
+
+namespace {
 
 uint64_t generateTrueRandom() {
 	std::random_device device;
@@ -20,7 +22,25 @@ uint64_t generateTrueRandom() {
 	return distribution(device);
 }
 
-static thread_local mt19937_64 rng(generateTrueRandom());
+static thread_local std::mt19937_64 rng(generateTrueRandom());
+
+string computeHash(string pass) {
+	string res;
+	res.resize(SHA_DIGEST_LENGTH);
+	SHA1((const unsigned char*)&pass[0], pass.size(), (unsigned char*)&res[0]);
+	return res;
+}
+
+string genSalt() {
+	string ret;
+	std::uniform_int_distribution<int> distribution(33, 126);
+	for(int i = 0; i < 16; ++i) {
+		ret.push_back(distribution(rng));
+	}
+	return ret;
+}
+
+} // end anonymous namespace
 
 void makeDB() {
 	db.reset(new odb::sqlite::database("cses.db", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
@@ -51,26 +71,6 @@ bool isValidUsername(string name) {
 	return codepointCount != 0 && codepointCount <= 255;
 }
 
-namespace {
-
-string computeHash(string pass) {
-	string res;
-	res.resize(SHA_DIGEST_LENGTH);
-	SHA1((const unsigned char*)&pass[0], pass.size(), (unsigned char*)&res[0]);
-	return res;
-}
-
-string genSalt() {
-	string ret;
-	std::uniform_int_distribution<int> distribution(33, 126);
-	for(int i = 0; i < 16; ++i) {
-		ret.push_back(distribution(rng));
-	}
-	return ret;
-}
-
-}
-
 pair<bool, ID> testLogin(string user, string pass) {
 	transaction t(db->begin());
 	result<User> res = db->query<User>(query<User>::name == user);
@@ -78,9 +78,10 @@ pair<bool, ID> testLogin(string user, string pass) {
 	User u = *res.begin();
 	return make_pair(computeHash(u.salt + pass) == u.hash, u.id);
 }
+
 pair<bool, ID> registerUser(string name, string pass) {
 	if(!isValidUsername(name)) {
-		throw invalid_argument("Invalid username passed to registerUser.");
+		throw std::invalid_argument("Invalid username passed to registerUser.");
 	}
 	
 	User user;
@@ -98,6 +99,7 @@ pair<bool, ID> registerUser(string name, string pass) {
 	}
 	return pair<bool, ID>(true, id);
 }
+
 pair<bool, User> getUserByID(ID id) {
 	transaction t(db->begin());
 	result<User> res = db->query<User>(query<User>::id == id);
@@ -106,4 +108,6 @@ pair<bool, User> getUserByID(ID id) {
 	} else {
 		return make_pair(true, *res.begin());
 	}
+}
+
 }

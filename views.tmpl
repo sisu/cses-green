@@ -1,7 +1,8 @@
 <% c++ #include "content.hpp" %>
+<% c++ using namespace cses; %>
 <% skin views %>
 
-<% view page uses content::Page %>
+<% view page uses Page %>
 <% template render() %>
 <!DOCTYPE html>
 <html>
@@ -31,7 +32,7 @@
 <% end view %>
 
 
-<% view contests uses content::Contests extends page %>
+<% view contests uses ContestsPage extends page %>
 <% template body() %>
 <html>
 <body>
@@ -49,14 +50,14 @@
 <% end view %>
 
 
-<% view submit uses content::Submit extends page %>
+<% view submit uses SubmitPage extends page %>
 <% template body() %>
 submit
 <% end template %>
 <% end view %>
 
 
-<% view contest uses content::Contest extends page %>
+<% view contest uses ContestPage extends page %>
 <% template body() %>
 <form method="post" action=""><%csrf%>
 <% form as_p info %>
@@ -65,7 +66,7 @@ submit
 <% end view %>
 
 
-<% view user uses content::User extends page %>
+<% view user uses UserPage extends page %>
 <% template body() %>
 user
 <form method="post" action=""><%csrf%>
@@ -74,7 +75,7 @@ user
 <% end template %>
 <% end view %>
 
-<% view registration uses content::Registration extends page %>
+<% view registration uses RegistrationPage extends page %>
 <% template body() %>
 <h1>Register user</h1>
 <form method="post" action=""><%csrf%>
@@ -83,7 +84,7 @@ user
 <% end template %>
 <% end view %>
 
-<% view login uses content::Login extends page %>
+<% view login uses LoginPage extends page %>
 <% template body() %>
 <h1>Login</h1>
 <form method="post" action=""><%csrf%>
@@ -93,7 +94,7 @@ user
 <% end view %>
 
 
-<% view languages uses content::Languages extends page %>
+<% view languages uses LanguagesPage extends page %>
 <% template body() %>
 <h1>Languages</h1>
 <% foreach l in languages %>
