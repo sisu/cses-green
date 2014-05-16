@@ -12,7 +12,7 @@ struct Page: cppcms::base_content {
 };
 
 struct ContestsPage: Page {
-	std::vector<std::string> contests;
+	vector<string> contests;
 };
 
 struct SubmitPage: Page {
@@ -111,8 +111,12 @@ struct LanguagesPage: Page {
 			add(submit);
 		}
 	};
-	std::vector<Language> languages;
+	vector<Language> languages;
 	Language newLang;
+};
+
+struct AdminPage: Page {
+	vector<User> userlist;
 };
 
 }

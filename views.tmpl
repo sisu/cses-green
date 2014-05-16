@@ -110,4 +110,22 @@ user
 <% end template %>
 <% end view %>
 
+<% view admin uses AdminPage extends page %>
+<% template body() %>
+<h1>Admin panel</h1>
+<h2>Users</h2>
+<% foreach user in userlist %>
+<table>
+	<% item %>
+	<tr>
+		<td><%= user.name %></td>
+		<td><a href="<% url "admin_user" using user.id %>">Edit</a></td>
+	</tr>
+	<% end %>
+</table>
+<% end %>
+</form>
+<% end template %>
+<% end view %>
+
 <% end skin %>

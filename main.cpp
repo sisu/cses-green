@@ -18,22 +18,28 @@ struct Server: cppcms::application {
 	Server(cppcms::service& srv): cppcms::application(srv) {
 		dispatcher().assign("/", &Server::contests, this);
 		mapper().assign("");
-
+		
 		dispatcher().assign("/contest/.+", &Server::contest, this, 1);
 		mapper().assign("contest", "contest/{1}");
-
+		
 		dispatcher().assign("/user/.*", &Server::user, this, 1);
 		mapper().assign("user", "user/{1}");
-
+		
 		dispatcher().assign("/register/", &Server::registration, this);
 		mapper().assign("register", "register/");
-
+		
 		dispatcher().assign("/login/", &Server::login, this);
 		mapper().assign("login", "login/");
-
+		
 		dispatcher().assign("/languages/", &Server::languages, this);
 		mapper().assign("languages", "languages/");
-
+		
+		dispatcher().assign("/admin/", &Server::admin, this);
+		mapper().assign("admin", "admin/");
+		
+		dispatcher().assign("/admin/user/(\\d+)", &Server::admin_user, this, 1);
+		mapper().assign("admin_user", "admin/user/{1}/");
+		
 		mapper().root("/");
 	}
 
@@ -137,6 +143,19 @@ struct Server: cppcms::application {
 			}
 		}
 		render("languages", c);
+	}
+	
+	void admin() {
+		AdminPage c;
+		using namespace odb;
+		transaction t(db->begin());
+		result<User> res = db->query<User>();
+		c.userlist.assign(res.begin(), res.end());
+		render("admin", c);
+	}
+
+	void admin_user(string userIDString) {
+		
 	}
 
 	bool isPost() const {
