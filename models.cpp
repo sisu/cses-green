@@ -100,14 +100,4 @@ pair<bool, ID> registerUser(string name, string pass) {
 	return pair<bool, ID>(true, id);
 }
 
-pair<bool, User> getUserByID(ID id) {
-	transaction t(db->begin());
-	result<User> res = db->query<User>(query<User>::id == id);
-	if(res.empty()) {
-		return make_pair(false, User());
-	} else {
-		return make_pair(true, *res.begin());
-	}
-}
-
 }

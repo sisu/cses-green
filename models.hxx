@@ -159,7 +159,6 @@ void makeDB();
 bool isValidUsername(string name);
 pair<bool, ID> testLogin(string user, string pass);
 pair<bool, ID> registerUser(string name, string pass);
-pair<bool, User> getUserByID(ID id);
 //UniqueFile makeFile();
 
 }

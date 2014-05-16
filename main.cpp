@@ -1,6 +1,7 @@
 #include "common.hpp"
 #include "content.hpp"
 #include "models.hxx"
+#include "models-odb.hxx"
 #include <booster/log.h>
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
@@ -144,12 +145,15 @@ struct Server: cppcms::application {
 	
 	pair<bool, User> getUser() {
 		if(session().is_set("id")) {
-			auto ret = getUserByID(session().get<ID>("id"));
-			if(!ret.first) {
-				session().reset_session();
-				session().erase("id");
+			ID userID = session().get<ID>("id");
+			using namespace odb;
+			transaction t(db->begin());
+			result<User> res = db->query<User>(query<User>::id == userID);
+			if(!res.empty()) {
+				return make_pair(true, *res.begin());
 			}
-			return ret;
+			session().reset_session();
+			session().erase("id");
 		}
 		return make_pair(false, User());
 	}
