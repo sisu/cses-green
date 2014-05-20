@@ -5,6 +5,7 @@
 #include <tuple>
 #include <string>
 #include <memory>
+#include <boost/optional.hpp>
 
 namespace cses {
 
@@ -17,5 +18,6 @@ using std::string;
 using std::unique_ptr;
 using std::shared_ptr;
 using std::weak_ptr;
+using boost::optional;
 
 }

@@ -5,7 +5,7 @@ ODIRS:=$(addprefix $(ODIR)/, $(DIRS))
 SRC:=$(wildcard $(addsuffix /*.cpp,$(DIRS)))
 OBJ:=$(patsubst %.cpp,obj/%.o,$(SRC))
 
-DBFILE:=models
+DBFILE:=model_db
 DBOBJ=$(ODIR)/$(DBFILE)-odb.o
 
 TMPLSRC:=$(wildcard $(addsuffix /*.tmpl,$(DIRS)))
@@ -27,7 +27,7 @@ all: $(ODIRS) cses
 cses: $(OBJ) $(DBOBJ) $(TMPLOBJ)
 	g++ -o "$@" $^ $(CXXFLAGS) $(LDFLAGS)
 
-$(OBJ): $(ODIR)/%.o: %.cpp
+$(OBJ): $(ODIR)/%.o: %.cpp $(ODIR)/$(DBFILE)-odb.hxx
 	g++ "$<" -c -o "$@" $(CXXFLAGS)
 
 $(DBOBJ): %.o: %.cxx
@@ -47,7 +47,5 @@ $(ODIRS):
 
 $(ODIR)/%-odb.hxx $(ODIR)/%-odb.cxx: $(DBFILE).hxx
 	odb -o $(ODIR) -d sqlite -q -s $< -x "-std=c++0x" -x '-Wno-pragmas'
-
-$(ODIR)/./models.o: $(ODIR)/$(DBFILE)-odb.hxx
 
 include $(wildcard $(ODIR)/*.d)

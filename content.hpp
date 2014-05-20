@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include "models.hxx"
+#include "model.hpp"
 #include <cppcms/view.h>
 #include <cppcms/form.h>
 #include <vector>

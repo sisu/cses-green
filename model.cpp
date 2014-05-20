@@ -1,5 +1,4 @@
-#include "models.hxx"
-#include "models-odb.hxx"
+#include "model.hpp"
 #include <cppcms/encoding.h>
 #include <odb/database.hxx>
 #include <odb/sqlite/database.hxx>
@@ -51,12 +50,10 @@ void makeDB() {
 		t.commit();
 	}
 #endif
-	bool success;
-	ID userID;
-	tie(success, userID) = registerUser("a", "a");
-	if(success) {
+	optional<ID> newUserID = registerUser("a", "a");
+	if(newUserID) {
 		transaction t(db->begin());
-		User* user = db->load<User>(userID);
+		User* user = db->load<User>(*newUserID);
 		user->admin = 1;
 		db->update(user);
 		t.commit();
@@ -71,15 +68,19 @@ bool isValidUsername(string name) {
 	return codepointCount != 0 && codepointCount <= 255;
 }
 
-pair<bool, ID> testLogin(string user, string pass) {
+optional<ID> testLogin(string user, string pass) {
 	transaction t(db->begin());
 	result<User> res = db->query<User>(query<User>::name == user);
-	if(res.empty()) return pair<bool, ID>(false, 0);
+	if(res.empty()) return optional<ID>();
 	User u = *res.begin();
-	return make_pair(computeHash(u.salt + pass) == u.hash, u.id);
+	if(computeHash(u.salt + pass) == u.hash) {
+		return u.id;
+	} else {
+		return optional<ID>();
+	}
 }
 
-pair<bool, ID> registerUser(string name, string pass) {
+optional<ID> registerUser(string name, string pass) {
 	if(!isValidUsername(name)) {
 		throw std::invalid_argument("Invalid username passed to registerUser.");
 	}
@@ -95,9 +96,9 @@ pair<bool, ID> registerUser(string name, string pass) {
 		id = db->persist(user);
 		t.commit();
 	} catch(object_already_persistent) {
-		return pair<bool, ID>(false, 0);
+		return optional<ID>();
 	}
-	return pair<bool, ID>(true, id);
+	return id;
 }
 
 }

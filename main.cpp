@@ -1,7 +1,6 @@
 #include "common.hpp"
 #include "content.hpp"
-#include "models.hxx"
-#include "models-odb.hxx"
+#include "model.hpp"
 #include <booster/log.h>
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
@@ -37,7 +36,7 @@ struct Server: cppcms::application {
 		dispatcher().assign("/admin/", &Server::admin, this);
 		mapper().assign("admin", "admin/");
 		
-		dispatcher().assign("/admin/user/(\\d+)", &Server::admin_user, this, 1);
+		dispatcher().assign("/admin/user/(\\d+)/", &Server::admin_user, this, 1);
 		mapper().assign("admin_user", "admin/user/{1}/");
 		
 		mapper().root("/");
@@ -52,11 +51,9 @@ struct Server: cppcms::application {
 	}
 #endif
 	void contests() {
-		bool login;
-		User user;
-		tie(login, user) = getUser();
-		if(login) {
-			BOOSTER_DEBUG("cses_contests") << "User " << user.id << ": \"" << user.name << "\" visited the page.";
+		optional<User> user = getUser();
+		if(user) {
+			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->name << "\" visited the page.";
 		} else {
 			BOOSTER_DEBUG("cses_contests") << "Outsider visited the page.";
 		}
@@ -94,12 +91,10 @@ struct Server: cppcms::application {
 		if(isPost()) {
 			c.info.load(context());
 			if(c.info.validate()) {
-				bool success;
-				ID userID;
-				tie(success, userID) = registerUser(c.info.name.value(), c.info.password.value());
-				if(success) {
+				optional<ID> newUserID = registerUser(c.info.name.value(), c.info.password.value());
+				if(newUserID) {
 					BOOSTER_INFO("cses_register")
-						<< "Registered user " << userID << ": \"" << c.info.name.value() << "\".";
+						<< "Registered user " << *newUserID << ": \"" << c.info.name.value() << "\".";
 				} else {
 					c.info.name.valid(false);
 					c.info.name.error_message("Username already in use.");
@@ -115,12 +110,11 @@ struct Server: cppcms::application {
 			c.info.load(context());
 			if(c.info.validate()) {
 				bool success;
-				ID userID;
-				tie(success, userID) = testLogin(c.info.name.value(), c.info.password.value());
-				if(success) {
+				optional<ID> userID = testLogin(c.info.name.value(), c.info.password.value());
+				if(userID) {
 					session().reset_session();
 					session().erase("prelogin");
-					session().set("id", userID);
+					session().set("id", *userID);
 					response().set_redirect_header("/");
 					return;
 				}
@@ -146,6 +140,11 @@ struct Server: cppcms::application {
 	}
 	
 	void admin() {
+		optional<User> user = getUser();
+		if(!user || !user->admin) {
+			return;
+		}
+		
 		AdminPage c;
 		using namespace odb;
 		transaction t(db->begin());
@@ -155,26 +154,24 @@ struct Server: cppcms::application {
 	}
 
 	void admin_user(string userIDString) {
-		
+		std::cout << userIDString << "\n";
 	}
 
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
 	}
 	
-	pair<bool, User> getUser() {
+	optional<User> getUser() {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
-			using namespace odb;
-			transaction t(db->begin());
-			result<User> res = db->query<User>(query<User>::id == userID);
-			if(!res.empty()) {
-				return make_pair(true, *res.begin());
+			optional<User> user = getObjectIfExists<User>(userID);
+			if(!user) {
+				session().reset_session();
+				session().erase("id");
 			}
-			session().reset_session();
-			session().erase("id");
+			return user;
 		}
-		return make_pair(false, User());
+		return optional<User>();
 	}
 };
 
