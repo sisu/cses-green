@@ -1,6 +1,7 @@
 #include "common.hpp"
 #include "content.hpp"
 #include "model.hpp"
+#include "io_util.hpp"
 #include <booster/log.h>
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
@@ -36,8 +37,8 @@ struct Server: cppcms::application {
 		dispatcher().assign("/admin/", &Server::admin, this);
 		mapper().assign("admin", "admin/");
 		
-		dispatcher().assign("/admin/user/(\\d+)/", &Server::admin_user, this, 1);
-		mapper().assign("admin_user", "admin/user/{1}/");
+		dispatcher().assign("/admin/user/(\\d+)/", &Server::adminEditUser, this, 1);
+		mapper().assign("adminEditUser", "admin/user/{1}/");
 		
 		mapper().root("/");
 	}
@@ -51,7 +52,7 @@ struct Server: cppcms::application {
 	}
 #endif
 	void contests() {
-		optional<User> user = getUser();
+		optional<User> user = getCurrentUser();
 		if(user) {
 			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->name << "\" visited the page.";
 		} else {
@@ -109,7 +110,6 @@ struct Server: cppcms::application {
 		if(isPost() && session().is_set("prelogin")) {
 			c.info.load(context());
 			if(c.info.validate()) {
-				bool success;
 				optional<ID> userID = testLogin(c.info.name.value(), c.info.password.value());
 				if(userID) {
 					session().reset_session();
@@ -127,7 +127,7 @@ struct Server: cppcms::application {
 	void languages() {
 		throw 5;
 		LanguagesPage c;
-		if (isPost()) {
+		if(isPost()) {
 			c.newLang.load(context());
 			if (c.newLang.validate()) {
 				Language lang;
@@ -140,8 +140,8 @@ struct Server: cppcms::application {
 	}
 	
 	void admin() {
-		optional<User> user = getUser();
-		if(!user || !user->admin) {
+		if(!isCurrentUserAdmin()) {
+			sendRedirectHeader("/");
 			return;
 		}
 		
@@ -153,25 +153,55 @@ struct Server: cppcms::application {
 		render("admin", c);
 	}
 
-	void admin_user(string userIDString) {
-		std::cout << userIDString << "\n";
+	void adminEditUser(string userIDString) {
+		if(!isCurrentUserAdmin()) {
+			sendRedirectHeader("/");
+			return;
+		}
+		
+		optional<ID> userID = stringToInteger<ID>(userIDString);
+		if(!userID) {
+			sendRedirectHeader("/admin");
+			return;
+		}
+		
+		AdminEditUserPage c;
+		if(isPost()) {
+			
+		} else {
+			
+		}
 	}
 
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
 	}
 	
-	optional<User> getUser() {
+	// If the user has logged in and is active, return it.
+	optional<User> getCurrentUser() {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
 			optional<User> user = getObjectIfExists<User>(userID);
-			if(!user) {
-				session().reset_session();
-				session().erase("id");
+			if(user && user->active) {
+				return user;
 			}
-			return user;
+			session().reset_session();
+			session().erase("id");
 		}
 		return optional<User>();
+	}
+	
+	bool isCurrentUserAdmin() {
+		optional<User> user = getCurrentUser();
+		if(!user) return false;
+		return user->admin;
+	}
+	
+	template <typename... Params>
+	void sendRedirectHeader(const char* path, const Params&... params) {
+		std::stringstream url;
+		mapper().map(url, path, params...);
+		response().set_redirect_header(url.str());
 	}
 };
 

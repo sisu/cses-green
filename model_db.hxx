@@ -49,7 +49,8 @@ struct User: HasID {
 	string salt;
 #pragma db value_not_null inverse(users) section(sec)
 	vector<Group*> groups;
-	bool admin = 0;
+	bool admin = false;
+	bool active = false;
 
 #pragma db load(lazy)
 	odb::section sec;

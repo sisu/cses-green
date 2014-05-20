@@ -1,10 +1,7 @@
 #pragma once
 #include "common.hpp"
+#include "widgets.hpp"
 #include "model.hpp"
-#include <cppcms/view.h>
-#include <cppcms/form.h>
-#include <vector>
-#include <string>
 
 namespace cses {
 
@@ -17,8 +14,6 @@ struct ContestsPage: Page {
 
 struct SubmitPage: Page {
 };
-
-namespace ws = cppcms::widgets;
 
 struct ContestPage: Page {
 	struct Info: cppcms::form {
@@ -49,7 +44,7 @@ struct UserPage: Page {
 
 struct RegistrationPage: Page {
 	struct Info: cppcms::form {
-		ws::text name;
+		SetUsernameWidget name;
 		ws::password password;
 		ws::submit submit;
 		Info() {
@@ -59,16 +54,6 @@ struct RegistrationPage: Page {
 			add(name);
 			add(password);
 			add(submit);
-		}
-		
-		virtual bool validate() override {
-			if(!cppcms::form::validate()) return false;
-			if(!isValidUsername(name.value())) {
-				name.valid(false);
-				name.error_message("Invalid username. Username must contain 1-255 characters.");
-				return false;
-			}
-			return true;
 		}
 	};
 	Info info;
@@ -117,6 +102,40 @@ struct LanguagesPage: Page {
 
 struct AdminPage: Page {
 	vector<User> userlist;
+};
+
+struct AdminEditUserPage: Page {
+	struct BasicForm: cppcms::form {
+		SetUsernameWidget name;
+		ws::select_multiple groups;
+		ws::checkbox active;
+		ws::submit submit;
+		
+		BasicForm() {
+			name.message("Username");
+			groups.message("Groups");
+			active.message("Active");
+			submit.message("Save");
+			add(name);
+			add(groups);
+			add(active);
+			add(submit);
+		}
+	};
+	struct PasswordForm: cppcms::form {
+		ws::password password;
+		ws::submit submit;
+		
+		PasswordForm() {
+			password.message("New password");
+			submit.message("Set password");
+			add(password);
+			add(submit);
+		}
+	};
+	
+	BasicForm basicForm;
+	PasswordForm passwordForm;
 };
 
 }

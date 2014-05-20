@@ -73,7 +73,7 @@ optional<ID> testLogin(string user, string pass) {
 	result<User> res = db->query<User>(query<User>::name == user);
 	if(res.empty()) return optional<ID>();
 	User u = *res.begin();
-	if(computeHash(u.salt + pass) == u.hash) {
+	if(computeHash(u.salt + pass) == u.hash && u.active) {
 		return u.id;
 	} else {
 		return optional<ID>();
@@ -89,7 +89,8 @@ optional<ID> registerUser(string name, string pass) {
 	user.name = name;
 	user.salt = genSalt();
 	user.hash = computeHash(user.salt + pass);
-	user.admin = 0;
+	user.admin = false;
+	user.active = true;
 	ID id;
 	try {
 		transaction t(db->begin());
