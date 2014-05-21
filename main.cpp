@@ -54,7 +54,7 @@ struct Server: cppcms::application {
 	void contests() {
 		optional<User> user = getCurrentUser();
 		if(user) {
-			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->name << "\" visited the page.";
+			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->getName() << "\" visited the page.";
 		} else {
 			BOOSTER_DEBUG("cses_contests") << "Outsider visited the page.";
 		}
@@ -92,11 +92,14 @@ struct Server: cppcms::application {
 		if(isPost()) {
 			c.info.load(context());
 			if(c.info.validate()) {
-				optional<ID> newUserID = registerUser(c.info.name.value(), c.info.password.value());
-				if(newUserID) {
+				try {
+					odb::transaction t(db->begin());
+					User newUser(c.info.name.value(), c.info.password.value());
+					db->persist(newUser);
+					t.commit();
 					BOOSTER_INFO("cses_register")
-						<< "Registered user " << *newUserID << ": \"" << c.info.name.value() << "\".";
-				} else {
+						<< "Registered user " << newUser.id << ": \"" << newUser.getName() << "\".";
+				} catch(odb::object_already_persistent) {
 					c.info.name.valid(false);
 					c.info.name.error_message("Username already in use.");
 				}
@@ -117,6 +120,9 @@ struct Server: cppcms::application {
 					session().set("id", *userID);
 					response().set_redirect_header("/");
 					return;
+				} else {
+					BOOSTER_INFO("cses_login") << "Login failed with username \"" << c.info.name.value() << "\".\n";
+					c.loginFailed = true;
 				}
 			}
 		}
@@ -146,9 +152,8 @@ struct Server: cppcms::application {
 		}
 		
 		AdminPage c;
-		using namespace odb;
-		transaction t(db->begin());
-		result<User> res = db->query<User>();
+		odb::transaction t(db->begin());
+		odb::result<User> res = db->query<User>();
 		c.userlist.assign(res.begin(), res.end());
 		render("admin", c);
 	}
@@ -178,7 +183,9 @@ struct Server: cppcms::application {
 				
 			}
 		} else {
-			
+			c.form.name.value(user->getName());
+			c.form.admin.value(user->isAdmin());
+			c.form.active.value(user->isActive());
 		}
 		
 		render("adminEditUser", c);
@@ -193,7 +200,7 @@ struct Server: cppcms::application {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
 			optional<User> user = getObjectIfExists<User>(userID);
-			if(user && user->active) {
+			if(user && user->isActive()) {
 				return user;
 			}
 			session().reset_session();
@@ -205,7 +212,7 @@ struct Server: cppcms::application {
 	bool isCurrentUserAdmin() {
 		optional<User> user = getCurrentUser();
 		if(!user) return false;
-		return user->admin;
+		return user->isAdmin();
 	}
 	
 	template <typename... Params>

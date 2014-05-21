@@ -5,6 +5,29 @@
 
 namespace cses {
 
+typedef optional<string> OptString;
+
+struct SetUsernameWidget: ValidatingWidget<ws::text> {
+	virtual CheckResult checkValue(const string& name) override {
+		if(User::isValidName(name)) return ok();
+		return error("Invalid username. Username must consist of 1-255 characters.");
+	}
+};
+
+struct SetPasswordWidget: ValidatingWidget<ws::password> {
+	virtual CheckResult checkValue(const string& password) override {
+		if(User::isValidPassword(password)) return ok();
+		return error("Invalid username. Username must consist of 1-255 characters.");
+	}
+};
+
+struct SetOptionalPasswordWidget: ValidatingWidget<ws::password> {
+	virtual CheckResult checkValue(const string& password) override {
+		if(password.empty() || User::isValidPassword(password)) return ok();
+		return error("Invalid username. Username must consist of 1-255 characters.");
+	}
+};
+
 struct Page: cppcms::base_content {
 };
 
@@ -45,7 +68,7 @@ struct UserPage: Page {
 struct RegistrationPage: Page {
 	struct Info: cppcms::form {
 		SetUsernameWidget name;
-		ws::password password;
+		SetPasswordWidget password;
 		ws::submit submit;
 		Info() {
 			name.message("Name");
@@ -73,6 +96,7 @@ struct LoginPage: Page {
 			add(submit);
 		}
 	};
+	bool loginFailed = false;
 	Info info;
 };
 
@@ -107,7 +131,7 @@ struct AdminPage: Page {
 struct AdminEditUserPage: Page {
 	struct Form: cppcms::form {
 		SetUsernameWidget name;
-		ws::password password;
+		SetOptionalPasswordWidget password;
 		ws::checkbox admin;
 		ws::checkbox active;
 		ws::submit submit;

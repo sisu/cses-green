@@ -42,13 +42,47 @@ typedef unique_ptr<File> UniqueFile;
 
 #pragma db object
 struct User: HasID {
+public:
+	User(string name, string password, bool admin = false, bool active = true);
+	
+	const string& getName() const {
+		return name;
+	}
+	void setName(const string& newName);
+	
+	bool isPasswordMatch(const string& cmpPassword) const;
+	void setPassword(const string& newPassword);
+	
+	bool isAdmin() const {
+		return admin;
+	}
+	void setAdmin(bool newAdmin) {
+		admin = newAdmin;
+	}
+	
+	bool isActive() const {
+		return active;
+	}
+	void setActive(bool newActive) {
+		active = newActive;
+	}
+	
+	// Usernames must consist of 1-255 code points.
+	static bool isValidName(const string& name);
+	
+	// Passwords must consist of 1-255 code points.
+	static bool isValidPassword(const string& password);
+	
+private:
+	User() { }
+	
 #pragma db unique
 	StrField name;
 	StrField hash;
 #pragma db type(CHAR_FIELD(16))
 	string salt;
-	bool admin = false;
-	bool active = false;
+	bool admin;
+	bool active;
 	
 #if 0
 #pragma db value_not_null inverse(users) section(sec)

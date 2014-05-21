@@ -6,9 +6,9 @@
 namespace cses {
 
 void makeDB();
-bool isValidUsername(string name);
+
+// Return ID of active user with given username and password, if exists.
 optional<ID> testLogin(string user, string pass);
-optional<ID> registerUser(string name, string pass);
 
 // Get database object with given id if exists.
 template <typename T>

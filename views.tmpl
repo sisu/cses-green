@@ -87,6 +87,9 @@ user
 <% view login uses LoginPage extends page %>
 <% template body() %>
 <h1>Login</h1>
+<% if loginFailed %>
+	<p>Wrong username or password!</p>
+<% end %>
 <form method="post" action=""><%csrf%>
 <% form as_p info %>
 </form>
@@ -118,7 +121,7 @@ user
 <table>
 	<% item %>
 	<tr>
-		<td><%= user.name %></td>
+		<td><%= user.getName() %></td>
 		<td><a href="<% url "adminEditUser" using user.id %>">Edit</a></td>
 	</tr>
 	<% end %>

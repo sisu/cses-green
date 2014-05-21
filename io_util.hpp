@@ -26,4 +26,7 @@ optional<T> stringToInteger(const string& src) {
 	return ret;
 }
 
+// Count unicode code points. Throws Error if invalid UTF-8.
+size_t countCodePoints(const string& str);
+
 }

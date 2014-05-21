@@ -3,21 +3,36 @@
 #include "model.hpp"
 #include <cppcms/view.h>
 #include <cppcms/form.h>
+#include <utility>
 
 namespace cses {
 
 namespace ws = cppcms::widgets;
 
-// Widget that validates values to pass isValidUsername.
-struct SetUsernameWidget: ws::text {
+// Wrapper for Widget that checks after other validations whether checkValue
+// returns an error message, and in that case sets the widget invalid with
+// the returned error message.
+template <typename Widget>
+struct ValidatingWidget: Widget {
 	virtual bool validate() override {
-		if(!ws::text::validate()) return false;
-		if(!isValidUsername(value())) {
-			valid(false);
-			error_message("Invalid username. Username must contain 1-255 characters.");
+		if(!Widget::validate()) return false;
+		optional<string> validatorRet = checkValue(Widget::value());
+		if(validatorRet) {
+			Widget::valid(false);
+			Widget::error_message(*validatorRet);
 			return false;
 		}
 		return true;
+	}
+	typedef optional<string> CheckResult;
+	virtual CheckResult checkValue(const decltype(std::declval<Widget>().value())&) = 0;
+	
+protected:
+	CheckResult ok() {
+		return optional<string>();
+	}
+	CheckResult error(const string& message) {
+		return message;
 	}
 };
 
