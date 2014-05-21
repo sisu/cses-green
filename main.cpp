@@ -165,12 +165,23 @@ struct Server: cppcms::application {
 			return;
 		}
 		
+		optional<User> user = getObjectIfExists<User>(*userID);
+		if(!user) {
+			sendRedirectHeader("/admin");
+			return;
+		}
+		
 		AdminEditUserPage c;
 		if(isPost()) {
-			
+			c.form.load(context());
+			if(c.form.validate()) {
+				
+			}
 		} else {
 			
 		}
+		
+		render("adminEditUser", c);
 	}
 
 	bool isPost() const {

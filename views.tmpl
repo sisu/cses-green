@@ -124,6 +124,15 @@ user
 	<% end %>
 </table>
 <% end %>
+<% end template %>
+<% end view %>
+
+<% view adminEditUser uses AdminEditUserPage extends page %>
+<% template body() %>
+<h1>Admin panel</h1>
+<h2>Edit user</h2>
+<form method="post" action=""><%csrf%>
+<% form as_p form %>
 </form>
 <% end template %>
 <% end view %>

@@ -105,37 +105,28 @@ struct AdminPage: Page {
 };
 
 struct AdminEditUserPage: Page {
-	struct BasicForm: cppcms::form {
+	struct Form: cppcms::form {
 		SetUsernameWidget name;
-		ws::select_multiple groups;
+		ws::password password;
+		ws::checkbox admin;
 		ws::checkbox active;
 		ws::submit submit;
 		
-		BasicForm() {
+		Form() {
 			name.message("Username");
-			groups.message("Groups");
+			password.message("New password (empty to keep old)");
+			admin.message("Admin");
 			active.message("Active");
-			submit.message("Save");
+			submit.value("Save");
 			add(name);
-			add(groups);
+			add(password);
+			add(admin);
 			add(active);
 			add(submit);
 		}
 	};
-	struct PasswordForm: cppcms::form {
-		ws::password password;
-		ws::submit submit;
-		
-		PasswordForm() {
-			password.message("New password");
-			submit.message("Set password");
-			add(password);
-			add(submit);
-		}
-	};
 	
-	BasicForm basicForm;
-	PasswordForm passwordForm;
+	Form form;
 };
 
 }

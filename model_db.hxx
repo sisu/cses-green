@@ -47,19 +47,22 @@ struct User: HasID {
 	StrField hash;
 #pragma db type(CHAR_FIELD(16))
 	string salt;
-#pragma db value_not_null inverse(users) section(sec)
-	vector<Group*> groups;
 	bool admin = false;
 	bool active = false;
-
+	
+#if 0
+#pragma db value_not_null inverse(users) section(sec)
+	vector<Group*> groups;
 #pragma db load(lazy)
 	odb::section sec;
-
+#endif
+	
 	friend class odb::access;
 };
 typedef shared_ptr<User> UserPtr;
 #pragma db value(UserPtr) not_null
 
+#if 0
 #pragma db object
 struct Group: HasID {
 	StrField name;
@@ -70,6 +73,7 @@ private:
 	Group() {}
 	friend class odb::access;
 };
+#endif
 
 #pragma db object
 struct Task: HasID {
@@ -108,10 +112,13 @@ struct Contest: HasID {
 #pragma db unique
 	StrField name;
 	vector<TaskPtr> tasks;
+
+#if 0
 #pragma db unordered
 	vector<UserPtr> users;
 #pragma db value_not_null unordered
 	vector<shared_ptr<Group>> groups;
+#endif
 
 private:
 	Contest() {}
