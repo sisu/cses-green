@@ -17,14 +17,14 @@ struct SetUsernameWidget: ValidatingWidget<ws::text> {
 struct SetPasswordWidget: ValidatingWidget<ws::password> {
 	virtual CheckResult checkValue(const string& password) override {
 		if(User::isValidPassword(password)) return ok();
-		return error("Invalid username. Username must consist of 1-255 characters.");
+		return error("Invalid password. Password must consist of 1-255 characters.");
 	}
 };
 
 struct SetOptionalPasswordWidget: ValidatingWidget<ws::password> {
 	virtual CheckResult checkValue(const string& password) override {
 		if(password.empty() || User::isValidPassword(password)) return ok();
-		return error("Invalid username. Username must consist of 1-255 characters.");
+		return error("Invalid password. Password must consist of 1-255 characters.");
 	}
 };
 
@@ -151,6 +151,8 @@ struct AdminEditUserPage: Page {
 	};
 	
 	Form form;
+	bool success = false;
+	bool nameInUse = false;
 };
 
 }

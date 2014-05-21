@@ -180,7 +180,36 @@ struct Server: cppcms::application {
 		if(isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
-				
+				user->setName(c.form.name.value());
+				if(!c.form.password.value().empty()) {
+					user->setPassword(c.form.password.value());
+				}
+				user->setAdmin(c.form.admin.value());
+				user->setActive(c.form.active.value());
+				try {
+					odb::transaction t(db->begin());
+					
+					// FIXME: find better way to detect username in use.
+					// can't reliably detect UNIQUE constraint failure,
+					// current workaround throws if someone creates user with
+					// colliding name during the transaction.
+					odb::result<User> res = db->query<User>(
+						odb::query<User>::name == user->getName()
+					);
+					c.nameInUse = false;
+					for(const User& other : res) {
+						if(other.id != user->id) c.nameInUse = true;
+					}
+					
+					if(!c.nameInUse) {
+						db->update(*user);
+						t.commit();
+						c.success = true;
+					}
+				} catch(odb::object_not_persistent& e) {
+					sendRedirectHeader("/admin");
+					return;
+				}
 			}
 		} else {
 			c.form.name.value(user->getName());
