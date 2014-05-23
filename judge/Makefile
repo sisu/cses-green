@@ -35,7 +35,7 @@ $(THRIFT_OBJ): %.o: %.cpp
 
 $(THRIFT_SRC): $(ODIR)/gen-cpp/$(TFILE)_types.h
 
-$(ODIR)/gen-cpp/$(TFILE)_types.h: $(TFILE).thrift
+$(ODIR)/gen-cpp/$(TFILE)_types.h: common/$(TFILE).thrift
 	thrift -o $(ODIR) --gen cpp $<
 
 clean:
