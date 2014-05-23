@@ -29,6 +29,7 @@
 
 <% template body() %>
 <% end template %>
+
 <% end view %>
 
 
@@ -142,6 +143,16 @@ user
 <h1>Admin panel</h1>
 <h2>Edit language</h2>
 <form method="post" action=""><%csrf%>
+<% form as_p form %>
+</form>
+<% end template %>
+<% end view %>
+
+<% view adminImport uses AdminImportPage extends page %>
+<% template body() %>
+<h1>Admin panel</h1>
+<h2>Import contest</h2>
+<form method="post" action="" enctype="multipart/form-data"><%csrf%>
 <% form as_p form %>
 </form>
 <% end template %>

@@ -7,10 +7,13 @@
 #include <cppcms/applications_pool.h>
 #include <cppcms/service.h>
 #include <cppcms/http_response.h>
+#include <cppcms/http_file.h>
 #include <cppcms/url_dispatcher.h>
 #include <cppcms/url_mapper.h>
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
+#include <dirent.h>
 
 using namespace cses;
 
@@ -39,6 +42,9 @@ struct Server: cppcms::application {
 		
 		dispatcher().assign("/admin/language/(\\d+|new)/", &Server::adminEditLanguage, this, 1);
 		mapper().assign("adminEditLanguage", "admin/language/{1}/");
+                
+                dispatcher().assign("/admin/import/", &Server::adminImport, this);
+                mapper().assign("adminImport", "admin/import/");
 		
 		mapper().root("/");
 	}
@@ -249,6 +255,53 @@ struct Server: cppcms::application {
 		
 		render("adminEditLanguage", c);
 	}
+	
+        void adminImport() {
+                if(!isCurrentUserAdmin()) {
+                        sendRedirectHeader("/");
+                        return;
+                }
+                
+                AdminImportPage c;
+		if (isPost()) {
+			c.form.load(context());
+			if(c.form.validate()) {
+				string name = c.form.name.value();
+				char directoryName[] = "zipXXXXXX";
+				mkdtemp(directoryName);
+				string newName = directoryName;				
+				c.form.package.value()->save_to(newName + "/pelle.zip");
+				string command = "unzip " + newName + "/pelle.zip -d " + newName;
+				system(command.c_str());
+				DIR *dir = opendir((newName + "/.").c_str());
+				struct dirent *d;
+				map<string, pair<vector<string>, vector<string>>> data;
+				while ((d = readdir(dir)) != NULL) {
+					string dirName = d->d_name;
+					if (dirName == ".") continue;
+					if (dirName == "..") continue;
+					if (dirName == "pelle.zip") continue;
+					DIR *dir2 = opendir((newName + "/" + dirName + "/.").c_str());
+					struct dirent *d2;
+					vector<string> inputs, outputs;
+					while ((d2 = readdir(dir2)) != NULL) {
+						string fileName = d2->d_name;
+						if (fileName == ".") continue;
+						if (fileName == "..") continue;
+						if (fileName.find(".in") != string::npos) inputs.push_back(fileName);
+						if (fileName.find(".IN") != string::npos) inputs.push_back(fileName);
+						if (fileName.find(".out") != string::npos) outputs.push_back(fileName);
+						if (fileName.find(".OUT") != string::npos) outputs.push_back(fileName);
+					}
+					sort(inputs.begin(), inputs.end());
+					sort(outputs.begin(), outputs.end());
+					data[dirName] = make_pair(inputs, outputs);
+				}
+				
+			}
+		}
+                render("adminImport", c);
+        }
 	
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";

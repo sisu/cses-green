@@ -7,6 +7,8 @@
 #include <string>
 #include <memory>
 #include <cstdlib>
+#include <set>
+#include <map>
 //#include <boost/optional.hpp>
 
 namespace cses {
@@ -23,6 +25,8 @@ using std::weak_ptr;
 using std::size_t;
 using std::move;
 using std::swap;
+using std::set;
+using std::map;
 
 struct Error : std::exception {
 public:
