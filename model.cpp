@@ -21,7 +21,8 @@ uint64_t generateTrueRandom() {
 	return distribution(device);
 }
 
-static thread_local std::mt19937_64 rng(generateTrueRandom());
+//static __thread std::mt19937_64 rng(generateTrueRandom());
+static std::mt19937_64 rng(generateTrueRandom());
 
 string computeHash(string pass) {
 	string res;

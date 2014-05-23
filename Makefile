@@ -1,6 +1,7 @@
 DIRS:=.
 ODIR:=obj
 ODIRS:=$(addprefix $(ODIR)/, $(DIRS))
+CXX=g++-4.7
 
 SRC:=$(wildcard $(addsuffix /*.cpp,$(DIRS)))
 OBJ:=$(patsubst %.cpp,obj/%.o,$(SRC))
@@ -25,16 +26,16 @@ LDFLAGS:=-L /usr/lib/odb/ -lodb -lodb-sqlite -lcppcms -lbooster -lssl -lcrypto
 all: $(ODIRS) cses
 
 cses: $(OBJ) $(DBOBJ) $(TMPLOBJ)
-	g++ -o "$@" $^ $(CXXFLAGS) $(LDFLAGS)
+	$(CXX) -o "$@" $^ $(CXXFLAGS) $(LDFLAGS)
 
 $(OBJ): $(ODIR)/%.o: %.cpp $(ODIR)/$(DBFILE)-odb.hxx
-	g++ "$<" -c -o "$@" $(CXXFLAGS)
+	$(CXX) "$<" -c -o "$@" $(CXXFLAGS)
 
 $(DBOBJ): %.o: %.cxx
-	g++ "$<" -c -o "$@" $(CXXFLAGS)
+	$(CXX) "$<" -c -o "$@" $(CXXFLAGS)
 
 $(TMPLOBJ): %.o: %.cpp
-	g++ "$<" -c -o "$@" $(CXXFLAGS)
+	$(CXX) "$<" -c -o "$@" $(CXXFLAGS)
 
 $(TMPLCPP): $(ODIR)/%.cpp: %.tmpl
 	cppcms_tmpl_cc $< -o $@
