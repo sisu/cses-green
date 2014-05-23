@@ -31,10 +31,10 @@ cses: $(OBJ) $(DBOBJ) $(TMPLOBJ)
 $(OBJ): $(ODIR)/%.o: %.cpp $(ODIR)/$(DBFILE)-odb.hxx
 	$(CXX) "$<" -c -o "$@" $(CXXFLAGS)
 
-$(DBOBJ): %.o: %.cxx
+$(DBOBJ): %.o: %.cxx $(ODIR)/$(DBFILE)-odb.hxx
 	$(CXX) "$<" -c -o "$@" $(CXXFLAGS)
 
-$(TMPLOBJ): %.o: %.cpp
+$(TMPLOBJ): %.o: %.cpp $(ODIR)/$(DBFILE)-odb.hxx
 	$(CXX) "$<" -c -o "$@" $(CXXFLAGS)
 
 $(TMPLCPP): $(ODIR)/%.cpp: %.tmpl
