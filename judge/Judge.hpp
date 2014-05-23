@@ -1,15 +1,32 @@
+#include "common.hpp"
 #include "gen-cpp/Judge.h"
 
 namespace cses {
-namespace protocol {
 
-class Judge: public cses::protocol::JudgeIf {
+class Judge: public protocol::JudgeIf {
 public:
-  virtual bool hasFile(const std::string& token, const std::string& hash) override;
-  virtual void sendFile(const std::string& token, const std::string& data) override;
-  virtual void getFile(std::string& _return, const std::string& token, const std::string& hash) override;
-  virtual void run(RunResult& _return, const std::string& token, const std::string& image, const std::vector<FileRef> & inputs, const RunOptions& options) override;
+	Judge(const string& authToken) : correctToken(authToken) { }
+	
+	virtual bool hasFile(const string& token, const string& hash) override;
+	virtual void sendFile(const string& token, const string& data) override;
+	
+	virtual void getFile(
+		string& _return,
+		const string& token,
+		const string& hash
+	) override;
+	
+	virtual void run(
+		protocol::RunResult& _return,
+		const string& token,
+		const string& imageRepository,
+		const string& imageID,
+		const vector<protocol::FileRef>& inputs,
+		const protocol::RunOptions& options
+	) override;
+	
+private:
+	string correctToken;
 };
 
-}
 }

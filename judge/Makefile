@@ -18,7 +18,7 @@ DFLAGS:=-g
 OFLAGS:=-O3
 CXXFLAGS:=$(BASEFLAGS) $(DFLAGS)
 #CXXFLAGS:=$(BASEFLAGS) $(OFLAGS)
-LDFLAGS:=-lthrift -lcppcms
+LDFLAGS:=-lthrift -lcppcms -lcrypto
 
 .PHONY: all clean
 
@@ -35,7 +35,7 @@ $(THRIFT_OBJ): %.o: %.cpp
 
 $(THRIFT_SRC): $(ODIR)/gen-cpp/$(TFILE)_types.h
 
-$(ODIR)/gen-cpp/$(TFILE)_types.h: $(TFILE).thrift
+$(ODIR)/gen-cpp/$(TFILE)_types.h: common/$(TFILE).thrift
 	thrift -o $(ODIR) --gen cpp $<
 
 clean:

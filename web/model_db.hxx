@@ -187,10 +187,12 @@ struct Submission: HasID {
 	UniqueFile binary;
 	int status;
 };
+typedef shared_ptr<Submission> SubmissionPtr;
+#pragma db value(SubmissionPtr) not_null
 
 #pragma db object
 struct Result: HasID {
-	shared_ptr<Submission> submission;
+	SubmissionPtr submission;
 	shared_ptr<TestCase> testCase;
 	UniqueFile output;
 	UniqueFile errOutput;

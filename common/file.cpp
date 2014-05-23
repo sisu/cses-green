@@ -91,4 +91,15 @@ bool fileHashExists(const string& hash) {
 	return true;
 }
 
+bool isValidFileHash(const string& str) {
+	if(str.size() != 2 * SHA_DIGEST_LENGTH) return false;
+	for(char c : str) {
+		if(!(
+			(c >= '0' && c <= '9') ||
+			(c >= 'a' && c <= 'f')
+		)) return false;
+	}
+	return true;
+}
+
 }
