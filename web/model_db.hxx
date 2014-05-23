@@ -157,8 +157,8 @@ struct Contest: HasID {
 	vector<shared_ptr<Group>> groups;
 #endif
 
-private:
 	Contest() {}
+private:
 	friend class odb::access;
 };
 

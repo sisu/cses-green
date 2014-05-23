@@ -68,7 +68,14 @@ struct Server: cppcms::application {
 //		response().out() << "<html><body>lololol</body></html>\n";
 #if 1
 		ContestsPage c;
-		c.contests = {"a", "b"};
+		
+		odb::transaction t(db->begin());		
+		odb::result<Contest> contestRes = db->query<Contest>();
+		for (auto x : contestRes) {
+			c.contests.push_back(x.name);
+		}
+		
+		//c.contests = {"a", "b"};
 		render("contests", c);
 #else
 		content::message c;
@@ -144,8 +151,7 @@ struct Server: cppcms::application {
 		}
 		
 		AdminPage c;
-		odb::transaction t(db->begin());
-		
+		odb::transaction t(db->begin());		
 		odb::result<User> userRes = db->query<User>();
 		c.users.assign(userRes.begin(), userRes.end());
 		
@@ -299,6 +305,8 @@ struct Server: cppcms::application {
 					data[dirName] = make_pair(inputs, outputs);
 				}
 				odb::transaction t(db->begin());
+				shared_ptr<Contest> newContest(new Contest());
+				newContest->name = contestName;
 				for (auto x : data) {
 					shared_ptr<Task> newTask(new Task());
 					string taskName = contestName + "_" + x.first;
@@ -336,12 +344,9 @@ struct Server: cppcms::application {
 						string inputHash = inputSaver.save();
 						string outputHash = outputSaver.save();
 						
-						BOOSTER_INFO("lol") << inputHash << " " << outputHash;
-						
 						newInput->hash = inputHash;
 						newOutput->hash = outputHash;
 						unique_ptr<TestCase> newCase(new TestCase());
-						//newCase->task = newTask;
  						db->persist(newInput.get());
  						db->persist(newOutput.get());
 						newCase->input = move(newInput);
@@ -350,9 +355,12 @@ struct Server: cppcms::application {
  						newTask->testCases.push_back(move(newCase));
 					}
 					db->persist(newTask.get());
+					newContest->tasks.push_back(move(newTask));
 				}
+				db->persist(newContest.get());
 				t.commit();
-				
+				command = "rm -rf " + newName;
+				system(command.c_str());
 			}
 		}
                 render("adminImport", c);
