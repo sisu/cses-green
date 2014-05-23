@@ -7,7 +7,7 @@
 #include <string>
 #include <memory>
 #include <cstdlib>
-#include <boost/optional.hpp>
+//#include <boost/optional.hpp>
 
 namespace cses {
 
@@ -21,7 +21,8 @@ using std::unique_ptr;
 using std::shared_ptr;
 using std::weak_ptr;
 using std::size_t;
-using boost::optional;
+using std::move;
+using std::swap;
 
 struct Error : std::exception {
 public:
@@ -33,6 +34,72 @@ public:
 	
 private:
 	string msg;
+};
+
+// Optional supporting move semantics, because boost::optional doesn't.
+// TODO: optimize
+template <typename T>
+class optional {
+public:
+	optional() { }
+	optional(const T& t) {
+		val.reset(new T(t));
+	}
+	optional(T&& t) {
+		val.reset(new T(move(t)));
+	}
+	optional(const optional<T>& t) {
+		if(t.val) {
+			val.reset(new T(*t.val));
+		}
+	}
+	optional(optional<T>&& t) {
+		swap(val, t.val);
+	}
+	optional<T>& operator=(const T& t) {
+		val.reset(new T(t));
+		return *this;
+	}
+	optional<T>& operator=(T&& t) {
+		val.reset(new T(move(t)));
+		return *this;
+	}
+	optional<T>& operator=(const optional<T>& t) {
+		if(t.val) {
+			val.reset(new T(*t.val));
+		} else {
+			val.reset(nullptr);
+		}
+		return *this;
+	}
+	optional<T>& operator=(optional<T>&& t) {
+		swap(val, t.val);
+		return *this;
+	}
+	
+	const T& operator*() const {
+		if(!val) throw Error("optional::operator*: Value not set.");
+		return *val;
+	}
+	T& operator*() {
+		if(!val) throw Error("optional::operator*: Value not set.");
+		return *val;
+	}
+	const T* operator->() const {
+		if(!val) throw Error("optional::operator*: Value not set.");
+		return val.get();
+	}
+	T* operator->() {
+		if(!val) throw Error("optional::operator*: Value not set.");
+		return val.get();
+	}
+	
+	operator bool() {
+		return (bool)val;
+	}
+	
+private:
+	unique_ptr<T> val;
 };
 
 }

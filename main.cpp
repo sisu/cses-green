@@ -31,14 +31,14 @@ struct Server: cppcms::application {
 		dispatcher().assign("/login/", &Server::login, this);
 		mapper().assign("login", "login/");
 		
-		dispatcher().assign("/languages/", &Server::languages, this);
-		mapper().assign("languages", "languages/");
-		
 		dispatcher().assign("/admin/", &Server::admin, this);
 		mapper().assign("admin", "admin/");
 		
 		dispatcher().assign("/admin/user/(\\d+)/", &Server::adminEditUser, this, 1);
 		mapper().assign("adminEditUser", "admin/user/{1}/");
+		
+		dispatcher().assign("/admin/language/(\\d+|new)/", &Server::adminEditLanguage, this, 1);
+		mapper().assign("adminEditLanguage", "admin/language/{1}/");
 		
 		mapper().root("/");
 	}
@@ -129,21 +129,6 @@ struct Server: cppcms::application {
 		session().set("prelogin", "");
 		render("login", c);
 	}
-
-	void languages() {
-		throw 5;
-		LanguagesPage c;
-		if(isPost()) {
-			c.newLang.load(context());
-			if (c.newLang.validate()) {
-				Language lang;
-				lang.name = c.newLang.name.value();
-				lang.suffix = c.newLang.suffix.value();
-//				lang.compiler = makeFile(c.newLang.compiler.value());
-			}
-		}
-		render("languages", c);
-	}
 	
 	void admin() {
 		if(!isCurrentUserAdmin()) {
@@ -153,8 +138,13 @@ struct Server: cppcms::application {
 		
 		AdminPage c;
 		odb::transaction t(db->begin());
-		odb::result<User> res = db->query<User>();
-		c.userlist.assign(res.begin(), res.end());
+		
+		odb::result<User> userRes = db->query<User>();
+		c.users.assign(userRes.begin(), userRes.end());
+		
+//		odb::result<User> languageRes = db->query<Language>();
+//		c.languages.assign(languageRes.begin(), languageRes.end());
+		
 		render("admin", c);
 	}
 
@@ -219,7 +209,47 @@ struct Server: cppcms::application {
 		
 		render("adminEditUser", c);
 	}
-
+	
+	void adminEditLanguage(string langIDString) {
+		if(!isCurrentUserAdmin()) {
+			sendRedirectHeader("/");
+			return;
+		}
+		
+		bool createNew = langIDString == "new";
+		
+		optional<ID> langID;
+		if(!createNew) {
+			langID = stringToInteger<ID>(langIDString);
+			if(!langID) {
+				sendRedirectHeader("/admin");
+				return;
+			}
+		}
+		
+		optional<Language> lang;
+		if(!createNew) {
+			optional<Language> lang = getObjectIfExists<Language>(*langID);
+			if(!lang) {
+				sendRedirectHeader("/admin");
+				return;
+			}
+		}
+		
+		AdminEditLanguagePage c;
+		if(isPost()) {
+			c.form.load(context());
+			if(c.form.validate()) {
+				
+			}
+		} else if(lang) {
+			c.form.name.value(lang->name);
+			c.form.suffix.value(lang->suffix);
+		}
+		
+		render("adminEditLanguage", c);
+	}
+	
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
 	}

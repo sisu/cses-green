@@ -96,33 +96,28 @@ user
 <% end template %>
 <% end view %>
 
-
-<% view languages uses LanguagesPage extends page %>
-<% template body() %>
-<h1>Languages</h1>
-<% foreach l in languages %>
-	<%item%>
-	<form method="post" action=""><%csrf%>
-	<% form as_p l %>
-	</form>
-	<% end %>
-<% end %>
-<form method="post" action=""><%csrf%>
-<% form as_p newLang %>
-</form>
-<% end template %>
-<% end view %>
-
 <% view admin uses AdminPage extends page %>
 <% template body() %>
 <h1>Admin panel</h1>
 <h2>Users</h2>
-<% foreach user in userlist %>
+<% foreach user in users %>
 <table>
 	<% item %>
 	<tr>
 		<td><%= user.getName() %></td>
 		<td><a href="<% url "adminEditUser" using user.id %>">Edit</a></td>
+	</tr>
+	<% end %>
+</table>
+<% end %>
+<h2>Languages</h2>
+<a href="<% url "adminEditLanguage" using NEW_LANGUAGE %>">New</a>
+<% foreach language in languages %>
+<table>
+	<% item %>
+	<tr>
+		<td><%= language.name %></td>
+		<td><a href="<% url "adminEditLanguage" using language.id %>">Edit</a></td>
 	</tr>
 	<% end %>
 </table>
@@ -136,6 +131,16 @@ user
 <h2>Edit user</h2>
 <% if nameInUse %><p>Edit failed: Username already in use.</p><% end %>
 <% if success %><p>User successfully edited.</p><% end %>
+<form method="post" action=""><%csrf%>
+<% form as_p form %>
+</form>
+<% end template %>
+<% end view %>
+
+<% view adminEditLanguage uses AdminEditLanguagePage extends page %>
+<% template body() %>
+<h1>Admin panel</h1>
+<h2>Edit language</h2>
 <form method="post" action=""><%csrf%>
 <% form as_p form %>
 </form>

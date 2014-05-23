@@ -100,32 +100,10 @@ struct LoginPage: Page {
 	Info info;
 };
 
-struct LanguagesPage: Page {
-	struct Language: cppcms::form {
-		ws::text name;
-		ws::text suffix;
-		ws::file compiler;
-		ws::file runner;
-		ws::submit submit;
-		Language() {
-			name.message("Name");
-			suffix.message("Suffix");
-			compiler.message("Compiler");
-			runner.message("Runner");
-			submit.value("Save");
-			add(name);
-			add(suffix);
-			add(compiler);
-			add(runner);
-			add(submit);
-		}
-	};
-	vector<Language> languages;
-	Language newLang;
-};
-
 struct AdminPage: Page {
-	vector<User> userlist;
+	vector<User> users;
+	vector<Language> languages;
+	const string NEW_LANGUAGE = "new";
 };
 
 struct AdminEditUserPage: Page {
@@ -154,5 +132,31 @@ struct AdminEditUserPage: Page {
 	bool success = false;
 	bool nameInUse = false;
 };
+
+struct AdminEditLanguagePage: Page {
+	struct Form: cppcms::form {
+		ws::text name;
+		ws::text suffix;
+		ws::file compiler;
+		ws::file runner;
+		ws::submit submit;
+		Form() {
+			name.message("Name");
+			suffix.message("Suffix");
+			compiler.message("Compiler");
+			runner.message("Runner");
+			submit.value("Save");
+			add(name);
+			add(suffix);
+			add(compiler);
+			add(runner);
+			add(submit);
+		}
+	};
+	Form form;
+	bool success = false;
+	bool nameInUse = false;
+};
+
 
 }

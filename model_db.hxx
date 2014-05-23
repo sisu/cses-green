@@ -113,8 +113,9 @@ private:
 struct Task: HasID {
 #pragma db unique
 	StrField name;
-#pragma db not_null
-	shared_ptr<File> evaluator;
+	
+	UniqueFile evaluator;
+	
 #pragma db value_not_null inverse(task) section(sec)
 	vector<unique_ptr<TestCase>> testCases;
 //#pragma db value_not_null inverse(task)

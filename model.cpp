@@ -88,9 +88,7 @@ void makeDB() {
 		User testUser("a", "a", true);
 		db->persist(testUser);
 		t.commit();
-	} catch(object_already_persistent) {
-		std::cout << "FUU\n";
-	}
+	} catch(object_already_persistent) { }
 }
 
 optional<ID> testLogin(string user, string pass) {
