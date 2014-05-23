@@ -12,8 +12,7 @@ THRIFT_CPP:=$(TFILE)_constants.cpp  $(TSRV).cpp  $(TFILE)_types.cpp
 THRIFT_OBJ:=$(patsubst %.cpp,obj/gen-cpp/%.o,$(THRIFT_CPP))
 THRIFT_SRC:=$(patsubst %.o,%.cpp,$(THRIFT_OBJ))
 
-BOOST_DIR=/usr/include
-BASEFLAGS:=-Wall -Wextra -std=c++0x -MMD -Wno-unknown-pragmas -I. -I$(ODIR) -Icommon/ -I$(BOOST_DIR)
+BASEFLAGS:=-Wall -Wextra -std=c++0x -MMD -Wno-unknown-pragmas -I. -I$(ODIR) -Icommon/
 DFLAGS:=-g
 OFLAGS:=-O3
 CXXFLAGS:=$(BASEFLAGS) $(DFLAGS)
