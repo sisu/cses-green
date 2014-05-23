@@ -32,4 +32,8 @@ private:
 // Parameter is not checked for sanity.
 unique_ptr<std::ifstream> openFileByHash(const string& hash);
 
+// Check if file of given hash can be opened with openFileByHash.
+// Parameter is not checked for sanity.
+bool fileHashExists(const string& hash);
+
 }

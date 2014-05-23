@@ -75,4 +75,20 @@ unique_ptr<std::ifstream> openFileByHash(const string& hash) {
 	return ret;
 }
 
+bool fileHashExists(const string& hash) {
+	string filename = "files/" + hash;
+	
+	struct stat statBuf;
+	int res = stat(filename.c_str(), &statBuf);
+	if(res == -1) {
+		if(errno == ENOENT) {
+			return false;
+		} else {
+			throw Error("fileHashExists: stat returned error other than ENOENT.");
+		}
+	}
+	
+	return true;
+}
+
 }
