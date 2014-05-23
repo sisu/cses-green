@@ -41,7 +41,7 @@
 <% foreach c in contests %>
 <ul>
 <% item %>
-	<li><a href="<% url "contest" using c %>"><%= c %></a></li>
+	<li><a href="<% url "contest" using c.first %>"><%= c.second %></a></li>
 <% end %>
 </ul>
 <% end %>
@@ -49,14 +49,6 @@
 </html>
 <% end template %>
 <% end view %>
-
-
-<% view submit uses SubmitPage extends page %>
-<% template body() %>
-submit
-<% end template %>
-<% end view %>
-
 
 <% view contest uses ContestPage extends page %>
 <% template body() %>
@@ -152,6 +144,16 @@ user
 <% template body() %>
 <h1>Admin panel</h1>
 <h2>Import contest</h2>
+<form method="post" action="" enctype="multipart/form-data"><%csrf%>
+<% form as_p form %>
+</form>
+<% end template %>
+<% end view %>
+
+<% view submit uses SubmitPage extends page %>
+<% template body() %>
+<h1>Contest</h1>
+<h2>Submit solution</h2>
 <form method="post" action="" enctype="multipart/form-data"><%csrf%>
 <% form as_p form %>
 </form>

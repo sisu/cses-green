@@ -109,10 +109,13 @@ private:
 };
 #endif
 
+//typedef shared_ptr<Contest> ContestPtr;
+
 #pragma db object
 struct Task: HasID {
 #pragma db unique
 	StrField name;
+	//ContestPtr contest;
 	
 	//UniqueFile evaluator;
 	
@@ -120,7 +123,8 @@ struct Task: HasID {
 #pragma db value_not_null section(sec)
 	vector<unique_ptr<TestCase>> testCases;
 //#pragma db value_not_null inverse(task)
-//	vector<unique_ptr<Submission>> submissions;
+#pragma db value_not_null section(sec)
+	vector<unique_ptr<Submission>> submissions;
 
 #pragma db load(lazy) update(manual)
 	odb::section sec;
@@ -137,6 +141,7 @@ struct TestCase: HasID {
 	//TaskPtr task;
 	UniqueFile input;
 	UniqueFile output;
+	int group;
 
 	TestCase() {}
 

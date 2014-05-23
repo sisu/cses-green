@@ -32,10 +32,7 @@ struct Page: cppcms::base_content {
 };
 
 struct ContestsPage: Page {
-	vector<string> contests;
-};
-
-struct SubmitPage: Page {
+	vector<pair<unsigned,string>> contests;
 };
 
 struct ContestPage: Page {
@@ -173,6 +170,27 @@ struct AdminImportPage: Page {
 		}
 	};
 	Form form;
+};
+
+struct SubmitPage: Page {
+	struct Form: cppcms::form {
+		ws::select task;
+		ws::file solution;
+		ws::select language;
+		ws::submit submit;
+		Form() {
+			task.message("Task");
+			solution.message("Solution");
+			language.message("Language");
+			submit.value("Submit");
+			add(task);
+			add(solution);
+			add(language);
+			add(submit);
+		}
+	};
+	Form form;
+	vector<pair<unsigned,string>> tasks;
 };
 
 

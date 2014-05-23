@@ -23,11 +23,14 @@ struct Server: cppcms::application {
 		dispatcher().assign("/", &Server::contests, this);
 		mapper().assign("");
 		
-		dispatcher().assign("/contest/.+", &Server::contest, this, 1);
-		mapper().assign("contest", "contest/{1}");
-		
-		dispatcher().assign("/user/.*", &Server::user, this, 1);
-		mapper().assign("user", "user/{1}");
+		dispatcher().assign("/contest/(\\d+)/", &Server::contest, this, 1);
+		mapper().assign("contest", "contest/{1}/");
+
+		dispatcher().assign("/contest/(\\d+)/submit/", &Server::submit, this, 1);
+		mapper().assign("submit", "contest/{1}/submit/");
+
+		dispatcher().assign("/user/(\\d*)/", &Server::user, this, 1);
+		mapper().assign("user", "user/{1}/");
 		
 		dispatcher().assign("/register/", &Server::registration, this);
 		mapper().assign("register", "register/");
@@ -72,7 +75,7 @@ struct Server: cppcms::application {
 		odb::transaction t(db->begin());		
 		odb::result<Contest> contestRes = db->query<Contest>();
 		for (auto x : contestRes) {
-			c.contests.push_back(x.name);
+			c.contests.push_back(make_pair(x.id, x.name));
 		}
 		
 		//c.contests = {"a", "b"};
@@ -93,6 +96,19 @@ struct Server: cppcms::application {
 		}
 #endif
 		render("contest", c);
+	}
+	
+	void submit(string cnt) {
+		SubmitPage c;
+
+// 		odb::transaction t(db->begin());		
+// 		odb::result<Task> contestRes = db->query<Task>();
+// 		for (auto x : contestRes) {
+// 			c.form.task.add(to_string(x.id), x.name);
+// 		}		
+// 		
+// 		c.form.task.add();
+		render("submit", c);
 	}
 
 	void user(string user) {
@@ -351,6 +367,7 @@ struct Server: cppcms::application {
  						db->persist(newOutput.get());
 						newCase->input = move(newInput);
 						newCase->output = move(newOutput);
+						newCase->group = 1;
  						db->persist(newCase.get());
  						newTask->testCases.push_back(move(newCase));
 					}
