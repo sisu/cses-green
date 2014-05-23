@@ -36,4 +36,7 @@ unique_ptr<std::ifstream> openFileByHash(const string& hash);
 // Parameter is not checked for sanity.
 bool fileHashExists(const string& hash);
 
+// Check whether string is a valid file hash.
+bool isValidFileHash(const string& str);
+
 }

@@ -15,10 +15,19 @@ struct RunResult {
 	2:i32 status,
 }
 
-service Judge {
-	bool hasFile(1:string token, 2:string hash),
-	void sendFile(1:string token, 2:string data),
-	string getFile(1:string token, 2:string hash),
+exception InternalError { }
+exception InvalidDataError { }
+exception AuthError { }
+exception DoesNotExistError { }
 
-	RunResult run(1:string token, 2:string image, 3:list<FileRef> inputs, 4:RunOptions options),
+service Judge {
+	bool hasFile(1:string token, 2:string hash)
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
+	void sendFile(1:string token, 2:string data)
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
+	string getFile(1:string token, 2:string hash)
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
+	
+	RunResult run(1:string token, 2:string imageRepository, 3:string imageID, 4:list<FileRef> inputs, 5:RunOptions options)
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
 }

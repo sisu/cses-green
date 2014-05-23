@@ -12,6 +12,8 @@
 *.la
 *.a
 
-cses
-cses.db
+web/cses
+web/cses.db
 web/obj/*
+judge/judge
+judge/obj/*
