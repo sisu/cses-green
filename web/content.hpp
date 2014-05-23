@@ -158,5 +158,22 @@ struct AdminEditLanguagePage: Page {
 	bool nameInUse = false;
 };
 
+struct AdminImportPage: Page {
+	struct Form: cppcms::form {
+		ws::text name;
+		ws::file package;
+		ws::submit submit;
+		Form() {
+			name.message("Contest name");
+			package.message("ZIP file");
+			submit.value("Create");
+			add(name);
+			add(package);
+			add(submit);
+		}
+	};
+	Form form;
+};
+
 
 }
