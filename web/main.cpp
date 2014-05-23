@@ -2,6 +2,7 @@
 #include "content.hpp"
 #include "model.hpp"
 #include "io_util.hpp"
+#include "file.hpp"
 #include <booster/log.h>
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
@@ -266,7 +267,7 @@ struct Server: cppcms::application {
 		if (isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
-				string name = c.form.name.value();
+				string contestName = c.form.name.value();
 				char directoryName[] = "zipXXXXXX";
 				mkdtemp(directoryName);
 				string newName = directoryName;				
@@ -297,6 +298,60 @@ struct Server: cppcms::application {
 					sort(outputs.begin(), outputs.end());
 					data[dirName] = make_pair(inputs, outputs);
 				}
+				odb::transaction t(db->begin());
+				for (auto x : data) {
+					shared_ptr<Task> newTask(new Task());
+					string taskName = contestName + "_" + x.first;
+					newTask->name = taskName;
+					for (size_t i = 0; i < data[x.first].first.size(); i++) {
+						unique_ptr<File> newInput(new File()), newOutput(new File());
+						newInput->name = data[x.first].first[i];
+						newOutput->name = data[x.first].second[i];
+						FileSave inputSaver, outputSaver;
+						
+						char *buffer;
+						FILE *file;
+						int fsize;
+						
+						file = fopen((newName + "/" + x.first + "/" + newInput->name).c_str(), "rb");
+						fseek(file, 0, SEEK_END);
+						fsize = ftell(file);
+						rewind(file);
+						buffer = (char*)malloc(sizeof(char)*fsize);
+						fread(buffer, 1, fsize, file);
+						fclose(file);
+						inputSaver.write(buffer, fsize);
+						free(buffer);
+
+						file = fopen((newName + "/" + x.first + "/" + newOutput->name).c_str(), "rb");
+						fseek(file, 0, SEEK_END);
+						fsize = ftell(file);
+						rewind(file);
+						buffer = (char*)malloc(sizeof(char)*fsize);
+						fread(buffer, 1, fsize, file);
+						fclose(file);
+						outputSaver.write(buffer, fsize);
+						free(buffer);
+
+						string inputHash = inputSaver.save();
+						string outputHash = outputSaver.save();
+						
+						BOOSTER_INFO("lol") << inputHash << " " << outputHash;
+						
+						newInput->hash = inputHash;
+						newOutput->hash = outputHash;
+						unique_ptr<TestCase> newCase(new TestCase());
+						//newCase->task = newTask;
+ 						db->persist(newInput.get());
+ 						db->persist(newOutput.get());
+						newCase->input = move(newInput);
+						newCase->output = move(newOutput);
+ 						db->persist(newCase.get());
+ 						newTask->testCases.push_back(move(newCase));
+					}
+					db->persist(newTask.get());
+				}
+				t.commit();
 				
 			}
 		}

@@ -114,9 +114,10 @@ struct Task: HasID {
 #pragma db unique
 	StrField name;
 	
-	UniqueFile evaluator;
+	//UniqueFile evaluator;
 	
-#pragma db value_not_null inverse(task) section(sec)
+//#pragma db value_not_null inverse(task) section(sec)
+#pragma db value_not_null section(sec)
 	vector<unique_ptr<TestCase>> testCases;
 //#pragma db value_not_null inverse(task)
 //	vector<unique_ptr<Submission>> submissions;
@@ -124,8 +125,8 @@ struct Task: HasID {
 #pragma db load(lazy) update(manual)
 	odb::section sec;
 
-private:
 	Task() {}
+private:
 	friend class odb::access;
 };
 typedef shared_ptr<Task> TaskPtr;
@@ -133,12 +134,13 @@ typedef shared_ptr<Task> TaskPtr;
 
 #pragma db object
 struct TestCase: HasID {
-	TaskPtr task;
+	//TaskPtr task;
 	UniqueFile input;
 	UniqueFile output;
 
-private:
 	TestCase() {}
+
+private:
 	friend class odb::access;
 };
 
