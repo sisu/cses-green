@@ -75,6 +75,7 @@ bool User::isValidPassword(const string& password) {
 }
 
 void makeDB() {
+	system("rm -f cses.db");
 	db.reset(new odb::sqlite::database("cses.db", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
 #if 1
 	{

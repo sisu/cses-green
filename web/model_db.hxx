@@ -119,8 +119,7 @@ struct Task: HasID {
 	
 	//UniqueFile evaluator;
 	
-//#pragma db value_not_null inverse(task) section(sec)
-#pragma db value_not_null section(sec)
+#pragma db value_not_null inverse(task) section(sec)
 	vector<unique_ptr<TestCase>> testCases;
 //#pragma db value_not_null inverse(task)
 #pragma db value_not_null section(sec)
@@ -138,7 +137,7 @@ typedef shared_ptr<Task> TaskPtr;
 
 #pragma db object
 struct TestCase: HasID {
-	//TaskPtr task;
+	TaskPtr task;
 	UniqueFile input;
 	UniqueFile output;
 	int group;
