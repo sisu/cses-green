@@ -1,4 +1,4 @@
-DIRS:=.
+DIRS:=. common
 ODIR:=obj
 ODIRS:=$(addprefix $(ODIR)/, $(DIRS))
 CXX=g++-4.7
@@ -14,7 +14,7 @@ TMPLCPP:=$(patsubst %.tmpl,obj/%.cpp,$(TMPLSRC))
 TMPLOBJ:=$(patsubst %.tmpl,obj/%.o,$(TMPLSRC))
 OBJ := $(OBJ)
 
-BASEFLAGS:=-Wall -Wextra -std=c++0x -MMD -Wno-unknown-pragmas -I. -I$(ODIR)
+BASEFLAGS:=-Wall -Wextra -std=c++0x -MMD -Wno-unknown-pragmas -I. -I$(ODIR) -Icommon/
 DFLAGS:=-g
 OFLAGS:=-O3
 CXXFLAGS:=$(BASEFLAGS) $(DFLAGS)
@@ -47,6 +47,6 @@ $(ODIRS):
 	mkdir -p "$@"
 
 $(ODIR)/%-odb.hxx $(ODIR)/%-odb.cxx: $(DBFILE).hxx
-	odb -o $(ODIR) -d sqlite -q -s $< -x "-std=c++0x" -x '-Wno-pragmas'
+	odb -o $(ODIR) -d sqlite -q -s $< -x "-std=c++0x" -x '-Wno-pragmas' -Icommon/
 
 include $(wildcard $(ODIR)/*.d)
