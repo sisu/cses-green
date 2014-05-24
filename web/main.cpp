@@ -385,7 +385,7 @@ struct Server: cppcms::application {
  						db->persist(newCase.get());
  						newTask->testCases.push_back(move(newCase));
 					}
-					db->persist(newTask.get());					
+					db->persist(newTask);
 					newContest->tasks.push_back(move(newTask));
 				}
 				db->persist(newContest.get());

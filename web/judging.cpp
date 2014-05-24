@@ -173,44 +173,41 @@ ReturnConnection::~ReturnConnection() {
 	master.returnConnection(connection);
 }
 
-#if 0
-string getCompiledEvaluatorHash(TaskPtr task) {
-	transaction t(db->begin());
-	typedef odb::query<CompilationResult> Q;
-	odb::result<CompilationResult> result = db->query(Q::language==t
-}
-#endif
-
 class RunTestGroup: public UnitTask {
 public:
-	RunTestGroup(SubmissionPtr submission, vector<unique_ptr<TestCase>>&& testCases):
+	RunTestGroup(SubmissionPtr submission, vector<shared_ptr<TestCase>>&& testCases):
 		submission(submission), testCases(move(testCases)) {
 	}
 protected:
 	void run(JudgeConnection connection, JudgeMaster&) override {
-		shared_ptr<Language> lang = submission->language;
-		TaskPtr task = submission->task;
 		(void)connection;
-		for(auto& test: testCases) {
-			StringMap inputs;
-			inputs["binary"] = submission->binary->hash;
-			inputs["input"] = test->input->hash;
-			StringMap result = connection.runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
-			Result res;
-			res.submission = submission;
-			res.testCase.reset(test.get());
-			if (result.count("stdout")) res.output.reset(new File(result["stdout"], "stdout"));
-			if (result.count("stderr")) res.errOutput.reset(new File(result["stderr"], "stderr"));
-			{
-				odb::transaction t(db->begin());
-				db->persist(res);
-				t.commit();
-			}
+		for(shared_ptr<TestCase> test: testCases) {
+			Result result = runForInput(connection, test);
 		}
 	}
 private:
 	SubmissionPtr submission;
-	vector<unique_ptr<TestCase>> testCases;
+	vector<shared_ptr<TestCase>> testCases;
+
+	Result runForInput(JudgeConnection connection, shared_ptr<TestCase> test) {
+		shared_ptr<Language> lang = submission->language;
+		TaskPtr task = submission->task;
+		StringMap inputs;
+		inputs["binary"] = submission->binary->hash;
+		inputs["input"] = test->input->hash;
+		StringMap result = connection.runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
+		Result res;
+		res.submission = submission;
+//		res.testCase = test;
+		if (result.count("stdout")) res.output.reset(new File(result["stdout"], "stdout"));
+		if (result.count("stderr")) res.errOutput.reset(new File(result["stderr"], "stderr"));
+		{
+			odb::transaction t(db->begin());
+			db->persist(res);
+			t.commit();
+		}
+		return res;
+	}
 };
 
 class CompileTask: public UnitTask {
@@ -238,9 +235,9 @@ private:
 	void startTestGroups(JudgeMaster& master) {
 		TaskPtr task = submission->task;
 		db->load(*task, task->sec);
-		std::map<int, vector<unique_ptr<TestCase>>> testCasesByGroup;
-		for(auto& test: task->testCases) {
-			testCasesByGroup[test->group].push_back(move(test));
+		std::map<int, vector<shared_ptr<TestCase>>> testCasesByGroup;
+		for(auto test: task->testCases) {
+			testCasesByGroup[test->group].push_back(test);
 		}
 		for(auto& i: testCasesByGroup) {
 			master.addTask(new RunTestGroup(submission, move(i.second)));
