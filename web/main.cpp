@@ -111,6 +111,36 @@ struct Server: cppcms::application {
 		optional<ID> contestID = stringToInteger<ID>(id);
 		ListPage p;
 		p.id = *contestID;
+		
+		odb::transaction t(db->begin());
+		
+		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
+		db->load(*cnt, cnt->sec);
+		
+		
+		
+		for (auto x : cnt->tasks) {
+			ID taskID = x->id;
+			
+			odb::query<Submission> q (odb::query<Submission>::task == taskID &&
+			                          odb::query<Submission>::user == getCurrentUser()->id);
+			odb::result<Submission> sRes = db->query<Submission>(q);
+			
+			for (auto s : sRes) {
+				long long time = s.time;
+				string task = x->name;
+				SubmissionStatus ss = s.status;
+				string status;
+				if (ss == SubmissionStatus::PENDING) status = "PENDING";
+				if (ss == SubmissionStatus::JUDGING) status = "JUDGING";
+				if (ss == SubmissionStatus::READY) status = "READY";
+				if (ss == SubmissionStatus::ERROR) status = "ERROR";
+				
+			}
+		}
+		
+		
+		
 		render("list", p);
 	}
 
@@ -205,35 +235,10 @@ struct Server: cppcms::application {
 				c.groups[i].results[j].memoryInKBytes = memory[test->id];
 				c.groups[i].results[j].status = status[test->id];
 				c.groups[i].results[j].color = color[test->id];
-// // 				ResultStatus rs = test->status;
-// // 				if (rs == ResultStatus::CORRECT) {
-// // 					c.groups[i].results[j].status = "CORRECT";
-// // 				} else {
-// // 					c.groups[i].results[j].status = "LOL";
-// // 				}
  				j++;
  			}
  			i++;
  		}
-		
-// 		c.points = 50;
-// 		c.total = 100;
-// 		c.groups.resize(3);
-// 		c.groups[0].number = 1; c.groups[0].points = 13; c.groups[0].total = 13;
-// 		c.groups[1].number = 2; c.groups[1].points = 37; c.groups[1].total = 37;
-// 		c.groups[2].number = 3; c.groups[2].points = 0; c.groups[2].total = 50;
-// 		c.groups[0].results.resize(5);
-// 		c.groups[1].results.resize(6);
-// 		c.groups[2].results.resize(4);
-// 		for (int i = 0; i < 3; i++) {
-// 			for (size_t j = 0; j < c.groups[i].results.size(); j++) {
-// 				c.groups[i].results[j].number = j+1;
-// 				c.groups[i].results[j].timeInSeconds = 0.01*(j+1);
-// 				c.groups[i].results[j].memoryInKBytes = 10*(j+1);
-// 				if (i < 2) c.groups[i].results[j].status = "ACCEPTED";
-// 				else c.groups[i].results[j].status = "TIME LIMIT EXCEEDED";
-// 			}
-// 		}
 		
 		render("view", c);
 	}
@@ -292,7 +297,7 @@ struct Server: cppcms::application {
 				t.commit();
 				addForJudging(submission);
 			}
-			sendRedirectHeader("/");
+			sendRedirectHeader("/list", id);
 			return;
 		}
 		

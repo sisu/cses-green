@@ -229,6 +229,7 @@ struct Submission: HasID {
 #pragma db not_null
 	Program program;
 	SubmissionStatus status;
+	long long time;
 };
 typedef shared_ptr<Submission> SubmissionPtr;
 #pragma db value(SubmissionPtr) not_null

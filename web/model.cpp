@@ -6,6 +6,7 @@
 #include <openssl/sha.h>
 #include <random>
 #include <stdexcept>
+#include "common/time.hpp"
 
 namespace cses {
 
@@ -151,6 +152,7 @@ void makeDB() {
 		s->user = testUser;
 		s->task = lastTask;
 		s->program.language = cpp;
+		s->time = current_time();
 		db->persist(s);
 		for (int j = 0; j < 20; j++) {
 			Result r;

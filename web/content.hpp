@@ -212,6 +212,13 @@ struct ViewPage: Page {
 };
 
 struct ListPage: Page {
+	struct item {
+		int id;
+		string task;
+		string time;
+		string status;
+	};
+	vector<item> items;
 	ID id;
 	string name;
 };
