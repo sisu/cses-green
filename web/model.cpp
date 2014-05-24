@@ -107,7 +107,6 @@ void makeDB() {
 		cnt.name = "testikisa";
 		shared_ptr<Task> firstTask;
 		shared_ptr<TestCase> cases[20];
-		db->persist(cnt);
 		for (int i = 0; i < 3; i++) {
 			shared_ptr<Task> tsk(new Task());
 			if (i == 2) firstTask = tsk;
@@ -136,6 +135,7 @@ void makeDB() {
 			}
 			cnt.tasks.push_back(tsk);
 		}
+		db->persist(cnt);
 		
 		shared_ptr<Submission> s(new Submission());
 		s->user = testUser;
