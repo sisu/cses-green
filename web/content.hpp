@@ -225,6 +225,16 @@ struct ListPage: InContestPage {
 };
 
 struct ScoresPage: InContestPage {
+	struct Cell {
+		bool has;
+		int score;
+	};
+	struct Row {
+		string user;
+		vector<Cell> cells;
+	};
+	vector<string> tasks;
+	vector<Row> rows;
 };
 
 }
