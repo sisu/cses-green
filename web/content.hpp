@@ -184,6 +184,9 @@ struct AdminImportPage: Page {
 struct InContestPage: Page {
 	string name;
 	ID id;
+	string time1;
+	string time2;
+	string message;
 };
 
 struct SubmitPage: InContestPage {

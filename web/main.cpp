@@ -113,7 +113,8 @@ struct Server: cppcms::application {
 
 		optional<ID> contestID = stringToInteger<ID>(id);
 		ListPage p;
-		p.id = *contestID;
+
+		addContestInfo(p, *contestID);
 		
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		ID userID = getCurrentUser()->id;
@@ -186,11 +187,14 @@ struct Server: cppcms::application {
 		shared_ptr<Task> task = s->task;
 		
 
+		{
+			odb::transaction t(db->begin());
+			db->load(*task, task->sec);
+		}
 		
+		addContestInfo(c, task->contest.lock()->id);
+
 		odb::transaction t(db->begin());
-		db->load(*task, task->sec);
-		
-		c.id = task->contest.lock()->id;
 		
 		int cnt = 0, ind = 0;
 		
@@ -280,7 +284,8 @@ struct Server: cppcms::application {
 		
 		SubmitPage c;
  		optional<ID> contestID = stringToInteger<ID>(id);
-		c.id = *contestID;
+
+		addContestInfo(c, *contestID);
 		
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		
@@ -676,6 +681,15 @@ struct Server: cppcms::application {
 		std::stringstream url;
 		mapper().map(url, path, params...);
 		response().set_redirect_header(url.str());
+	}
+	
+	void addContestInfo(InContestPage &c, int contestID) {
+		shared_ptr<Contest> cnt = getSharedPtr<Contest>(contestID);
+		c.time1 = format_time(cnt->beginTime);
+		c.time2 = format_time(cnt->endTime);
+		c.message = "lol";
+		c.id = contestID;
+		c.name = cnt->name;
 	}
 };
 

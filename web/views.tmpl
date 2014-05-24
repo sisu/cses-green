@@ -37,12 +37,21 @@
 <% view in_contest uses InContestPage extends page %>
 <% template body() %>
 
+<table>
+<tr><td width=400>
 <h1>Contest <%= name %></h1>
 <p>
 <a href="<% url "submit" using id %>">Submit solution</a> |
 <a href="<% url "list" using id %>">View submissions</a> |
 <a href="<% url "scores" using id %>">Scoreboard</a>
 </p>
+</td><td width=400>
+<ul>
+<li>Beginning time: <%= time1 %>
+<li>Ending time: <%= time2 %>
+<li> <%= message %>
+</ul>
+</table>
 <hr>
 <% include body2() %>
 <% end template %>
