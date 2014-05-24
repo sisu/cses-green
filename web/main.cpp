@@ -139,18 +139,17 @@ struct Server: cppcms::application {
 				codeFile->hash = hash;
 				codeFile->name = c.form.file.value()->name();
 				Submission newSubmission;
-				optional<User> user = getCurrentUser();
-				shared_ptr<User> userPtr(new User(*user));
-				newSubmission.user = userPtr;
-				optional<Task> task = getObjectIfExists<Task>(*taskID);
-				shared_ptr<Task> taskPtr(new Task(move(*task)));
-				newSubmission.task = taskPtr;
-				optional<Language> language = getObjectIfExists<Language>(*languageID);
-				shared_ptr<Language> languagePtr(language->shared_from_this());
-				newSubmission.language = languagePtr;
-				newSubmission.source = move(codeFile);
+				shared_ptr<User> user = getCurrentUserPtr();
+				newSubmission.user = user;
+				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
+				newSubmission.task = task;
+				shared_ptr<Language> language = getSharedPtr<Language>(*languageID);
+				assert(language);
+				newSubmission.language = language;
 				newSubmission.status = SubmissionStatus::PENDING;
 				odb::transaction t(db->begin());
+				db->persist(*codeFile);
+				newSubmission.source = move(codeFile);
 				db->persist(newSubmission);
 				t.commit();				
 			}
@@ -457,6 +456,19 @@ struct Server: cppcms::application {
 			session().erase("id");
 		}
 		return optional<User>();
+	}
+
+	shared_ptr<User> getCurrentUserPtr() {
+		if(session().is_set("id")) {
+			ID userID = session().get<ID>("id");
+			shared_ptr<User> user = getSharedPtr<User>(userID);
+			if(user && user->isActive()) {
+				return user;
+			}
+			session().reset_session();
+			session().erase("id");
+		}
+		return {};
 	}
 	
 	bool isCurrentUserAdmin() {

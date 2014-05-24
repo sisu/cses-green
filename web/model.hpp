@@ -22,6 +22,13 @@ optional<T> getObjectIfExists(const typename odb::object_traits<T>::id_type& id)
 	}
 }
 
+template <typename T>
+shared_ptr<T> getSharedPtr(const typename odb::object_traits<T>::id_type& id) {
+	odb::transaction t(db->begin());
+	odb::result<T> res = db->query<T>(odb::query<T>::id == id);
+	return res.begin().load();
+}
+
 //UniqueFile makeFile();
 
 }

@@ -54,7 +54,7 @@ struct DockerImage {
 };
 
 
-#pragma db object
+#pragma db object pointer(shared_ptr)
 struct User: HasID {
 public:
 	User(string name, string password, bool admin = false, bool active = true);
@@ -184,7 +184,7 @@ private:
 	friend class odb::access;
 };
 
-#pragma db object
+#pragma db object pointer(shared_ptr)
 struct Language: HasID, std::enable_shared_from_this<Language> {
 #pragma db unique
 	StrField name;
