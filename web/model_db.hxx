@@ -137,7 +137,7 @@ struct Program {
 };
 
 #pragma db object pointer(shared_ptr)
-struct Task: HasID, std::enable_shared_from_this<Task> {
+struct Task: HasID {
 #pragma db unique
 	StrField name;
 	//ContestPtr contest;
