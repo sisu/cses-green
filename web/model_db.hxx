@@ -185,7 +185,7 @@ private:
 };
 
 #pragma db object
-struct Language: HasID {
+struct Language: HasID, std::enable_shared_from_this<Language> {
 #pragma db unique
 	StrField name;
 #pragma db type(CHAR_FIELD(16))

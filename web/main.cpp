@@ -142,11 +142,11 @@ struct Server: cppcms::application {
 				optional<User> user = getCurrentUser();
 				shared_ptr<User> userPtr(new User(*user));
 				newSubmission.user = userPtr;
-				optional<Task> task = getObjectIfExists<Task>(taskID);
+				optional<Task> task = getObjectIfExists<Task>(*taskID);
 				shared_ptr<Task> taskPtr(new Task(move(*task)));
 				newSubmission.task = taskPtr;
-				optional<Language> language = getObjectIfExists<Language>(languageID);
-				shared_ptr<Language> languagePtr(new Language(*language));
+				optional<Language> language = getObjectIfExists<Language>(*languageID);
+				shared_ptr<Language> languagePtr(language->shared_from_this());
 				newSubmission.language = languagePtr;
 				newSubmission.source = move(codeFile);
 				newSubmission.status = SubmissionStatus::PENDING;
