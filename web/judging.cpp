@@ -115,12 +115,17 @@ class JudgeMaster {
 public:
 	static JudgeMaster& instance() {
 		static JudgeMaster master;
+		static bool initDone;
+		if (!initDone) {
+			initDone=1;
+		}
 		return master;
 	}
 
 	void judgeLoop() {
 		while(1) {
 			auto lock = getLock();
+			cerr<<"checking for tasks and judges.\n";
 			condition.wait(lock);
 			startJudgings();
 		}
@@ -156,7 +161,9 @@ public:
 	}
 
 private:
-	JudgeMaster() {}
+	JudgeMaster(): mainThread(&JudgeMaster::judgeLoop, this) {}
+
+	std::thread mainThread;
 
 	std::unique_lock<std::mutex> getLock() {
 		return std::unique_lock<std::mutex>(mutex);
@@ -166,6 +173,7 @@ private:
 		std::vector<JudgeConnection> freeHosts;
 		std::set_difference(allJudgeHosts.begin(), allJudgeHosts.end(), usedJudgeHosts.begin(), usedJudgeHosts.end(), std::back_inserter(freeHosts));
 		while(!freeHosts.empty() && !pendingTasks.empty()) {
+			cerr<<"Starting judging of submission\n";
 			UnitTask* task = pendingTasks.front();
 			pendingTasks.pop_front();
 			JudgeConnection host = freeHosts.back();
@@ -310,6 +318,7 @@ private:
 namespace cses {
 
 void addForJudging(SubmissionPtr submission) {
+	cerr<<"adding task for judging\n";
 	CompileAndRunTask* task = new CompileAndRunTask(submission);
 	JudgeMaster::instance().addTask(task);
 }
