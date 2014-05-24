@@ -239,12 +239,17 @@ struct ListPage: InContestPage {
 
 struct ScoresPage: InContestPage {
 	struct Cell {
-		bool has;
-		int score;
+		bool has = 0;
+		int score = 0;
 	};
 	struct Row {
 		string user;
 		vector<Cell> cells;
+		int score = 0;
+
+		bool operator<(const Row& c) const {
+			return score < c.score;
+		}
 	};
 	vector<string> tasks;
 	vector<Row> rows;
