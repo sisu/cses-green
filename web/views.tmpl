@@ -47,10 +47,42 @@
 </p>
 </td><td width=400>
 <ul>
-<li>Beginning time: <%= time1 %>
-<li>Ending time: <%= time2 %>
-<li> <%= message %>
+<li>Beginning time: <%= formatTime1 %>
+<li>Ending time: <%= formatTime2 %>
+<li><span id="message"></span>
 </ul>
+<script>
+var beginTime = <%= beginTime %>;
+var endTime = <%= endTime %>;
+var curTime = <%= curTime %>;
+var jsBegin = (new Date()).getTime();
+
+function update() {
+	var message = document.getElementById("message");
+	var newTime = curTime+parseInt(((new Date()).getTime()-jsBegin)/1000);
+	if (newTime < beginTime) {
+		message.innerHTML = "The contest has not started.";
+	} else if (newTime > endTime) {
+		message.innerHTML = "The contest has ended.";
+	} else {
+		var timeLeft = endTime-newTime;
+		var seconds = timeLeft%60;
+		timeLeft = parseInt(timeLeft/60);
+		var minutes = timeLeft%60;
+		timeLeft = parseInt(timeLeft/60);
+		var hours = timeLeft%60;
+		if (seconds < 10) seconds = "0"+seconds;
+		if (minutes < 10) minutes = "0"+minutes;
+		if (hours < 10) hours = "0"+hours;
+		message.innerHTML = "Remaining time: " + hours + ":" + minutes + ":" + seconds;		
+	}
+}
+
+update();
+window.setInterval("update()", 1000);
+
+
+</script>
 </table>
 <hr>
 <% include body2() %>

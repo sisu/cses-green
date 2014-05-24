@@ -724,9 +724,11 @@ struct Server: cppcms::application {
 	
 	void addContestInfo(InContestPage &c, int contestID) {
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(contestID);
-		c.time1 = format_time(cnt->beginTime);
-		c.time2 = format_time(cnt->endTime);
-		c.message = "lol";
+		c.beginTime = cnt->beginTime;
+		c.endTime = cnt->endTime;
+		c.curTime = current_time();
+		c.formatTime1 = format_time(cnt->beginTime);
+		c.formatTime2 = format_time(cnt->endTime);
 		c.id = contestID;
 		c.name = cnt->name;
 	}

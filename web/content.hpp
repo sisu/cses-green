@@ -184,9 +184,11 @@ struct AdminImportPage: Page {
 struct InContestPage: Page {
 	string name;
 	ID id;
-	string time1;
-	string time2;
-	string message;
+	string formatTime1;
+	string formatTime2;
+	long long beginTime;
+	long long endTime;
+	long long curTime;
 };
 
 struct SubmitPage: InContestPage {
