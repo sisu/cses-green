@@ -33,6 +33,7 @@ struct JudgeConnection {
 			File file;
 			file.hash = input.second;
 			file.name = input.first;
+			files.push_back(file);
 		}
 		return runOnJudge(image, files, timeLimit, memoryLimit);
 	}
@@ -314,6 +315,8 @@ private:
 
 	void startTestGroups(JudgeMaster& master) {
 		TaskPtr task = submission->task;
+		odb::session s;
+		odb::transaction t(db->begin());
 		db->load(*task, task->sec);
 		for(auto group: task->testGroups) {
 			master.addTask(new RunTestGroup(submission, move(group->tests)));
