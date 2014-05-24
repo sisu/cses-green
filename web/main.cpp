@@ -56,11 +56,11 @@ struct Server: cppcms::application {
 		dispatcher().assign("/admin/user/(\\d+)/", &Server::adminEditUser, this, 1);
 		mapper().assign("adminEditUser", "admin/user/{1}/");
 		
-		dispatcher().assign("/admin/language/(\\d+|new)/", &Server::adminEditLanguage, this, 1);
-		mapper().assign("adminEditLanguage", "admin/language/{1}/");
-                
-                dispatcher().assign("/import/", &Server::adminImport, this);
-                mapper().assign("adminImport", "import/");
+		dispatcher().assign("/admin/language/(submission|evaluator)/(\\d+|new)/", &Server::adminEditLanguage, this, 1, 2);
+		mapper().assign("adminEditLanguage", "admin/language/{1}/{2}/");
+		
+		dispatcher().assign("/import/", &Server::adminImport, this);
+		mapper().assign("adminImport", "import/");
 
 		dispatcher().assign("/static/([a-z_0-9\\.]+)", &Server::staticServe, this, 1);
 		mapper().assign("static", "static/{1}");
@@ -288,7 +288,7 @@ struct Server: cppcms::application {
 				c.form.task.add(x->name, std::to_string(x->id));
 			}  		
   		
-			odb::result<Language> languageRes = db->query<Language>();
+			odb::result<SubmissionLanguage> languageRes = db->query<SubmissionLanguage>();
 			for (auto x : languageRes) {
 				c.form.language.add(x.name, std::to_string(x.id));
 			}
@@ -319,7 +319,7 @@ struct Server: cppcms::application {
 				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
 				submission->task = task;
 				submission->time = current_time();
-				submission->program.language = getSharedPtr<Language>(*languageID);
+				submission->program.language = getSharedPtr<SubmissionLanguage>(*languageID);
 				submission->status = SubmissionStatus::PENDING;
 				odb::transaction t(db->begin());
 				db->persist(*codeFile);
@@ -396,8 +396,11 @@ struct Server: cppcms::application {
 		odb::result<User> userRes = db->query<User>();
 		c.users.assign(userRes.begin(), userRes.end());
 		
-//		odb::result<User> languageRes = db->query<Language>();
-//		c.languages.assign(languageRes.begin(), languageRes.end());
+		odb::result<SubmissionLanguage> submissionLanguageRes = db->query<SubmissionLanguage>();
+		c.submissionLanguages.assign(submissionLanguageRes.begin(), submissionLanguageRes.end());
+		
+		odb::result<EvaluatorLanguage> evaluatorLanguageRes = db->query<EvaluatorLanguage>();
+		c.evaluatorLanguages.assign(evaluatorLanguageRes.begin(), evaluatorLanguageRes.end());
 		
 		render("admin", c);
 	}
@@ -464,6 +467,7 @@ struct Server: cppcms::application {
 		render("adminEditUser", c);
 	}
 	
+	template <typename LanguageT>
 	void adminEditLanguage(string langIDString) {
 		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
@@ -473,17 +477,14 @@ struct Server: cppcms::application {
 		bool createNew = langIDString == "new";
 		
 		optional<ID> langID;
+		shared_ptr<LanguageT> lang;
 		if(!createNew) {
 			langID = stringToInteger<ID>(langIDString);
 			if(!langID) {
 				sendRedirectHeader("/admin");
 				return;
 			}
-		}
-		
-		optional<Language> lang;
-		if(!createNew) {
-			shared_ptr<Language> lang = getSharedPtr<Language>(*langID);
+			lang = getSharedPtr<LanguageT>(*langID);
 			if(!lang) {
 				sendRedirectHeader("/admin");
 				return;
@@ -496,12 +497,25 @@ struct Server: cppcms::application {
 			if(c.form.validate()) {
 				
 			}
-		} else if(lang) {
+		} else if(!createNew) {
 			c.form.name.value(lang->name);
 			c.form.suffix.value(lang->suffix);
+			c.form.compilerRepository.value(lang->compiler.repository);
+			c.form.compilerImageID.value(lang->compiler.id);
+			c.form.runnerRepository.value(lang->runner.repository);
+			c.form.runnerImageID.value(lang->runner.id);
 		}
 		
 		render("adminEditLanguage", c);
+	}
+	
+	void adminEditLanguage(string type, string langIDString) {
+		if(type == "submission") {
+			adminEditLanguage<SubmissionLanguage>(langIDString);
+		}
+		if(type == "evaluator") {
+			adminEditLanguage<EvaluatorLanguage>(langIDString);
+		}
 	}
 	
 	void adminImport() {

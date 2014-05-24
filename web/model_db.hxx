@@ -14,7 +14,6 @@ struct Contest;
 struct TestCase;
 struct Submission;
 struct Group;
-struct Language;
 struct TestGroup;
 
 typedef unsigned ID;
@@ -56,6 +55,39 @@ struct DockerImage {
 	string id;
 };
 
+
+#pragma db object abstract
+struct Language: HasID {
+	StrField name;
+#pragma db type(CHAR_FIELD(16))
+	string suffix;
+	DockerImage compiler;
+	DockerImage runner;
+};
+
+#pragma db object pointer(shared_ptr)
+struct SubmissionLanguage: Language {
+#pragma db index unique member(name)
+};
+
+#pragma db object pointer(shared_ptr)
+struct EvaluatorLanguage: Language {
+#pragma db index unique member(name)
+};
+
+#pragma db value
+struct SubmissionProgram {
+	shared_ptr<SubmissionLanguage> language;
+	MaybeFile source;
+	MaybeFile binary;
+};
+
+#pragma db value
+struct EvaluatorProgram {
+	shared_ptr<SubmissionLanguage> language;
+	MaybeFile source;
+	MaybeFile binary;
+};
 
 #pragma db object pointer(shared_ptr)
 struct User: HasID {
@@ -128,24 +160,13 @@ private:
 
 typedef shared_ptr<Contest> ContestPtr;
 
-#pragma db value
-struct Program {
-#pragma db null
-	shared_ptr<Language> language;
-	MaybeFile source;
-	MaybeFile binary;
-};
-
 #pragma db object pointer(shared_ptr)
 struct Task: HasID {
 #pragma db unique
 	StrField name;
 	weak_ptr<Contest> contest;
 
-	Program evaluator;
-
-	shared_ptr<Language> evaluatorLanguage;
-	MaybeFile evaluatorSource;
+	EvaluatorProgram evaluator;
 
 #pragma db value_not_null inverse(task) section(sec)
 	vector<shared_ptr<TestGroup>> testGroups;
@@ -205,16 +226,6 @@ private:
 	friend class odb::access;
 };
 
-#pragma db object pointer(shared_ptr)
-struct Language: HasID, std::enable_shared_from_this<Language> {
-#pragma db unique
-	StrField name;
-#pragma db type(CHAR_FIELD(16))
-	string suffix;
-	DockerImage compiler;
-	DockerImage runner;
-};
-
 enum class SubmissionStatus {
 	PENDING,
 	JUDGING,
@@ -226,8 +237,7 @@ enum class SubmissionStatus {
 struct Submission: HasID {
 	UserPtr user;
 	TaskPtr task;
-#pragma db not_null
-	Program program;
+	SubmissionProgram program;
 	SubmissionStatus status;
 	int score = 0;
 	long long time = 0;

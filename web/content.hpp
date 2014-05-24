@@ -99,8 +99,11 @@ struct LoginPage: Page {
 
 struct AdminPage: Page {
 	vector<User> users;
-	vector<Language> languages;
+	vector<SubmissionLanguage> submissionLanguages;
+	vector<EvaluatorLanguage> evaluatorLanguages;
 	const string NEW_LANGUAGE = "new";
+	const string SUBMISSION_LANGUAGE = "submission";
+	const string EVALUATOR_LANGUAGE = "evaluator";
 };
 
 struct AdminEditUserPage: Page {
@@ -134,19 +137,25 @@ struct AdminEditLanguagePage: Page {
 	struct Form: cppcms::form {
 		ws::text name;
 		ws::text suffix;
-		ws::file compiler;
-		ws::file runner;
+		ws::text compilerRepository;
+		ws::text compilerImageID;
+		ws::text runnerRepository;
+		ws::text runnerImageID;
 		ws::submit submit;
 		Form() {
 			name.message("Name");
 			suffix.message("Suffix");
-			compiler.message("Compiler");
-			runner.message("Runner");
+			compilerRepository.message("Compiler repository");
+			compilerImageID.message("Compiler image ID");
+			runnerRepository.message("Runner repository");
+			runnerImageID.message("Runner image ID");
 			submit.value("Save");
 			add(name);
 			add(suffix);
-			add(compiler);
-			add(runner);
+			add(compilerRepository);
+			add(compilerImageID);
+			add(runnerRepository);
+			add(runnerImageID);
 			add(submit);
 		}
 	};

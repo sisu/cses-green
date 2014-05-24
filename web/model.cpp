@@ -90,13 +90,13 @@ void makeDB() {
 		shared_ptr<User> testUser(new User("a", "a", true));
 		db->persist(*testUser);
 		
-		shared_ptr<Language> cpp(new Language());
+		shared_ptr<SubmissionLanguage> cpp(new SubmissionLanguage());
 		cpp->name = "C++";
 		cpp->suffix = "cpp";
 		cpp->compiler.repository = "repo";
 		cpp->compiler.id = "7989ad889d330ded7c203a599a3755a753234df21586129cb30884189e1f5d2e";
 		db->persist(*cpp);
-		shared_ptr<Language> java(new Language());
+		shared_ptr<SubmissionLanguage> java(new SubmissionLanguage());
 		java->name = "Java";
 		java->suffix = "java";
 		db->persist(*java);

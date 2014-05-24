@@ -123,14 +123,26 @@ user
 	<% end %>
 </table>
 <% end %>
-<h2>Languages</h2>
-<a href="<% url "adminEditLanguage" using NEW_LANGUAGE %>">New</a>
-<% foreach language in languages %>
+<h2>Submission languages</h2>
+<a href="<% url "adminEditLanguage" using SUBMISSION_LANGUAGE, NEW_LANGUAGE %>">New</a>
+<% foreach language in submissionLanguages %>
 <table>
 	<% item %>
 	<tr>
 		<td><%= language.name %></td>
-		<td><a href="<% url "adminEditLanguage" using language.id %>">Edit</a></td>
+		<td><a href="<% url "adminEditLanguage" using SUBMISSION_LANGUAGE, language.id %>">Edit</a></td>
+	</tr>
+	<% end %>
+</table>
+<% end %>
+<h2>Evaluator languages</h2>
+<a href="<% url "adminEditLanguage" using EVALUATOR_LANGUAGE, NEW_LANGUAGE %>">New</a>
+<% foreach language in evaluatorLanguages %>
+<table>
+	<% item %>
+	<tr>
+		<td><%= language.name %></td>
+		<td><a href="<% url "adminEditLanguage" using EVALUATOR_LANGUAGE, language.id %>">Edit</a></td>
 	</tr>
 	<% end %>
 </table>
