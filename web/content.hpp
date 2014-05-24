@@ -200,6 +200,7 @@ struct ViewPage: Page {
 		float timeInSeconds;
 		int memoryInKBytes;
 		string status;
+		string color;
 	};
 	struct group {
 		int number;

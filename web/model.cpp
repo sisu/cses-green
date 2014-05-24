@@ -120,6 +120,9 @@ void makeDB() {
 			for(int j=0; j<3; ++j) {
 				shared_ptr<TestGroup> group(new TestGroup);
 				group->task = tsk;
+				if (j == 0) group->points = 15;
+				if (j == 1) group->points = 35;
+				if (j == 2) group->points = 50;
 				tsk->testGroups.push_back(group);
 				db->persist(group);
 			}

@@ -110,36 +110,110 @@ struct Server: cppcms::application {
 		optional<ID> submissionID = stringToInteger<ID>(id);
 		shared_ptr<Submission> s = getSharedPtr<Submission>(*submissionID);
 
-		odb::transaction t(db->begin());
-		//odb::query<Result> q (odb::query<Result>::submission == *submissionID);
-		odb::result<Result> sRes = db->query<Result>();
-// 		int cnt = 0;
- 		for (auto &x : sRes) {
- 			BOOSTER_DEBUG("lol") << x.id;
-// 			cnt++;
-		}
-// 		BOOSTER_DEBUG("lol") << cnt;
-		//sRes.cache();
-		//BOOSTER_DEBUG("lol") << sRes.size();
+		shared_ptr<Task> task = s->task;
 		
-		c.points = 50;
-		c.total = 100;
-		c.groups.resize(3);
-		c.groups[0].number = 1; c.groups[0].points = 13; c.groups[0].total = 13;
-		c.groups[1].number = 2; c.groups[1].points = 37; c.groups[1].total = 37;
-		c.groups[2].number = 3; c.groups[2].points = 0; c.groups[2].total = 50;
-		c.groups[0].results.resize(5);
-		c.groups[1].results.resize(6);
-		c.groups[2].results.resize(4);
-		for (int i = 0; i < 3; i++) {
-			for (size_t j = 0; j < c.groups[i].results.size(); j++) {
-				c.groups[i].results[j].number = j+1;
-				c.groups[i].results[j].timeInSeconds = 0.01*(j+1);
-				c.groups[i].results[j].memoryInKBytes = 10*(j+1);
-				if (i < 2) c.groups[i].results[j].status = "ACCEPTED";
-				else c.groups[i].results[j].status = "TIME LIMIT EXCEEDED";
+		odb::transaction t(db->begin());
+		db->load(*task, task->sec);
+		
+		BOOSTER_DEBUG("lol") << task->name;
+		int cnt = 0, ind = 0;
+		
+		map<int,int> id2group;
+		map<int,int> remaining;
+		map<int,string> status;
+		map<int,float> time;
+		map<int,int> memory;
+		map<int,string> color;
+		
+		c.groups.resize(task->testGroups.size());
+		for (auto group : task->testGroups) {
+			c.groups[ind].number = ind+1;
+			c.groups[ind].points = 0;
+			c.groups[ind].total = group->points;			
+			cnt += group->points;
+			c.groups[ind].results.resize(group->tests.size());
+			remaining[ind] = group->tests.size();
+			for (auto test : group->tests) {
+				id2group[test->id] = ind;
+				status[test->id] = "NOT AVAILABLE";
+				time[test->id] = 0;
+				memory[test->id] = 0;
+				color[test->id] = "gray";
+			}
+			ind++;
+		}
+		c.points = 0;
+		c.total = cnt;
+		
+		odb::query<Result> q (odb::query<Result>::submission == *submissionID);
+		odb::result<Result> sRes = db->query<Result>(q);
+ 		for (auto x : sRes) {
+ 			int testId = x.testCase->id;
+			time[testId] = x.timeInSeconds;
+			memory[testId] = x.memoryInBytes;
+			ResultStatus rs = x.status;
+			color[testId] = "red";
+			if (rs == ResultStatus::CORRECT) {
+				status[testId] = "CORRECT";
+				remaining[id2group[testId]]--;
+				color[testId] = "green";
+			} else if (rs == ResultStatus::WRONG_ANSWER) {
+				status[testId] = "WRONG ANSWER";
+			} else if (rs == ResultStatus::TIME_LIMIT) {
+				status[testId] = "TIME LIMIT EXCEEDED";
+			} else if (rs == ResultStatus::RUNTIME_ERROR) {
+				status[testId] = "RUNTIME ERROR";
+			} else if (rs == ResultStatus::INTERNAL_ERROR) {
+				status[testId] = "INTERNAL ERROR";
 			}
 		}
+		
+		ind = 0;
+		for (auto group : task->testGroups) {
+			if (remaining[ind] == 0) c.groups[ind].points = group->points;
+			c.points += group->points;
+			ind++;
+		}
+ 		
+ 		int i = 0;
+ 		for (auto group : task->testGroups) {
+			int j = 0;
+ 			for (auto test : group->tests) {
+ 				c.groups[i].results[j].number = j+1;
+				c.groups[i].results[j].timeInSeconds = time[test->id];
+				c.groups[i].results[j].memoryInKBytes = memory[test->id];
+				c.groups[i].results[j].status = status[test->id];
+				c.groups[i].results[j].color = color[test->id];
+// // 				ResultStatus rs = test->status;
+// // 				if (rs == ResultStatus::CORRECT) {
+// // 					c.groups[i].results[j].status = "CORRECT";
+// // 				} else {
+// // 					c.groups[i].results[j].status = "LOL";
+// // 				}
+ 				j++;
+ 			}
+ 			i++;
+ 		}
+		
+// 		c.points = 50;
+// 		c.total = 100;
+// 		c.groups.resize(3);
+// 		c.groups[0].number = 1; c.groups[0].points = 13; c.groups[0].total = 13;
+// 		c.groups[1].number = 2; c.groups[1].points = 37; c.groups[1].total = 37;
+// 		c.groups[2].number = 3; c.groups[2].points = 0; c.groups[2].total = 50;
+// 		c.groups[0].results.resize(5);
+// 		c.groups[1].results.resize(6);
+// 		c.groups[2].results.resize(4);
+// 		for (int i = 0; i < 3; i++) {
+// 			for (size_t j = 0; j < c.groups[i].results.size(); j++) {
+// 				c.groups[i].results[j].number = j+1;
+// 				c.groups[i].results[j].timeInSeconds = 0.01*(j+1);
+// 				c.groups[i].results[j].memoryInKBytes = 10*(j+1);
+// 				if (i < 2) c.groups[i].results[j].status = "ACCEPTED";
+// 				else c.groups[i].results[j].status = "TIME LIMIT EXCEEDED";
+// 			}
+// 		}
+		
 		render("view", c);
 	}
 	
