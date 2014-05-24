@@ -3,6 +3,7 @@
 #include "model.hpp"
 #include "io_util.hpp"
 #include "file.hpp"
+#include "judging.hpp"
 #include <booster/log.h>
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
@@ -138,20 +139,21 @@ struct Server: cppcms::application {
 				unique_ptr<File> codeFile(new File());
 				codeFile->hash = hash;
 				codeFile->name = c.form.file.value()->name();
-				Submission newSubmission;
+				shared_ptr<Submission> submission(new Submission);
 				shared_ptr<User> user = getCurrentUserPtr();
-				newSubmission.user = user;
+				submission->user = user;
 				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
-				newSubmission.task = task;
+				submission->task = task;
 				shared_ptr<Language> language = getSharedPtr<Language>(*languageID);
 				assert(language);
-				newSubmission.language = language;
-				newSubmission.status = SubmissionStatus::PENDING;
+				submission->language = language;
+				submission->status = SubmissionStatus::PENDING;
 				odb::transaction t(db->begin());
 				db->persist(*codeFile);
-				newSubmission.source = move(codeFile);
-				db->persist(newSubmission);
-				t.commit();				
+				submission->source = move(codeFile);
+				db->persist(*submission);
+				t.commit();
+				addForJudging(submission);
 			}
 			sendRedirectHeader("/");
 			return;

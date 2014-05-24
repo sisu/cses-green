@@ -197,8 +197,8 @@ struct Language: HasID, std::enable_shared_from_this<Language> {
 enum class SubmissionStatus {
 	PENDING,
 	JUDGING,
-	SUCCESS,
-	FAIL
+	READY,
+	ERROR,
 };
 
 #pragma db object
