@@ -183,6 +183,9 @@ protected:
 		(void)connection;
 		for(shared_ptr<TestCase> test: testCases) {
 			Result result = runForInput(connection, test);
+			if (result.output) {
+				evaluateOutput(connection, test, result.output->hash);
+			}
 		}
 	}
 private:
@@ -199,7 +202,9 @@ private:
 		Result res;
 		res.submission = submission;
 //		res.testCase = test;
-		if (result.count("stdout")) res.output.reset(new File(result["stdout"], "stdout"));
+		if (result.count("stdout")) {
+			res.output.reset(new File(result["stdout"], "stdout"));
+		}
 		if (result.count("stderr")) res.errOutput.reset(new File(result["stderr"], "stderr"));
 		{
 			odb::transaction t(db->begin());
@@ -207,6 +212,9 @@ private:
 			t.commit();
 		}
 		return res;
+	}
+
+	void evaluateOutput(JudgeConnection connection, shared_ptr<TestCase> test, string outputHash) {
 	}
 };
 
