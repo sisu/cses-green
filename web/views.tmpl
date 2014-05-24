@@ -205,6 +205,16 @@ user
 <% view list uses ListPage extends in_contest %>
 <% template body2() %>
 <h2>View submissions</h2>
+
+<% foreach item in items %>
+  <table>
+  <tr><td width=150><b>task</b></td><td width=150><b>time</b></td><td width=150><b>status</b></td></tr>
+  <% item %>
+    <tr><td><%= item.task %></td><td><%= item.time %></td><td><%= item.status %></td></tr>
+  <% end %>
+  </table>
+<% end %>
+
 <% end template %>
 <% end view %>
 

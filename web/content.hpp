@@ -216,7 +216,7 @@ struct ViewPage: Page {
 
 struct ListPage: InContestPage {
 	struct item {
-		int id;
+		string id;
 		string task;
 		string time;
 		string status;

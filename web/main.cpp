@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <fstream>
+#include "common/time.hpp"
 
 using namespace cses;
 
@@ -112,18 +113,20 @@ struct Server: cppcms::application {
 		ListPage p;
 		p.id = *contestID;
 		
+		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
+		ID userID = getCurrentUser()->id;
+
 		odb::transaction t(db->begin());
 		
-		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		db->load(*cnt, cnt->sec);
 		
-		
+		vector<tuple<long long, int, string, string>> data;
 		
 		for (auto x : cnt->tasks) {
 			ID taskID = x->id;
 			
 			odb::query<Submission> q (odb::query<Submission>::task == taskID &&
-			                          odb::query<Submission>::user == getCurrentUser()->id);
+			                          odb::query<Submission>::user == userID);
 			odb::result<Submission> sRes = db->query<Submission>(q);
 			
 			for (auto s : sRes) {
@@ -135,11 +138,18 @@ struct Server: cppcms::application {
 				if (ss == SubmissionStatus::JUDGING) status = "JUDGING";
 				if (ss == SubmissionStatus::READY) status = "READY";
 				if (ss == SubmissionStatus::ERROR) status = "ERROR";
-				
+				int submissionID = s.id;
+				data.push_back(make_tuple(-time, submissionID, task, status));
 			}
 		}
-		
-		
+		sort(data.begin(), data.end());
+		p.items.resize(data.size());
+		for (size_t i = 0; i < data.size(); i++) {
+			p.items[i].id = std::to_string(std::get<1>(data[i]));
+			p.items[i].time = format_time(-std::get<0>(data[i]));
+			p.items[i].task = std::get<2>(data[i]);
+			p.items[i].status = std::get<3>(data[i]);
+		}
 		
 		render("list", p);
 	}
