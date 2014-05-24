@@ -145,6 +145,49 @@ void ensureImagePulled(const string& imageRepository, const string& imageID) {
 	throw Error("Image ID " + imageID + " from repository " + imageRepository + " missing, too lazy to go get it...");
 }
 
+// Check run method input for validity (everything is safe identifier, hashes
+// are valid and exist and imageid is valid). Throws protocol errors on failure.
+void checkRunParameters(
+	const string& imageRepository,
+	const string& imageID,
+	const vector<protocol::FileRef>& inputs,
+	const protocol::RunOptions& options
+) {
+	// First validate input.
+	if(!isSafeIdentifier(imageRepository)) {
+		throw withMsg<protocol::InvalidDataError>("Image repository is unsafe identifier.");
+	}
+	
+	if(!isValidImageID(imageID)) {
+		throw withMsg<protocol::InvalidDataError>("Invalid image ID.");
+	}
+	
+	for(const protocol::FileRef& input : inputs) {
+		if(!isSafeIdentifier(input.name)) {
+			throw withMsg<protocol::InvalidDataError>("Input file name is unsafe identifier.");
+		}
+		if(!isValidFileHash(input.hash)) {
+			throw withMsg<protocol::InvalidDataError>("Malformed input file hash.");
+		}
+		if(!fileHashExists(input.hash)) {
+			throw withMsg<protocol::InvalidDataError>("Input file does not exist.");
+		}
+	}
+	
+	if(!std::isfinite(options.timeLimit)) {
+		throw withMsg<protocol::InvalidDataError>("Infinite time limit.");
+	}
+	if(options.timeLimit <= 0.0) {
+		throw withMsg<protocol::InvalidDataError>("Nonpositive time limit.");
+	}
+	if(options.memoryLimitBytes < 512 * 1024) {
+		throw withMsg<protocol::InvalidDataError>("Memory limit under 512k.");
+	}
+	if(options.memoryLimitBytes > 512 * 1024 * 1024) { // TODO: adapt to server
+		throw withMsg<protocol::InvalidDataError>("Memory limit over 512M.");
+	}
+}
+
 } // end anonymous namespace
 
 void Judge::run(
@@ -160,39 +203,7 @@ void Judge::run(
 			throw withMsg<protocol::AuthError>("Invalid token.");
 		}
 		
-		// First validate input.
-		if(!isSafeIdentifier(imageRepository)) {
-			throw withMsg<protocol::InvalidDataError>("Image repository is unsafe identifier.");
-		}
-		
-		if(!isValidImageID(imageID)) {
-			throw withMsg<protocol::InvalidDataError>("Invalid image ID.");
-		}
-		
-		for(const protocol::FileRef& input : inputs) {
-			if(!isSafeIdentifier(input.name)) {
-				throw withMsg<protocol::InvalidDataError>("Input file name is unsafe identifier.");
-			}
-			if(!isValidFileHash(input.hash)) {
-				throw withMsg<protocol::InvalidDataError>("Malformed input file hash.");
-			}
-			if(!fileHashExists(input.hash)) {
-				throw withMsg<protocol::InvalidDataError>("Input file does not exist.");
-			}
-		}
-		
-		if(!std::isfinite(options.timeLimit)) {
-			throw withMsg<protocol::InvalidDataError>("Infinite time limit.");
-		}
-		if(options.timeLimit <= 0.0) {
-			throw withMsg<protocol::InvalidDataError>("Nonpositive time limit.");
-		}
-		if(options.memoryLimitBytes < 512 * 1024) {
-			throw withMsg<protocol::InvalidDataError>("Memory limit under 512k.");
-		}
-		if(options.memoryLimitBytes > 512 * 1024 * 1024) { // TODO: adapt to server
-			throw withMsg<protocol::InvalidDataError>("Memory limit over 512M.");
-		}
+		checkRunParameters(imageRepository, imageID, inputs, options);
 		
 		ensureImagePulled(imageRepository, imageID);
 		

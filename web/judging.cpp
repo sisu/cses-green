@@ -33,6 +33,7 @@ struct JudgeConnection {
 			File file;
 			file.hash = input.second;
 			file.name = input.first;
+			files.push_back(file);
 		}
 		return runOnJudge(image, files, timeLimit, memoryLimit);
 	}
@@ -102,7 +103,15 @@ public:
 		unique_ptr<UnitTask> self(this);
 		ReturnConnection ret{master, connection};
 		(void)ret;
-		run(connection, master);
+		try {
+			run(connection, master);
+		} catch(const ::apache::thrift::TException& e) {
+#if 0
+			auto d = dynamic_cast<const cses::protocol::InvalidDataError&>(e);
+			cerr<<"err "<<d.msg<<'\n';
+#endif
+			throw;
+		}
 	}
 
 protected:
@@ -115,12 +124,17 @@ class JudgeMaster {
 public:
 	static JudgeMaster& instance() {
 		static JudgeMaster master;
+		static bool initDone;
+		if (!initDone) {
+			initDone=1;
+		}
 		return master;
 	}
 
 	void judgeLoop() {
 		while(1) {
 			auto lock = getLock();
+			cerr<<"checking for tasks and judges.\n";
 			condition.wait(lock);
 			startJudgings();
 		}
@@ -156,7 +170,9 @@ public:
 	}
 
 private:
-	JudgeMaster() {}
+	JudgeMaster(): mainThread(&JudgeMaster::judgeLoop, this) {}
+
+	std::thread mainThread;
 
 	std::unique_lock<std::mutex> getLock() {
 		return std::unique_lock<std::mutex>(mutex);
@@ -166,6 +182,7 @@ private:
 		std::vector<JudgeConnection> freeHosts;
 		std::set_difference(allJudgeHosts.begin(), allJudgeHosts.end(), usedJudgeHosts.begin(), usedJudgeHosts.end(), std::back_inserter(freeHosts));
 		while(!freeHosts.empty() && !pendingTasks.empty()) {
+			cerr<<"Starting judging of submission\n";
 			UnitTask* task = pendingTasks.front();
 			pendingTasks.pop_front();
 			JudgeConnection host = freeHosts.back();
@@ -298,6 +315,8 @@ private:
 
 	void startTestGroups(JudgeMaster& master) {
 		TaskPtr task = submission->task;
+		odb::session s;
+		odb::transaction t(db->begin());
 		db->load(*task, task->sec);
 		for(auto group: task->testGroups) {
 			master.addTask(new RunTestGroup(submission, move(group->tests)));
@@ -310,6 +329,7 @@ private:
 namespace cses {
 
 void addForJudging(SubmissionPtr submission) {
+	cerr<<"adding task for judging\n";
 	CompileAndRunTask* task = new CompileAndRunTask(submission);
 	JudgeMaster::instance().addTask(task);
 }
