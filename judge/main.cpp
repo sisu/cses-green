@@ -8,25 +8,9 @@
 #include <thrift/transport/TServerSocket.h>
 #include <thrift/transport/TTransportUtils.h>
 
-
-
-
-#include "docker.hpp"
-#include "file.hpp"
-
-
-
 using namespace cses;
 
 int main() {
-	unordered_map<string, string> input;
-	{
-		FileSave save;
-		save.write("lollero", 7);
-		input["plorts"] = save.save();
-	}
-	runInDocker("fasd", "99ec81b80c55d906afd8179560fdab0ee93e32c52053816ca1d531597c1ff48f", input, 1.5, 1500000);
-	
 	using namespace apache::thrift;
 	using namespace apache::thrift::protocol;
 	using namespace apache::thrift::transport;

@@ -1,6 +1,7 @@
 #include "gen-cpp/Judge.h"
 #include "judging.hpp"
 #include "common/file.hpp"
+#include "common/io_util.hpp"
 #include "model_db-odb.hxx"
 #include <thread>
 #include <condition_variable>
@@ -19,11 +20,11 @@ using namespace cses;
 typedef std::unordered_map<string,string> StringMap;
 
 struct JudgeConnection {
-	string host;
+	JudgeHost host;
 	protocol::JudgeClient client;
 	string token = "uolevi";
 
-	JudgeConnection(string host): host(host), client(makeProtocol(host)) {
+	JudgeConnection(JudgeHost host): host(host), client(makeProtocol(host.host, host.port)) {
 	}
 
 	StringMap runOnJudge(DockerImage image, const StringMap& inputs, double timeLimit, int memoryLimit) {
@@ -67,16 +68,18 @@ struct JudgeConnection {
 	}
 
 	bool operator<(const JudgeConnection& c) const {
-		return host < c.host;
+		if (host.name != c.host.name) return host.name < c.host.name;
+		if (host.host != c.host.host) return host.host < c.host.host;
+		return host.port < c.host.port;
 	}
 
 private:
-	static boost::shared_ptr<apache::thrift::protocol::TProtocol> makeProtocol(string host) {
+	static boost::shared_ptr<apache::thrift::protocol::TProtocol> makeProtocol(string host, int port) {
 		using namespace apache::thrift;
 		using namespace apache::thrift::protocol;
 		using namespace apache::thrift::transport;
 
-		boost::shared_ptr<TTransport> socket(new TSocket(host, 9090));
+		boost::shared_ptr<TTransport> socket(new TSocket(host, port));
 		boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
 		boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 		transport->open();
@@ -130,11 +133,22 @@ public:
 	}
 
 	void updateJudgeHosts() {
-		odb::transaction t(db->begin());
-		odb::result<JudgeHost> hosts = db->query<JudgeHost>();
+		std::vector<JudgeHost> hosts;
+		{
+			odb::transaction t(db->begin());
+			odb::result<JudgeHost> result = db->query<JudgeHost>();
+			hosts.assign(result.begin(), result.end());
+		}
 		allJudgeHosts.clear();
 		for(JudgeHost host: hosts) {
+			std::thread(&JudgeMaster::connectToJudgeHostLoop, this, host).detach();
 		}
+	}
+
+	void addConnectedJudgeHost(JudgeConnection conn) {
+		auto lock = getLock();
+		allJudgeHosts.insert(JudgeConnection(conn));
+		condition.notify_one();
 	}
 
 	void returnConnection(JudgeConnection conn) {
@@ -156,7 +170,20 @@ private:
 			pendingTasks.pop_front();
 			JudgeConnection host = freeHosts.back();
 			freeHosts.pop_back();
-			std::thread t(&UnitTask::execute, task, host, std::ref(*this));
+			std::thread(&UnitTask::execute, task, host, std::ref(*this)).detach();
+		}
+	}
+
+	void connectToJudgeHostLoop(JudgeHost host) {
+		while(1) {
+			try {
+				addConnectedJudgeHost(JudgeConnection(host));
+				cerr<<"Connected to jugehost "<<host.name<<'\n';
+				return;
+			} catch(const apache::thrift::transport::TTransportException& e) {
+//				cerr<<"Connecting to "<<host.name<<" failed: "<<e.what()<<'\n';
+				sleep(5);
+			}
 		}
 	}
 
@@ -184,7 +211,7 @@ protected:
 		for(shared_ptr<TestCase> test: testCases) {
 			Result result = runForInput(connection, test);
 			if (result.output) {
-				evaluateOutput(connection, test, result.output->hash);
+				evaluateOutput(connection, move(result));
 			}
 		}
 	}
@@ -193,10 +220,10 @@ private:
 	vector<shared_ptr<TestCase>> testCases;
 
 	Result runForInput(JudgeConnection connection, shared_ptr<TestCase> test) {
-		shared_ptr<Language> lang = submission->language;
+		shared_ptr<Language> lang = submission->program.language;
 		TaskPtr task = submission->task;
 		StringMap inputs;
-		inputs["binary"] = submission->binary->hash;
+		inputs["binary"] = submission->program.binary->hash;
 		inputs["input"] = test->input->hash;
 		StringMap result = connection.runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
 		Result res;
@@ -214,29 +241,58 @@ private:
 		return res;
 	}
 
-	void evaluateOutput(JudgeConnection connection, shared_ptr<TestCase> test, string outputHash) {
+	void evaluateOutput(JudgeConnection connection, Result result) {
+		DockerImage image;
+		StringMap inputs;
+		inputs["output"] = result.output->hash;
+		inputs["correct"] = result.testCase->output->hash;
+		StringMap resMap = connection.runOnJudge(image, inputs, 1.0, 100<<20);
+		string resStr = readFileByHash(resMap["result"]);
+
+		odb::transaction t(db->begin());
+		result.status = (ResultStatus)*stringToInteger<int>(resStr);
+		db->update(result);
+		t.commit();
 	}
 };
 
+template<class Owner>
 class CompileTask: public UnitTask {
 public:
-	CompileTask(SubmissionPtr submission): submission(submission) {
+	CompileTask(Program& program, Owner& owner): program(program), owner(owner) {
 	}
-protected:
-	void run(JudgeConnection connection, JudgeMaster& master) override {
-		shared_ptr<Language> lang = submission->language;
+	void run(JudgeConnection connection, JudgeMaster&) override {
+		shared_ptr<Language> lang = program.language;
 		StringMap inputs;
-		inputs["source"] = submission->source->hash;
+		inputs["source"] = program.source->hash;
 		StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
 		if (result.count("binary")) {
 			odb::transaction t(db->begin());
-			submission->binary.reset(new File(result["binary"], "binary"));
-			db->persist(submission->binary.get());
-			db->update(submission.get());
+			program.binary.reset(new File(result["binary"], "binary"));
+			db->persist(program.binary.get());
+			db->update(owner);
 			t.commit();
+		}
+	}
+private:
+	Program& program;
+	Owner& owner;
+};
+
+class CompileAndRunTask: public UnitTask {
+public:
+	CompileAndRunTask(SubmissionPtr submission): submission(submission) {
+	}
+
+protected:
+	void run(JudgeConnection connection, JudgeMaster& master) override {
+		CompileTask<Submission> compile(submission->program, *submission);
+		compile.run(connection, master);
+		if (submission->program.binary) {
 			startTestGroups(master);
 		}
 	}
+
 private:
 	SubmissionPtr submission;
 
@@ -258,8 +314,16 @@ private:
 namespace cses {
 
 void addForJudging(SubmissionPtr submission) {
-	CompileTask* task = new CompileTask(submission);
+	CompileAndRunTask* task = new CompileAndRunTask(submission);
 	JudgeMaster::instance().addTask(task);
+}
+
+void updateJudgeHosts() {
+	JudgeMaster::instance().updateJudgeHosts();
+}
+
+void compileEvaluator(TaskPtr task) {
+	JudgeMaster::instance().addTask(new CompileTask<Task>(task->evaluator, *task));
 }
 
 }

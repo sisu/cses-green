@@ -97,7 +97,12 @@ void makeDB() {
 		java->name = "Java";
 		java->suffix = "java";
 		db->persist(*java);
-				
+
+		JudgeHost host;
+		host.name = host.host = "localhost";
+		host.port = 9090;
+		db->persist(host);		
+		
 		Contest cnt;
 		cnt.name = "testikisa";
 		shared_ptr<Task> firstTask;

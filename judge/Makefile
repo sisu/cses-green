@@ -17,7 +17,7 @@ DFLAGS:=-g
 OFLAGS:=-O3
 CXXFLAGS:=$(BASEFLAGS) $(DFLAGS)
 #CXXFLAGS:=$(BASEFLAGS) $(OFLAGS)
-LDFLAGS:=-lthrift -lcppcms -lcrypto
+LDFLAGS:=-lthrift -lcppcms -lcrypto -lpthread
 
 .PHONY: all clean
 
