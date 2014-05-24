@@ -13,6 +13,7 @@ public:
 	~FileSave();
 	
 	void write(const char* data, size_t length);
+	void writeFileContents(const string& filename);
 	
 	// Save the file so that it can be opened with openFileByHash. Returns
 	// the hash. Should be called only once.

@@ -35,6 +35,23 @@ void FileSave::write(const char* data, size_t length) {
 	tmpfile.write(data, length);
 }
 
+void FileSave::writeFileContents(const string& filename) {
+	std::ifstream in;
+	in.open(filename, std::ios_base::in | std::ios_base::binary);
+	if(!in.good()) throw Error("FileSave::writeFileContents: Opening file failed.");
+	
+	const size_t BUFSIZE = 4096;
+	
+	while(!in.eof()) {
+		char buf[BUFSIZE];
+		in.read(buf, BUFSIZE);
+		if(in.bad() || (in.fail() && !in.eof())) {
+			throw Error("FileSave::writeFileContents: Reading file failed.");
+		}
+		write(buf, in.gcount());
+	}
+}
+
 string FileSave::save() {
 	if(saveCalled) throw Error("FileSave::save: Called multiple times.");
 	saveCalled = true;
