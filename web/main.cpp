@@ -160,8 +160,11 @@ struct Server: cppcms::application {
 	void scores(string id) {
 		odb::session s2;
 		optional<ID> contestID = stringToInteger<ID>(id);
+
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		ScoresPage p;
+
+		addContestInfo(p, *contestID);
 #if 1
 		odb::transaction t(db->begin());
 		odb::result<User> users = db->query<User>();
