@@ -33,7 +33,6 @@
 
 <% end view %>
 
-
 <% view in_contest uses InContestPage extends page %>
 <% template body() %>
 
@@ -124,7 +123,9 @@ window.setInterval("update()", 1000);
 <% template body() %>
 user
 <form method="post" action=""><%csrf%>
-<% form as_p info %>
+<table class="formtable">
+<% form as_table info %>
+</table>
 </form>
 <% end template %>
 <% end view %>
@@ -133,7 +134,9 @@ user
 <% template body() %>
 <h1>Register user</h1>
 <form method="post" action=""><%csrf%>
-<% form as_p info %>
+<table>
+<% form as_table info %>
+</table>
 </form>
 <% end template %>
 <% end view %>
@@ -145,7 +148,9 @@ user
 	<p>Wrong username or password!</p>
 <% end %>
 <form method="post" action=""><%csrf%>
-<% form as_p info %>
+<table>
+<% form as_table info %>
+</table>
 </form>
 <% end template %>
 <% end view %>
@@ -198,7 +203,9 @@ user
 <% if nameInUse %><p>Edit failed: Username already in use.</p><% end %>
 <% if success %><p>User successfully edited.</p><% end %>
 <form method="post" action=""><%csrf%>
-<% form as_p form %>
+<table>
+<% form as_table form %>
+</table>
 </form>
 <% end template %>
 <% end view %>
@@ -208,7 +215,9 @@ user
 <h1>Admin panel</h1>
 <h2>Edit language</h2>
 <form method="post" action=""><%csrf%>
-<% form as_p form %>
+<table>
+<% form as_table form %>
+</table>
 </form>
 <% end template %>
 <% end view %>
@@ -218,7 +227,9 @@ user
 <h1>Admin panel</h1>
 <h2>Import contest</h2>
 <form method="post" action="" enctype="multipart/form-data"><%csrf%>
-<% form as_p form %>
+<table>
+<% form as_table form %>
+</table>
 </form>
 <% end template %>
 <% end view %>
@@ -261,7 +272,9 @@ user
 <% template body2() %>
 <h2>Submit solution</h2>
 <form method="post" action="" enctype="multipart/form-data"><%csrf%>
-<% form as_p form %>
+<table>
+<% form as_table form %>
+</table>
 </form>
 <% end template %>
 <% end view %>
