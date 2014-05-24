@@ -44,24 +44,6 @@ struct ContestPage: Page {
 };
 
 
-struct UserPage: Page {
-	struct Info: cppcms::form {
-		ws::text name;
-		ws::password password;
-		ws::submit submit;
-
-		Info() {
-			name.message("Name");
-			password.message("Password");
-			submit.value("Submit");
-			add(name);
-			add(password);
-			add(submit);
-		}
-	};
-	Info info;
-};
-
 struct RegistrationPage: Page {
 	struct Info: cppcms::form {
 		SetUsernameWidget name;
@@ -134,13 +116,38 @@ struct AdminEditUserPage: Page {
 };
 
 struct AdminEditLanguagePage: Page {
+	struct SetLanguageNameWidget: ValidatingWidget<ws::text> {
+		virtual CheckResult checkValue(const string& value) override {
+			if(Language::isValidName(value)) return ok();
+			return error("Invalid name. Name must consist of 1-255 characters.");
+		}
+	};
+	struct SetLanguageSuffixWidget: ValidatingWidget<ws::text> {
+		virtual CheckResult checkValue(const string& value) override {
+			if(Language::isValidSuffix(value)) return ok();
+			return error("Invalid suffix. Suffix must consist of 0-16 characters (0 if no suffix).");
+		}
+	};
+	struct SetCompilerRepositoryWidget: ValidatingWidget<ws::text> {
+		virtual CheckResult checkValue(const string& value) override {
+			if(DockerImage::isValidRepositoryName(value)) return ok();
+			return error("Unsupported repository name. Name must consist of 1-64 letters, numbers and underscores.");
+		}
+	};
+	struct SetCompilerImageIDWidget: ValidatingWidget<ws::text> {
+		virtual CheckResult checkValue(const string& value) override {
+			if(DockerImage::isValidImageID(value)) return ok();
+			return error("Invalid image ID. Image IDs consist of 64 digits 0-9 or letters a-f.");
+		}
+	};
+	
 	struct Form: cppcms::form {
-		ws::text name;
-		ws::text suffix;
-		ws::text compilerRepository;
-		ws::text compilerImageID;
-		ws::text runnerRepository;
-		ws::text runnerImageID;
+		SetLanguageNameWidget name;
+		SetLanguageSuffixWidget suffix;
+		SetCompilerRepositoryWidget compilerRepository;
+		SetCompilerImageIDWidget compilerImageID;
+		SetCompilerRepositoryWidget runnerRepository;
+		SetCompilerImageIDWidget runnerImageID;
 		ws::submit submit;
 		Form() {
 			name.message("Name");

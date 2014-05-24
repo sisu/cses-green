@@ -44,9 +44,6 @@ struct Server: cppcms::application {
 		dispatcher().assign("/code/(\\d+)/", &Server::code, this, 1);
 		mapper().assign("code", "code/{1}/");		
 		
-		dispatcher().assign("/user/(\\d*)/", &Server::user, this, 1);
-		mapper().assign("user", "user/{1}/");
-		
 		dispatcher().assign("/register/", &Server::registration, this);
 		mapper().assign("register", "register/");
 		
@@ -403,12 +400,6 @@ struct Server: cppcms::application {
   		render("submit", c);
 	}
 
-	void user(string user) {
-		(void)user;
-		UserPage u;
-		render("user", u);
-	}
-	
 	void registration() {
 		RegistrationPage c;
 		if(isPost()) {
@@ -541,11 +532,9 @@ struct Server: cppcms::application {
 			return;
 		}
 		
-		bool createNew = langIDString == "new";
-		
 		optional<ID> langID;
 		shared_ptr<LanguageT> lang;
-		if(!createNew) {
+		if(langIDString != "new") {
 			langID = stringToInteger<ID>(langIDString);
 			if(!langID) {
 				sendRedirectHeader("/admin");
@@ -562,9 +551,40 @@ struct Server: cppcms::application {
 		if(isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
-				
+				try {
+					odb::transaction t(db->begin());
+					
+					// FIXME: find better way to detect name in use.
+					odb::result<LanguageT> res = db->query<LanguageT>(
+						odb::query<LanguageT>::name == c.form.name.value()
+					);
+					for(const LanguageT& other : res) {
+						if(!langID || other.id != *langID) c.nameInUse = true;
+					}
+					
+					if(!c.nameInUse) {
+						LanguageT newLang(
+							c.form.name.value(),
+							c.form.suffix.value(),
+							DockerImage(c.form.compilerRepository.value(), c.form.compilerImageID.value()),
+							DockerImage(c.form.runnerRepository.value(), c.form.runnerImageID.value())
+						);
+						
+						if(langID) {
+							newLang.id = *langID;
+							db->update(newLang);
+						} else {
+							db->persist(newLang);
+						};
+						t.commit();
+						c.success = true;
+					}
+				} catch(odb::object_not_persistent& e) {
+					sendRedirectHeader("/admin");
+					return;
+				}
 			}
-		} else if(!createNew) {
+		} else if(lang) {
 			c.form.name.value(lang->getName());
 			c.form.suffix.value(lang->getSuffix());
 			c.form.compilerRepository.value(lang->compiler.getRepositoryName());
