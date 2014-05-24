@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <set>
 #include <map>
+#include <unordered_map>
+#include <set>
+#include <unordered_set>
 //#include <boost/optional.hpp>
 
 namespace cses {
@@ -27,6 +30,9 @@ using std::move;
 using std::swap;
 using std::set;
 using std::map;
+using std::unordered_map;
+using std::set;
+using std::unordered_set;
 
 struct Error : std::exception {
 public:
@@ -98,12 +104,20 @@ public:
 		return val.get();
 	}
 	
-	operator bool() {
-		return (bool)val;
-	}
-	
 private:
+	void unused() { }
+	typedef void (optional<T>::*unspecified_bool_type)();
+	
 	unique_ptr<T> val;
+	
+public:
+	operator unspecified_bool_type() {
+		if(val) {
+			return &optional<T>::unused;
+		} else {
+			return 0;
+		}
+	}
 };
 
 }

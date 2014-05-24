@@ -7,7 +7,7 @@ struct FileRef {
 
 struct RunOptions {
 	1:double timeLimit,
-	2:i32 memoryLimitBytes,
+	2:i64 memoryLimitBytes,
 }
 
 struct RunResult {
@@ -15,19 +15,27 @@ struct RunResult {
 	2:i32 status,
 }
 
-exception InternalError { }
-exception InvalidDataError { }
-exception AuthError { }
-exception DoesNotExistError { }
+exception InternalError {
+	1:string msg,
+}
+exception InvalidDataError {
+	1:string msg,
+}
+exception AuthError {
+	1:string msg,
+}
+exception DockerError {
+	1:string msg,
+}
 
 service Judge {
 	bool hasFile(1:string token, 2:string hash)
-		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DockerError d),
 	void sendFile(1:string token, 2:string data)
-		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DockerError d),
 	string getFile(1:string token, 2:string hash)
-		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DockerError d),
 	
 	RunResult run(1:string token, 2:string imageRepository, 3:string imageID, 4:list<FileRef> inputs, 5:RunOptions options)
-		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DoesNotExistError d),
+		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DockerError d),
 }

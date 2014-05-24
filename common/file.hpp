@@ -13,6 +13,7 @@ public:
 	~FileSave();
 	
 	void write(const char* data, size_t length);
+	void writeFileContents(const string& filename);
 	
 	// Save the file so that it can be opened with openFileByHash. Returns
 	// the hash. Should be called only once.
@@ -32,11 +33,17 @@ private:
 // Parameter is not checked for sanity.
 unique_ptr<std::ifstream> openFileByHash(const string& hash);
 
+// Get path where file is stored by its hash.
+// Parameter is not checked for sanity or existence.
+string getFileStoragePath(const string& hash);
+
 // Check if file of given hash can be opened with openFileByHash.
 // Parameter is not checked for sanity.
 bool fileHashExists(const string& hash);
 
 // Check whether string is a valid file hash.
 bool isValidFileHash(const string& str);
+
+string readFileByHash(const string& hash);
 
 }

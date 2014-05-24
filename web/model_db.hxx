@@ -125,20 +125,20 @@ private:
 
 typedef shared_ptr<Contest> ContestPtr;
 
-#pragma db object
-struct Task: HasID {
+#pragma db object pointer(shared_ptr)
+struct Task: HasID, std::enable_shared_from_this<Task> {
 #pragma db unique
 	StrField name;
 	//ContestPtr contest;
 	
 	//UniqueFile evaluator;
 	
+#pragma db value_not_null inverse(task) section(sec)
+	vector<shared_ptr<TestCase>> testCases;
 //#pragma db value_not_null inverse(task) section(sec)
-#pragma db value_not_null section(sec)
-	vector<unique_ptr<TestCase>> testCases;
-//#pragma db value_not_null inverse(task)
-#pragma db value_not_null section(sec)
-	vector<unique_ptr<Submission>> submissions;
+//	vector<shared_ptr<Submission>> submissions;
+	double timeInSeconds;
+	int memoryInBytes;
 
 #pragma db load(lazy) update(manual)
 	odb::section sec;
@@ -152,12 +152,10 @@ typedef shared_ptr<Task> TaskPtr;
 
 #pragma db object
 struct TestCase: HasID {
-	//TaskPtr task;
+	weak_ptr<Task> task;
 	UniqueFile input;
 	UniqueFile output;
 	int group;
-
-	TestCase() {}
 
 private:
 	friend class odb::access;
@@ -220,8 +218,8 @@ typedef shared_ptr<Submission> SubmissionPtr;
 struct Result: HasID {
 	SubmissionPtr submission;
 	shared_ptr<TestCase> testCase;
-	UniqueFile output;
-	UniqueFile errOutput;
+	MaybeFile output;
+	MaybeFile errOutput;
 	int result;
 	float time;
 	int memory;
@@ -231,6 +229,15 @@ struct Result: HasID {
 struct JudgeHost: HasID {
 	StrField name;
 	StrField host;
+};
+
+#pragma db object
+struct CompilationResult: HasID {
+	shared_ptr<Language> language;
+	UniqueFile source;
+	UniqueFile binary;
+
+#pragma db index("index") unique members(language, source)
 };
 
 }
