@@ -4,7 +4,8 @@
 			"port": 8000
 	},
 	"http": {
-		"script_names": ["lol"]
+		"script_names": ["lol"],
+		"timeout": 3600,
 	},
 	"security": {
 		"csrf" : {

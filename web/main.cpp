@@ -325,18 +325,22 @@ struct Server: cppcms::application {
 					}
 					sort(inputs.begin(), inputs.end());
 					sort(outputs.begin(), outputs.end());
+					while (outputs.size() < inputs.size()) outputs.push_back("");
 					data[dirName] = make_pair(inputs, outputs);
 				}
+				BOOSTER_INFO("lol") << "apina";
 				odb::transaction t(db->begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
 				//db->persist(newContest.get());				
 				for (auto x : data) {
+					BOOSTER_INFO("lol") << "banaani";
 					shared_ptr<Task> newTask(new Task());
 					string taskName = x.first;
 					newTask->name = taskName;
 					//newTask->contest = newContest;					
 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
+						BOOSTER_INFO("lol") << "cembalo";
 						unique_ptr<File> newInput(new File()), newOutput(new File());
 						newInput->name = data[x.first].first[i];
 						newOutput->name = data[x.first].second[i];
@@ -353,7 +357,7 @@ struct Server: cppcms::application {
 						buffer = (char*)malloc(sizeof(char)*fsize);
 						fread(buffer, 1, fsize, file);
 						fclose(file);
-						inputSaver.write(buffer, fsize);
+						//inputSaver.write(buffer, fsize);
 						free(buffer);
 
 						file = fopen((newName + "/" + x.first + "/" + newOutput->name).c_str(), "rb");
@@ -363,7 +367,7 @@ struct Server: cppcms::application {
 						buffer = (char*)malloc(sizeof(char)*fsize);
 						fread(buffer, 1, fsize, file);
 						fclose(file);
-						outputSaver.write(buffer, fsize);
+						//outputSaver.write(buffer, fsize);
 						free(buffer);
 
 						string inputHash = inputSaver.save();
