@@ -221,6 +221,35 @@ user
 <% view scores uses ScoresPage extends in_contest %>
 <% template body2() %>
 <h2>Scoreboard</h2>
+
+<table border="1">
+<tr>
+<th></th>
+<% foreach t in tasks %>
+	<% item %>
+		<th> <%= t %> </th>
+	<% end %>
+<% end %>
+<% foreach row in rows %>
+<% item %>
+	<tr>
+	<td> row.user </td>
+	<% foreach cell in row.cells %>
+	<% item %>
+		<td>
+		<% if cell.has %>
+			<%= cell.score %>
+		<% end %>
+		</td>
+	<% end %>
+	<% end %>
+	</tr>
+<% end %>
+<% end %>
+</tr>
+
+</table>
+
 <% end template %>
 <% end view %>
 

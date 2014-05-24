@@ -157,6 +157,14 @@ struct Server: cppcms::application {
 	void scores(string id) {
 		optional<ID> contestID = stringToInteger<ID>(id);
 		ScoresPage p;
+#if 0
+		odb::transaction t(db->begin());
+//		odb::result<User> users = contestRes
+#endif
+		p.tasks.push_back("a");
+		p.tasks.push_back("b");
+		p.rows.push_back({"x", {{0,0}, {1,100}}});
+		p.rows.push_back({"y", {{1,50}, {1,30}}});
 		p.id = *contestID;
 		render("scores", p);
 	}
