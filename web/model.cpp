@@ -106,8 +106,8 @@ void makeDB() {
 		host.port = 9090;
 		db->persist(host);
 		
-		Contest cnt;
-		cnt.name = "testikisa";
+		shared_ptr<Contest> cnt(new Contest());
+		cnt->name = "testikisa";
 		shared_ptr<Task> lastTask;
 		shared_ptr<TestCase> cases[20];
 		for (int i = 0; i < 3; i++) {
@@ -118,6 +118,7 @@ void makeDB() {
 			if (i == 2) tsk->name = "cembalo";
 			tsk->timeInSeconds = 2;
 			tsk->memoryInBytes = 16*1024*1024;
+			//tsk->contest = cnt;
 			db->persist(tsk);
 			
 			for(int j=0; j<3; ++j) {
@@ -141,7 +142,7 @@ void makeDB() {
 				tsk->testGroups[group]->tests.push_back(tcase);
 				db->persist(tcase);
 			}
-			cnt.tasks.push_back(tsk);
+			cnt->tasks.push_back(tsk);
 		}
 		db->persist(cnt);
 		

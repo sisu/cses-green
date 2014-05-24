@@ -188,7 +188,7 @@ struct Server: cppcms::application {
 		odb::transaction t(db->begin());
 		db->load(*task, task->sec);
 		
-		c.id = 1; //TODO change correct contest
+		c.id = 1; //TODO: fix this
 		
 		int cnt = 0, ind = 0;
 		
