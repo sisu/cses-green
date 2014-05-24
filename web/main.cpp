@@ -157,6 +157,7 @@ struct Server: cppcms::application {
 	}
 
 	void scores(string id) {
+		odb::session s2;
 		optional<ID> contestID = stringToInteger<ID>(id);
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		ScoresPage p;
