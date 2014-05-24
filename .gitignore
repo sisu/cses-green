@@ -16,5 +16,8 @@ web/cses
 web/cses.db
 web/cses.db-journal
 web/obj/*
+web/files/*
 judge/judge
 judge/obj/*
+judge/files/*
+judge/tmp/*

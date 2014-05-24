@@ -34,6 +34,25 @@
 <% end view %>
 
 
+<% view in_contest uses InContestPage extends page %>
+<% template body() %>
+
+<h1>Contest <%= name %></h1>
+<p>
+<a href="<% url "submit" using id %>">Submit solution</a> |
+<a href="<% url "list" using id %>">View submissions</a> |
+<a href="<% url "scores" using id %>">Scoreboard</a>
+</p>
+<hr>
+<% include body2() %>
+<% end template %>
+
+<% template body2() %>
+<% end template %>
+
+<% end view %>
+
+
 <% view contests uses ContestsPage extends page %>
 <% template body() %>
 <html>
@@ -174,15 +193,8 @@ user
 <% end template %>
 <% end view %>
 
-<% view submit uses SubmitPage extends page %>
-<% template body() %>
-<h1>Contest <%= name %></h1>
-<p>
-<a href="<% url "submit" using id %>">Submit solution</a> |
-<a href="<% url "list" using id %>">View submissions</a> |
-<a href="<% url "scores" using id %>">Scoreboard</a>
-</p>
-<hr>
+<% view submit uses SubmitPage extends in_contest %>
+<% template body2() %>
 <h2>Submit solution</h2>
 <form method="post" action="" enctype="multipart/form-data"><%csrf%>
 <% form as_p form %>
@@ -190,28 +202,14 @@ user
 <% end template %>
 <% end view %>
 
-<% view list uses ListPage extends page %>
-<% template body() %>
-<h1>Contest <%= name %></h1>
-<p>
-<a href="<% url "submit" using id %>">Submit solution</a> |
-<a href="<% url "list" using id %>">View submissions</a> |
-<a href="<% url "scores" using id %>">Scoreboard</a>
-</p>
-<hr>
+<% view list uses ListPage extends in_contest %>
+<% template body2() %>
 <h2>View submissions</h2>
 <% end template %>
 <% end view %>
 
-<% view scores uses ScoresPage extends page %>
-<% template body() %>
-<h1>Contest <%= name %></h1>
-<p>
-<a href="<% url "submit" using id %>">Submit solution</a> |
-<a href="<% url "list" using id %>">View submissions</a> |
-<a href="<% url "scores" using id %>">Scoreboard</a>
-</p>
-<hr>
+<% view scores uses ScoresPage extends in_contest %>
+<% template body2() %>
 <h2>Scoreboard</h2>
 <% end template %>
 <% end view %>

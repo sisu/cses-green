@@ -172,7 +172,12 @@ struct AdminImportPage: Page {
 	Form form;
 };
 
-struct SubmitPage: Page {
+struct InContestPage: Page {
+	string name;
+	ID id;
+};
+
+struct SubmitPage: InContestPage {
 	struct Form: cppcms::form {
 		ws::select task;
 		ws::file file;
@@ -190,8 +195,6 @@ struct SubmitPage: Page {
 		}
 	};
 	Form form;
-	ID id;
-	string name;
 };
 
 struct ViewPage: Page {	
@@ -211,7 +214,7 @@ struct ViewPage: Page {
 	int points, total;
 };
 
-struct ListPage: Page {
+struct ListPage: InContestPage {
 	struct item {
 		int id;
 		string task;
@@ -219,13 +222,9 @@ struct ListPage: Page {
 		string status;
 	};
 	vector<item> items;
-	ID id;
-	string name;
 };
 
-struct ScoresPage: Page {
-	ID id;
-	string name;
+struct ScoresPage: InContestPage {
 };
 
 }
