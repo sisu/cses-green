@@ -105,7 +105,33 @@ struct Server: cppcms::application {
 	
 	void view(string id) {
 		ViewPage c;
+		BOOSTER_DEBUG("lol") << id;
 		optional<ID> submissionID = stringToInteger<ID>(id);
+		optional<Submission> s = getObjectIfExists<Submission>(*submissionID);
+
+		odb::transaction t(db->begin());
+		//odb::query<Result> q (odb::query<Result>::submission == *submissionID);
+		//odb::result<Result> sRes = db->query<Result>();
+		//BOOSTER_DEBUG("lol") << sRes.size();
+		
+		c.points = 50;
+		c.total = 100;
+		c.groups.resize(3);
+		c.groups[0].number = 1; c.groups[0].points = 13; c.groups[0].total = 13;
+		c.groups[1].number = 2; c.groups[1].points = 37; c.groups[1].total = 37;
+		c.groups[2].number = 3; c.groups[2].points = 0; c.groups[2].total = 50;
+		c.groups[0].results.resize(5);
+		c.groups[1].results.resize(6);
+		c.groups[2].results.resize(4);
+		for (int i = 0; i < 3; i++) {
+			for (size_t j = 0; j < c.groups[i].results.size(); j++) {
+				c.groups[i].results[j].number = j+1;
+				c.groups[i].results[j].timeInSeconds = 0.01*(j+1);
+				c.groups[i].results[j].memoryInKBytes = 10*(j+1);
+				if (i < 2) c.groups[i].results[j].status = "ACCEPTED";
+				else c.groups[i].results[j].status = "TIME LIMIT EXCEEDED";
+			}
+		}
 		render("view", c);
 	}
 	
@@ -393,6 +419,7 @@ struct Server: cppcms::application {
 					string taskName = x.first;
 					newTask->name = taskName;
 					//newTask->contest = newContest;					
+					db->persist(newTask);					
 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
 						BOOSTER_INFO("lol") << "cembalo";
 						unique_ptr<File> newInput(new File()), newOutput(new File());
@@ -435,11 +462,10 @@ struct Server: cppcms::application {
 						newCase->input = move(newInput);
 						newCase->output = move(newOutput);
 						newCase->group = 1;
-						//newCase->task = newTask;
+						newCase->task = newTask;
  						db->persist(newCase.get());
  						newTask->testCases.push_back(move(newCase));
 					}
-					db->persist(newTask);
 					newContest->tasks.push_back(move(newTask));
 				}
 				db->persist(newContest.get());

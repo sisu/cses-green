@@ -195,6 +195,19 @@ struct SubmitPage: Page {
 };
 
 struct ViewPage: Page {	
+	struct result {
+		int number;
+		float timeInSeconds;
+		int memoryInKBytes;
+		string status;
+	};
+	struct group {
+		int number;
+		vector<result> results;
+		int points, total;
+	};
+	vector<group> groups;
+	int points, total;
 };
 
 }

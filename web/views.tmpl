@@ -165,6 +165,21 @@ user
 <% template body() %>
 <h1>Contest</h1>
 <h2>View submission</h2>
+<h3>Total score: <%= points %>/<%= total %> points</h3>
+<% foreach group in groups %>
+  <% item %>
+  <h3>Group <%= group.number %> (<%= group.points %>/<%= group.total %> points)</h3>
+  <% foreach result in group.results %>
+    <table>
+    <tr><td width=75><b>test</b></td><td width=75><b>time</b></td><td width=75><b>memory</b></td><td width=300><b>result</b></td></tr>
+    <% item %>
+      <tr><td>#<%= result.number %></td><td><%= result.timeInSeconds %> s</td><td><%= result.memoryInKBytes %> kB</td><td><%= result.status %></td></tr>
+    <% end %>
+    </table>
+  <% end %>
+  <% end %>
+<% end %>
+
 <% end template %>
 <% end view %>
 

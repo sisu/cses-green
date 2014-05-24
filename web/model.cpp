@@ -86,16 +86,66 @@ void makeDB() {
 #endif
 	try {
 		transaction t(db->begin());
-		User testUser("a", "a", true);
-		db->persist(testUser);
-		Language cpp;
-		cpp.name = "C++";
-		cpp.suffix = "cpp";
-		db->persist(cpp);
-		Language java;
-		java.name = "Java";
-		java.suffix = "java";
-		db->persist(java);
+		shared_ptr<User> testUser(new User("a", "a", true));
+		db->persist(*testUser);
+		
+		shared_ptr<Language> cpp(new Language());
+		cpp->name = "C++";
+		cpp->suffix = "cpp";
+		db->persist(*cpp);
+		shared_ptr<Language> java(new Language());
+		java->name = "Java";
+		java->suffix = "java";
+		db->persist(*java);
+				
+		Contest cnt;
+		cnt.name = "testikisa";
+		shared_ptr<Task> firstTask;
+		shared_ptr<TestCase> cases[20];
+		for (int i = 0; i < 3; i++) {
+			shared_ptr<Task> tsk(new Task());
+			if (i == 0) firstTask = tsk;
+			if (i == 0) tsk->name = "apina";
+			if (i == 1) tsk->name = "banaani";
+			if (i == 2) tsk->name = "cembalo";
+			tsk->timeInSeconds = 2;
+			tsk->memoryInBytes = 16*1024*1024;
+			db->persist(tsk);
+			for (int j = 0; j < 20; j++) {
+				shared_ptr<TestCase> tcase(new TestCase());
+				cases[j] = tcase;
+				tcase->task = tsk;
+				if (j < 5) tcase->group = 1;
+				else if (j < 12) tcase->group = 2;
+				else if (j < 20) tcase->group = 3;
+				db->persist(tcase.get());
+				tsk->testCases.push_back(tcase);
+			}
+			cnt.tasks.push_back(tsk);
+		}
+		db->persist(cnt);
+		
+		shared_ptr<Submission> s(new Submission());
+		s->user = testUser;
+		s->task = firstTask;
+		s->language = cpp;
+		db->persist(s.get());
+		for (int j = 0; j < 20; j++) {
+			Result r;
+			r.testCase = cases[j];
+			r.timeInSeconds = 0.1*j;
+			r.memoryInBytes = 10*j;
+			if (j < 12) r.status = ResultStatus::CORRECT;
+			else r.status = ResultStatus::TIME_LIMIT;
+			r.submission = s;
+			db->persist(r);
+		}
+		
+// 		TestCase case[20];
+// 		for (int i = 0; i < 20; i++) {
+// 			case[i].
+// 		}
+		
 		t.commit();
 	} catch(object_already_persistent) { }
 }
