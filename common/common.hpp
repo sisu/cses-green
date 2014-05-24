@@ -104,12 +104,20 @@ public:
 		return val.get();
 	}
 	
-	operator bool() {
-		return (bool)val;
-	}
-	
 private:
+	void unused() { }
+	typedef void (optional<T>::*unspecified_bool_type)();
+	
 	unique_ptr<T> val;
+	
+public:
+	operator unspecified_bool_type() {
+		if(val) {
+			return &optional<T>::unused;
+		} else {
+			return 0;
+		}
+	}
 };
 
 }
