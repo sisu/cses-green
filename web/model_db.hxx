@@ -140,7 +140,7 @@ struct Program {
 struct Task: HasID {
 #pragma db unique
 	StrField name;
-	//ContestPtr contest;
+	weak_ptr<Contest> contest;
 
 	Program evaluator;
 
@@ -186,8 +186,8 @@ private:
 struct Contest: HasID {
 #pragma db unique
 	StrField name;
-//#pragma db value_not_null inverse(contest) section(sec)	
-#pragma db value_not_null section(sec)	
+#pragma db value_not_null inverse(contest) section(sec)	
+//#pragma db value_not_null section(sec)	
 	vector<TaskPtr> tasks;
 
 #if 0
@@ -229,7 +229,8 @@ struct Submission: HasID {
 #pragma db not_null
 	Program program;
 	SubmissionStatus status;
-	long long time;
+	int score = 0;
+	long long time = 0;
 };
 typedef shared_ptr<Submission> SubmissionPtr;
 #pragma db value(SubmissionPtr) not_null

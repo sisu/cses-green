@@ -156,10 +156,14 @@ struct Server: cppcms::application {
 
 	void scores(string id) {
 		optional<ID> contestID = stringToInteger<ID>(id);
+		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		ScoresPage p;
 #if 0
 		odb::transaction t(db->begin());
-//		odb::result<User> users = contestRes
+		odb::result<User> users = db->query<User>();
+
+		typedef odb::query<Submission> query;
+		odb::result<Submission> submissions = db->query<Submission>(query<Submission>::task::contest == cnt);
 #endif
 		p.tasks.push_back("a");
 		p.tasks.push_back("b");
