@@ -274,10 +274,10 @@ private:
 	}
 };
 
-template<class Owner>
+template<class ProgramT, class Owner>
 class CompileTask: public UnitTask {
 public:
-	CompileTask(Program& program, Owner& owner): program(program), owner(owner) {
+	CompileTask(ProgramT& program, shared_ptr<Owner> owner): program(program), owner(owner) {
 	}
 	void run(JudgeConnection connection, JudgeMaster&) override {
 		shared_ptr<Language> lang = program.language;
@@ -293,8 +293,8 @@ public:
 		}
 	}
 private:
-	Program& program;
-	Owner& owner;
+	ProgramT& program;
+	shared_ptr<Owner> owner;
 };
 
 class CompileAndRunTask: public UnitTask {
@@ -304,7 +304,7 @@ public:
 
 protected:
 	void run(JudgeConnection connection, JudgeMaster& master) override {
-		CompileTask<Submission> compile(submission->program, *submission);
+		CompileTask<SubmissionProgram, Submission> compile(submission->program, submission);
 		compile.run(connection, master);
 		if (submission->program.binary) {
 			startTestGroups(master);
@@ -340,7 +340,9 @@ void updateJudgeHosts() {
 }
 
 void compileEvaluator(TaskPtr task) {
-	JudgeMaster::instance().addTask(new CompileTask<Task>(task->evaluator, *task));
+	JudgeMaster::instance().addTask(
+		new CompileTask<EvaluatorProgram, Task>(task->evaluator, task)
+	);
 }
 
 }
