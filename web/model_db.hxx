@@ -5,6 +5,7 @@
 #include <odb/lazy-ptr.hxx>
 #include <odb/section.hxx>
 
+#pragma db namespace session	
 namespace cses {
 
 extern unique_ptr<odb::database> db;

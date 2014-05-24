@@ -104,6 +104,8 @@ struct Server: cppcms::application {
 	}
 	
 	void view(string id) {
+		odb::session s2;
+		
 		ViewPage c;
 		optional<ID> submissionID = stringToInteger<ID>(id);
 		optional<Submission> s = getObjectIfExists<Submission>(*submissionID);
