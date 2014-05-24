@@ -258,13 +258,4 @@ struct JudgeHost: HasID {
 	int port;
 };
 
-#pragma db object
-struct CompilationResult: HasID {
-	shared_ptr<Language> language;
-	UniqueFile source;
-	UniqueFile binary;
-
-#pragma db index("index") unique members(language, source)
-};
-
 }
