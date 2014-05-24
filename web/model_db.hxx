@@ -35,9 +35,23 @@ struct File: HasID {
 	string hash;
 #pragma db type(STR_FIELD)
 	string name;
+
+	File() {}
+	File(string hash, string name): hash(hash), name(name) {}
 };
 typedef unique_ptr<File> UniqueFile;
 #pragma db value(UniqueFile) not_null
+typedef unique_ptr<File> MaybeFile;
+#pragma db value(MaybeFile) null
+
+
+#pragma db value
+struct DockerImage {
+#pragma db type(STR_FIELD)
+	string repository;
+#pragma db type(STR_FIELD)
+	string id;
+};
 
 
 #pragma db object
@@ -172,8 +186,8 @@ struct Language: HasID {
 	StrField name;
 #pragma db type(CHAR_FIELD(16))
 	string suffix;
-	UniqueFile compiler;
-	UniqueFile runner;
+	DockerImage compiler;
+	DockerImage runner;
 };
 
 #pragma db object
@@ -183,7 +197,7 @@ struct Submission: HasID {
 #pragma db not_null
 	shared_ptr<Language> language;
 	UniqueFile source;
-	UniqueFile binary;
+	MaybeFile binary;
 	int status;
 };
 typedef shared_ptr<Submission> SubmissionPtr;
