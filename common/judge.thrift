@@ -10,9 +10,16 @@ struct RunOptions {
 	2:i64 memoryLimitBytes,
 }
 
+enum RunResultType {
+	SUCCESS,
+	NONZERO_EXIT_STATUS,
+	TIME_LIMIT_EXCEEDED,
+	DISALLOWED_DISK_IO,
+}
+
 struct RunResult {
-	1:list<FileRef> outputs,
-	2:i32 status,
+	1:RunResultType type,
+	2:list<FileRef> outputs,
 }
 
 exception InternalError {

@@ -5,6 +5,8 @@
 #include <utility>
 #include <tuple>
 #include <string>
+#include <sstream>
+#include <iostream>
 #include <memory>
 #include <cstdlib>
 #include <set>
@@ -33,6 +35,10 @@ using std::map;
 using std::unordered_map;
 using std::set;
 using std::unordered_set;
+using std::cin;
+using std::cout;
+using std::cerr;
+using std::stringstream;
 
 struct Error : std::exception {
 public:
