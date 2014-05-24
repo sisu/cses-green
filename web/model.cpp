@@ -88,6 +88,14 @@ void makeDB() {
 		transaction t(db->begin());
 		User testUser("a", "a", true);
 		db->persist(testUser);
+		Language cpp;
+		cpp.name = "C++";
+		cpp.suffix = "cpp";
+		db->persist(cpp);
+		Language java;
+		java.name = "Java";
+		java.suffix = "java";
+		db->persist(java);
 		t.commit();
 	} catch(object_already_persistent) { }
 }

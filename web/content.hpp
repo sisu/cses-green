@@ -175,22 +175,23 @@ struct AdminImportPage: Page {
 struct SubmitPage: Page {
 	struct Form: cppcms::form {
 		ws::select task;
-		ws::file solution;
+		ws::file file;
 		ws::select language;
 		ws::submit submit;
 		Form() {
 			task.message("Task");
-			solution.message("Solution");
+			file.message("Solution");
 			language.message("Language");
 			submit.value("Submit");
 			add(task);
-			add(solution);
+			add(file);
 			add(language);
 			add(submit);
 		}
 	};
 	Form form;
-	vector<pair<unsigned,string>> tasks;
+	//vector<pair<unsigned,string>> tasks;
+	//vector<pair<string,string>> languages;
 };
 
 

@@ -196,6 +196,13 @@ struct Language: HasID {
 	DockerImage runner;
 };
 
+enum class SubmissionStatus {
+	PENDING,
+	JUDGING,
+	SUCCESS,
+	FAIL
+};
+
 #pragma db object
 struct Submission: HasID {
 	UserPtr user;
@@ -204,7 +211,7 @@ struct Submission: HasID {
 	shared_ptr<Language> language;
 	UniqueFile source;
 	MaybeFile binary;
-	int status;
+	SubmissionStatus status;
 };
 typedef shared_ptr<Submission> SubmissionPtr;
 #pragma db value(SubmissionPtr) not_null

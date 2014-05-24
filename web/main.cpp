@@ -15,6 +15,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <dirent.h>
+#include <fstream>
 
 using namespace cses;
 
@@ -103,19 +104,62 @@ struct Server: cppcms::application {
  		optional<ID> contestID = stringToInteger<ID>(id);
 		
 		optional<Contest> cnt = getObjectIfExists<Contest>(*contestID);
-		//optional<Task> cnt = getObjectIfExists<Task>(*contestID);
 		
- 		//odb::query<Task> q (odb::query<Task>::contest == contestID);
- 		
-  		//odb::transaction t(db->begin());		
-  		//odb::result<Task> taskRes = db->query<Task>(q);
-		odb::transaction t(db->begin());
-		db->load(*cnt, cnt->sec);
-
-		for (auto x : cnt->tasks) {
-  			c.form.task.add(x->name, std::to_string(x->id));
-  		}
-		render("submit", c);
+		{
+			odb::transaction t(db->begin());
+			db->load(*cnt, cnt->sec);
+			
+			for (auto x : cnt->tasks) {
+				c.form.task.add(x->name, std::to_string(x->id));
+			}  		
+  		
+			odb::result<Language> languageRes = db->query<Language>();
+			for (auto x : languageRes) {
+				c.form.language.add(x.name, std::to_string(x.id));
+			}
+		}
+		
+		if (isPost()) {
+			c.form.load(context());
+			if (c.form.validate()) {
+				optional<ID> taskID = stringToInteger<ID>(c.form.task.selected_id());
+				optional<ID> languageID = stringToInteger<ID>(c.form.language.selected_id());
+				BOOSTER_DEBUG("lol") << c.form.task.selected_id() << " " << c.form.language.selected_id() << " " << c.form.file.value()->name();
+				std::istream &is = c.form.file.value()->data();
+				is.seekg(0, is.end);
+				int len = is.tellg();
+				is.seekg(0, is.beg);
+				char *buffer = new char[len];
+				is.read(buffer, len);
+				FileSave saver;
+				saver.write(buffer, len);
+				delete[] buffer;
+				string hash = saver.save();
+				unique_ptr<File> codeFile(new File());
+				codeFile->hash = hash;
+				codeFile->name = c.form.file.value()->name();
+				Submission newSubmission;
+				optional<User> user = getCurrentUser();
+				shared_ptr<User> userPtr(new User(*user));
+				newSubmission.user = userPtr;
+				optional<Task> task = getObjectIfExists<Task>(taskID);
+				shared_ptr<Task> taskPtr(new Task(move(*task)));
+				newSubmission.task = taskPtr;
+				optional<Language> language = getObjectIfExists<Language>(languageID);
+				shared_ptr<Language> languagePtr(new Language(*language));
+				newSubmission.language = languagePtr;
+				newSubmission.source = move(codeFile);
+				newSubmission.status = SubmissionStatus::PENDING;
+				odb::transaction t(db->begin());
+				db->persist(newSubmission);
+				t.commit();				
+			}
+			sendRedirectHeader("/");
+			return;
+		}
+		
+  		
+  		render("submit", c);
 	}
 
 	void user(string user) {
