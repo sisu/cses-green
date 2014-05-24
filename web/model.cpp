@@ -98,7 +98,7 @@ void makeDB() {
 		db->persist(java);
 		JudgeHost host;
 		host.name = host.host = "localhost";
-		host.port = 9666;
+		host.port = 9090;
 		db->persist(host);
 		t.commit();
 	} catch(object_already_persistent) { }

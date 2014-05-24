@@ -504,6 +504,7 @@ int main() {
 		std::cerr<<"Config syntax error on line "<<line<<'\n';
 		return 1;
 	}
+	updateJudgeHosts();
 	cppcms::service srv(config);
 	srv.applications_pool().mount(cppcms::applications_factory<Server>());
 	srv.run();

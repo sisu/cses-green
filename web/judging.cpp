@@ -133,11 +133,22 @@ public:
 	}
 
 	void updateJudgeHosts() {
-		odb::transaction t(db->begin());
-		odb::result<JudgeHost> hosts = db->query<JudgeHost>();
+		std::vector<JudgeHost> hosts;
+		{
+			odb::transaction t(db->begin());
+			odb::result<JudgeHost> result = db->query<JudgeHost>();
+			hosts.assign(result.begin(), result.end());
+		}
 		allJudgeHosts.clear();
 		for(JudgeHost host: hosts) {
+			std::thread(&JudgeMaster::connectToJudgeHostLoop, this, host).detach();
 		}
+	}
+
+	void addConnectedJudgeHost(JudgeConnection conn) {
+		auto lock = getLock();
+		allJudgeHosts.insert(JudgeConnection(conn));
+		condition.notify_one();
 	}
 
 	void returnConnection(JudgeConnection conn) {
@@ -159,7 +170,20 @@ private:
 			pendingTasks.pop_front();
 			JudgeConnection host = freeHosts.back();
 			freeHosts.pop_back();
-			std::thread t(&UnitTask::execute, task, host, std::ref(*this));
+			std::thread(&UnitTask::execute, task, host, std::ref(*this)).detach();
+		}
+	}
+
+	void connectToJudgeHostLoop(JudgeHost host) {
+		while(1) {
+			try {
+				addConnectedJudgeHost(JudgeConnection(host));
+				cerr<<"Connected to jugehost "<<host.name<<'\n';
+				return;
+			} catch(const apache::thrift::transport::TTransportException& e) {
+//				cerr<<"Connecting to "<<host.name<<" failed: "<<e.what()<<'\n';
+				sleep(5);
+			}
 		}
 	}
 
@@ -274,6 +298,10 @@ namespace cses {
 void addForJudging(SubmissionPtr submission) {
 	CompileTask* task = new CompileTask(submission);
 	JudgeMaster::instance().addTask(task);
+}
+
+void updateJudgeHosts() {
+	JudgeMaster::instance().updateJudgeHosts();
 }
 
 }
