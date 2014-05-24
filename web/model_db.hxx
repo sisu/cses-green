@@ -14,6 +14,7 @@ struct TestCase;
 struct Submission;
 struct Group;
 struct Language;
+struct TestGroup;
 
 typedef unsigned ID;
 
@@ -146,7 +147,7 @@ struct Task: HasID, std::enable_shared_from_this<Task> {
 	MaybeFile evaluatorSource;
 
 #pragma db value_not_null inverse(task) section(sec)
-	vector<shared_ptr<TestCase>> testCases;
+	vector<shared_ptr<TestGroup>> testGroups;
 //#pragma db value_not_null inverse(task) section(sec)
 //	vector<shared_ptr<Submission>> submissions;
 	double timeInSeconds;
@@ -162,12 +163,18 @@ private:
 typedef shared_ptr<Task> TaskPtr;
 #pragma db value(TaskPtr) not_null
 
+#pragma db object pointer(shared_ptr)
+struct TestGroup: HasID {
+	weak_ptr<Task> task;
+#pragma db value_not_null inverse(group)
+	vector<shared_ptr<TestCase>> tests;
+};
+
 #pragma db object
 struct TestCase: HasID {
-	weak_ptr<Task> task;
+	weak_ptr<TestGroup> group;
 	UniqueFile input;
 	UniqueFile output;
-	int group;
 
 private:
 	friend class odb::access;

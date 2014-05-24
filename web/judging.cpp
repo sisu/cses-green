@@ -299,12 +299,8 @@ private:
 	void startTestGroups(JudgeMaster& master) {
 		TaskPtr task = submission->task;
 		db->load(*task, task->sec);
-		std::map<int, vector<shared_ptr<TestCase>>> testCasesByGroup;
-		for(auto test: task->testCases) {
-			testCasesByGroup[test->group].push_back(test);
-		}
-		for(auto& i: testCasesByGroup) {
-			master.addTask(new RunTestGroup(submission, move(i.second)));
+		for(auto group: task->testGroups) {
+			master.addTask(new RunTestGroup(submission, move(group->tests)));
 		}
 	}
 };

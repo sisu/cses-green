@@ -107,28 +107,35 @@ void makeDB() {
 		cnt.name = "testikisa";
 		shared_ptr<Task> firstTask;
 		shared_ptr<TestCase> cases[20];
+		db->persist(cnt);
 		for (int i = 0; i < 3; i++) {
 			shared_ptr<Task> tsk(new Task());
-			if (i == 0) firstTask = tsk;
+			if (i == 2) firstTask = tsk;
 			if (i == 0) tsk->name = "apina";
 			if (i == 1) tsk->name = "banaani";
 			if (i == 2) tsk->name = "cembalo";
 			tsk->timeInSeconds = 2;
 			tsk->memoryInBytes = 16*1024*1024;
 			db->persist(tsk);
+			for(int j=0; j<3; ++j) {
+				shared_ptr<TestGroup> group(new TestGroup);
+				group->task = tsk;
+				tsk->testGroups.push_back(group);
+				db->persist(group);
+			}
 			for (int j = 0; j < 20; j++) {
 				shared_ptr<TestCase> tcase(new TestCase());
 				cases[j] = tcase;
-				tcase->task = tsk;
-				if (j < 5) tcase->group = 1;
-				else if (j < 12) tcase->group = 2;
-				else if (j < 20) tcase->group = 3;
+				int group = 0;
+				if (j < 5) group = 0;
+				else if (j < 12) group = 1;
+				else if (j < 20) group = 2;
+				tcase->group = tsk->testGroups[group];
+				tsk->testGroups[group]->tests.push_back(tcase);
 				db->persist(tcase.get());
-				tsk->testCases.push_back(tcase);
 			}
 			cnt.tasks.push_back(tsk);
 		}
-		db->persist(cnt);
 		
 		shared_ptr<Submission> s(new Submission());
 		s->user = testUser;

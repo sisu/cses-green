@@ -416,8 +416,12 @@ struct Server: cppcms::application {
 					shared_ptr<Task> newTask(new Task());
 					string taskName = x.first;
 					newTask->name = taskName;
+					shared_ptr<TestGroup> group(new TestGroup());
+					group->task = newTask;
+					newTask->testGroups.push_back(group);
 					//newTask->contest = newContest;					
 					db->persist(newTask);					
+					db->persist(group);
 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
 						BOOSTER_INFO("lol") << "cembalo";
 						unique_ptr<File> newInput(new File()), newOutput(new File());
@@ -459,10 +463,9 @@ struct Server: cppcms::application {
  						db->persist(newOutput.get());
 						newCase->input = move(newInput);
 						newCase->output = move(newOutput);
-						newCase->group = 1;
-						newCase->task = newTask;
+						newCase->group = group;
  						db->persist(newCase.get());
- 						newTask->testCases.push_back(move(newCase));
+ 						group->tests.push_back(move(newCase));
 					}
 					newContest->tasks.push_back(move(newTask));
 				}
