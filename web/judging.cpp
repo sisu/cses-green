@@ -256,25 +256,43 @@ private:
 	}
 };
 
+template<class Owner>
 class CompileTask: public UnitTask {
 public:
-	CompileTask(SubmissionPtr submission): submission(submission) {
+	CompileTask(Program& program, Owner& owner): program(program), owner(owner) {
 	}
-protected:
-	void run(JudgeConnection connection, JudgeMaster& master) override {
-		shared_ptr<Language> lang = submission->program.language;
+	void run(JudgeConnection connection, JudgeMaster&) override {
+		shared_ptr<Language> lang = program.language;
 		StringMap inputs;
-		inputs["source"] = submission->program.source->hash;
+		inputs["source"] = program.source->hash;
 		StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
 		if (result.count("binary")) {
 			odb::transaction t(db->begin());
-			submission->program.binary.reset(new File(result["binary"], "binary"));
-			db->persist(submission->program.binary.get());
-			db->update(submission.get());
+			program.binary.reset(new File(result["binary"], "binary"));
+			db->persist(program.binary.get());
+			db->update(owner);
 			t.commit();
+		}
+	}
+private:
+	Program& program;
+	Owner& owner;
+};
+
+class CompileAndRunTask: public UnitTask {
+public:
+	CompileAndRunTask(SubmissionPtr submission): submission(submission) {
+	}
+
+protected:
+	void run(JudgeConnection connection, JudgeMaster& master) override {
+		CompileTask<Submission> compile(submission->program, *submission);
+		compile.run(connection, master);
+		if (submission->program.binary) {
 			startTestGroups(master);
 		}
 	}
+
 private:
 	SubmissionPtr submission;
 
@@ -296,12 +314,16 @@ private:
 namespace cses {
 
 void addForJudging(SubmissionPtr submission) {
-	CompileTask* task = new CompileTask(submission);
+	CompileAndRunTask* task = new CompileAndRunTask(submission);
 	JudgeMaster::instance().addTask(task);
 }
 
 void updateJudgeHosts() {
 	JudgeMaster::instance().updateJudgeHosts();
+}
+
+void compileEvaluator(TaskPtr task) {
+	JudgeMaster::instance().addTask(new CompileTask<Task>(task->evaluator, *task));
 }
 
 }
