@@ -160,17 +160,52 @@ struct Server: cppcms::application {
 		optional<ID> contestID = stringToInteger<ID>(id);
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		ScoresPage p;
-#if 0
+#if 1
 		odb::transaction t(db->begin());
 		odb::result<User> users = db->query<User>();
 
+		db->load(*cnt, cnt->sec);
+		vector<int> taskIds;
+		for(auto task: cnt->tasks) {
+			taskIds.push_back(task->id);
+			p.tasks.push_back(task->name);
+		}
+
 		typedef odb::query<Submission> query;
-		odb::result<Submission> submissions = db->query<Submission>(query<Submission>::task::contest == cnt);
-#endif
+		odb::result<Submission> submissions = db->query<Submission>(query::task.in_range(taskIds.begin(), taskIds.end()) + "ORDER BY" + query::time);
+
+		map<int, map<int, int>> scores;
+
+		for(auto& sub: submissions) {
+			scores[sub.user->id][sub.task->id] = sub.score;
+		}
+
+		for(auto& user: users) {
+			ScoresPage::Row row;
+			row.user = user.getName();
+			int total = 0;
+			auto& uscores = scores[user.id];
+			for(auto task: cnt->tasks) {
+				ScoresPage::Cell cell;
+				if (uscores.count(task->id)) {
+					cell.has = 1;
+					cell.score = uscores[task->id];
+					total += cell.score;
+				} else {
+					cell.has = 0;
+				}
+				row.cells.push_back(cell);
+			}
+			row.score = total;
+			p.rows.push_back(row);
+		}
+		sort(p.rows.begin(), p.rows.end());
+#else
 		p.tasks.push_back("a");
 		p.tasks.push_back("b");
 		p.rows.push_back({"x", {{0,0}, {1,100}}});
 		p.rows.push_back({"y", {{1,50}, {1,30}}});
+#endif
 		p.id = *contestID;
 		render("scores", p);
 	}
