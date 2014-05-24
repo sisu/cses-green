@@ -190,8 +190,8 @@ struct SubmitPage: Page {
 		}
 	};
 	Form form;
-	//vector<pair<unsigned,string>> tasks;
-	//vector<pair<string,string>> languages;
+	ID id;
+	string name;
 };
 
 struct ViewPage: Page {	
@@ -209,6 +209,16 @@ struct ViewPage: Page {
 	};
 	vector<group> groups;
 	int points, total;
+};
+
+struct ListPage: Page {
+	ID id;
+	string name;
+};
+
+struct ScoresPage: Page {
+	ID id;
+	string name;
 };
 
 }
