@@ -79,7 +79,7 @@ bool Language::isValidName(const string& value) {
 
 void Language::setSuffix(const string& value) {
 	if(!isValidSuffix(value)) throw Error("Language::setSuffix: Invalid value.");
-	name = value;
+	suffix = value;
 }
 
 bool Language::isValidSuffix(const string& value) {

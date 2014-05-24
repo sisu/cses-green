@@ -120,15 +120,6 @@ window.setInterval("update()", 1000);
 <% end template %>
 <% end view %>
 
-<% view user uses UserPage extends page %>
-<% template body() %>
-user
-<form method="post" action=""><%csrf%>
-<% form as_p info %>
-</form>
-<% end template %>
-<% end view %>
-
 <% view registration uses RegistrationPage extends page %>
 <% template body() %>
 <h1>Register user</h1>
@@ -207,6 +198,8 @@ user
 <% template body() %>
 <h1>Admin panel</h1>
 <h2>Edit language</h2>
+<% if nameInUse %><p>Edit failed: name already in use.</p><% end %>
+<% if success %><p>Language successfully edited.</p><% end %>
 <form method="post" action=""><%csrf%>
 <% form as_p form %>
 </form>

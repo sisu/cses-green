@@ -160,7 +160,7 @@ struct SubmissionProgram {
 
 #pragma db value
 struct EvaluatorProgram {
-	shared_ptr<SubmissionLanguage> language;
+	shared_ptr<EvaluatorLanguage> language;
 	MaybeFile source;
 	MaybeFile binary;
 };
