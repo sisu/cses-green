@@ -31,22 +31,6 @@ struct HasID {
 
 typedef string StrField;
 #pragma db value(StrField) type(STR_FIELD)
-/*
-#pragma db object
-struct File: HasID {
-#pragma db type(STR_FIELD)
-	string hash;
-#pragma db type(STR_FIELD)
-	string name;
-
-	File() {}
-	File(string hash, string name): hash(hash), name(name) {}
-};
-typedef shared_ptr<File> File;
-#pragma db value(File) not_null
-typedef shared_ptr<File> MaybeFile;
-#pragma db value(MaybeFile) null
-*/
 
 #pragma db value
 struct File {
