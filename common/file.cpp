@@ -75,6 +75,10 @@ unique_ptr<std::ifstream> openFileByHash(const string& hash) {
 	return ret;
 }
 
+string getFileStoragePath(const string& hash) {
+	return "files/" + hash;
+}
+
 bool fileHashExists(const string& hash) {
 	string filename = "files/" + hash;
 	

@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <set>
 #include <map>
+#include <unordered_map>
+#include <set>
+#include <unordered_set>
 //#include <boost/optional.hpp>
 
 namespace cses {
@@ -27,6 +30,9 @@ using std::move;
 using std::swap;
 using std::set;
 using std::map;
+using std::unordered_map;
+using std::set;
+using std::unordered_set;
 
 struct Error : std::exception {
 public:
