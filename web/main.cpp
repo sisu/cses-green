@@ -51,9 +51,12 @@ struct Server: cppcms::application {
 		
 		dispatcher().assign("/admin/language/(\\d+|new)/", &Server::adminEditLanguage, this, 1);
 		mapper().assign("adminEditLanguage", "admin/language/{1}/");
-                
-                dispatcher().assign("/admin/import/", &Server::adminImport, this);
-                mapper().assign("adminImport", "admin/import/");
+
+		dispatcher().assign("/admin/import/", &Server::adminImport, this);
+		mapper().assign("adminImport", "admin/import/");
+
+		dispatcher().assign("/static/([a-z_0-9\\.]+)", &Server::staticServe, this, 1);
+		mapper().assign("static", "static/{1}");
 		
 		mapper().root("/");
 	}
@@ -448,13 +451,13 @@ struct Server: cppcms::application {
 		render("adminEditLanguage", c);
 	}
 	
-        void adminImport() {
-                if(!isCurrentUserAdmin()) {
-                        sendRedirectHeader("/");
-                        return;
-                }
-                
-                AdminImportPage c;
+	void adminImport() {
+		if(!isCurrentUserAdmin()) {
+			sendRedirectHeader("/");
+			return;
+		}
+
+		AdminImportPage c;
 		if (isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
@@ -560,8 +563,18 @@ struct Server: cppcms::application {
 				system(command.c_str());
 			}
 		}
-                render("adminImport", c);
-        }
+		render("adminImport", c);
+	}
+
+	void staticServe(string file) {
+		std::ifstream f(("static/" + file).c_str());
+		if(!f) {
+			response().status(404);
+		} else {
+			response().content_type("application/octet-stream");
+			response().out() << f.rdbuf();
+		}
+	}
 	
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
