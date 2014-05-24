@@ -229,8 +229,8 @@ struct Result: HasID {
 	MaybeFile output;
 	MaybeFile errOutput;
 	ResultStatus status;
-	float time;
-	int memory;
+	float timeInSeconds;
+	int memoryInBytes;
 };
 
 #pragma db object
