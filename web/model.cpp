@@ -133,7 +133,7 @@ void makeDB() {
 		shared_ptr<Submission> s(new Submission());
 		s->user = testUser;
 		s->task = firstTask;
-		s->language = cpp;
+		s->program.language = cpp;
 		db->persist(s.get());
 		for (int j = 0; j < 20; j++) {
 			Result r;
