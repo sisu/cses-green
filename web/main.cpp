@@ -153,13 +153,11 @@ struct Server: cppcms::application {
 				submission->user = user;
 				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
 				submission->task = task;
-				shared_ptr<Language> language = getSharedPtr<Language>(*languageID);
-				assert(language);
-				submission->language = language;
+				submission->program.language = getSharedPtr<Language>(*languageID);
 				submission->status = SubmissionStatus::PENDING;
 				odb::transaction t(db->begin());
 				db->persist(*codeFile);
-				submission->source = move(codeFile);
+				submission->program.source = move(codeFile);
 				db->persist(*submission);
 				t.commit();
 				addForJudging(submission);

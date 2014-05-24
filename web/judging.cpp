@@ -1,6 +1,7 @@
 #include "gen-cpp/Judge.h"
 #include "judging.hpp"
 #include "common/file.hpp"
+#include "common/io_util.hpp"
 #include "model_db-odb.hxx"
 #include <thread>
 #include <condition_variable>
@@ -184,7 +185,7 @@ protected:
 		for(shared_ptr<TestCase> test: testCases) {
 			Result result = runForInput(connection, test);
 			if (result.output) {
-				evaluateOutput(connection, test, result.output->hash);
+				evaluateOutput(connection, move(result));
 			}
 		}
 	}
@@ -193,10 +194,10 @@ private:
 	vector<shared_ptr<TestCase>> testCases;
 
 	Result runForInput(JudgeConnection connection, shared_ptr<TestCase> test) {
-		shared_ptr<Language> lang = submission->language;
+		shared_ptr<Language> lang = submission->program.language;
 		TaskPtr task = submission->task;
 		StringMap inputs;
-		inputs["binary"] = submission->binary->hash;
+		inputs["binary"] = submission->program.binary->hash;
 		inputs["input"] = test->input->hash;
 		StringMap result = connection.runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
 		Result res;
@@ -214,7 +215,18 @@ private:
 		return res;
 	}
 
-	void evaluateOutput(JudgeConnection connection, shared_ptr<TestCase> test, string outputHash) {
+	void evaluateOutput(JudgeConnection connection, Result result) {
+		DockerImage image;
+		StringMap inputs;
+		inputs["output"] = result.output->hash;
+		inputs["correct"] = result.testCase->output->hash;
+		StringMap resMap = connection.runOnJudge(image, inputs, 1.0, 100<<20);
+		string resStr = readFileByHash(resMap["result"]);
+
+		odb::transaction t(db->begin());
+		result.status = (ResultStatus)*stringToInteger<int>(resStr);
+		db->update(result);
+		t.commit();
 	}
 };
 
@@ -224,14 +236,14 @@ public:
 	}
 protected:
 	void run(JudgeConnection connection, JudgeMaster& master) override {
-		shared_ptr<Language> lang = submission->language;
+		shared_ptr<Language> lang = submission->program.language;
 		StringMap inputs;
-		inputs["source"] = submission->source->hash;
+		inputs["source"] = submission->program.source->hash;
 		StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
 		if (result.count("binary")) {
 			odb::transaction t(db->begin());
-			submission->binary.reset(new File(result["binary"], "binary"));
-			db->persist(submission->binary.get());
+			submission->program.binary.reset(new File(result["binary"], "binary"));
+			db->persist(submission->program.binary.get());
 			db->update(submission.get());
 			t.commit();
 			startTestGroups(master);

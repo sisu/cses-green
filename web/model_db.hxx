@@ -13,6 +13,7 @@ struct Contest;
 struct TestCase;
 struct Submission;
 struct Group;
+struct Language;
 
 typedef unsigned ID;
 
@@ -125,14 +126,25 @@ private:
 
 typedef shared_ptr<Contest> ContestPtr;
 
+#pragma db value
+struct Program {
+#pragma db null
+	shared_ptr<Language> language;
+	MaybeFile source;
+	MaybeFile binary;
+};
+
 #pragma db object pointer(shared_ptr)
 struct Task: HasID, std::enable_shared_from_this<Task> {
 #pragma db unique
 	StrField name;
 	//ContestPtr contest;
-	
-	//UniqueFile evaluator;
-	
+
+	Program evaluator;
+
+	shared_ptr<Language> evaluatorLanguage;
+	MaybeFile evaluatorSource;
+
 #pragma db value_not_null inverse(task) section(sec)
 	vector<shared_ptr<TestCase>> testCases;
 //#pragma db value_not_null inverse(task) section(sec)
@@ -206,9 +218,7 @@ struct Submission: HasID {
 	UserPtr user;
 	TaskPtr task;
 #pragma db not_null
-	shared_ptr<Language> language;
-	UniqueFile source;
-	MaybeFile binary;
+	Program program;
 	SubmissionStatus status;
 };
 typedef shared_ptr<Submission> SubmissionPtr;
