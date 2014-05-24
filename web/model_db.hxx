@@ -214,13 +214,21 @@ struct Submission: HasID {
 typedef shared_ptr<Submission> SubmissionPtr;
 #pragma db value(SubmissionPtr) not_null
 
+enum class ResultStatus {
+	CORRECT,
+	WRONG_ANSWER,
+	TIME_LIMIT,
+	RUNTIME_ERROR,
+	INTERNAL_ERROR
+};
+
 #pragma db object
 struct Result: HasID {
 	SubmissionPtr submission;
 	shared_ptr<TestCase> testCase;
 	MaybeFile output;
 	MaybeFile errOutput;
-	int result;
+	ResultStatus status;
 	float time;
 	int memory;
 };
