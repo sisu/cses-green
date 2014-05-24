@@ -332,13 +332,13 @@ struct Server: cppcms::application {
 			odb::transaction t(db->begin());
 			db->load(*cnt, cnt->sec);
 			
-			for (auto x : cnt->tasks) {
+			for(const auto& x : cnt->tasks) {
 				c.form.task.add(x->name, std::to_string(x->id));
 			}  		
   		
 			odb::result<SubmissionLanguage> languageRes = db->query<SubmissionLanguage>();
-			for (auto x : languageRes) {
-				c.form.language.add(x.name, std::to_string(x.id));
+			for(const auto& x : languageRes) {
+				c.form.language.add(x.getName(), std::to_string(x.id));
 			}
 		}
 		
@@ -546,12 +546,12 @@ struct Server: cppcms::application {
 				
 			}
 		} else if(!createNew) {
-			c.form.name.value(lang->name);
-			c.form.suffix.value(lang->suffix);
-			c.form.compilerRepository.value(lang->compiler.repository);
-			c.form.compilerImageID.value(lang->compiler.id);
-			c.form.runnerRepository.value(lang->runner.repository);
-			c.form.runnerImageID.value(lang->runner.id);
+			c.form.name.value(lang->getName());
+			c.form.suffix.value(lang->getSuffix());
+			c.form.compilerRepository.value(lang->compiler.getRepositoryName());
+			c.form.compilerImageID.value(lang->compiler.getImageID());
+			c.form.runnerRepository.value(lang->runner.getRepositoryName());
+			c.form.runnerImageID.value(lang->runner.getImageID());
 		}
 		
 		render("adminEditLanguage", c);

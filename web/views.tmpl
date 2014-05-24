@@ -170,7 +170,7 @@ user
 <table>
 	<% item %>
 	<tr>
-		<td><%= language.name %></td>
+		<td><%= language.getName() %></td>
 		<td><a href="<% url "adminEditLanguage" using SUBMISSION_LANGUAGE, language.id %>">Edit</a></td>
 	</tr>
 	<% end %>
@@ -182,7 +182,7 @@ user
 <table>
 	<% item %>
 	<tr>
-		<td><%= language.name %></td>
+		<td><%= language.getName() %></td>
 		<td><a href="<% url "adminEditLanguage" using EVALUATOR_LANGUAGE, language.id %>">Edit</a></td>
 	</tr>
 	<% end %>

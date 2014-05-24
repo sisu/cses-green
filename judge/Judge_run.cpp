@@ -1,5 +1,6 @@
 #include "Judge.hpp"
 #include "file.hpp"
+#include "judge_interface.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -10,6 +11,8 @@
 
 namespace cses {
 
+using namespace judge_interface;
+
 namespace {
 
 template <typename T>
@@ -17,30 +20,6 @@ T withMsg(const string& msg) {
 	T ret;
 	ret.msg = msg;
 	return ret;
-}
-
-bool isSafeIdentifier(const string& str) {
-	if(str.empty() || str.size() > 64) return false;
-	for(char c : str) {
-		if(!(
-			(c >= 'a' && c <= 'z') ||
-			(c >= 'A' && c <= 'Z') ||
-			(c >= '0' && c <= '9') ||
-			c == '_'
-		)) return false;
-	}
-	return true;
-}
-
-bool isValidImageID(const string& str) {
-	if(str.size() != 64) return false;
-	for(char c : str) {
-		if(!(
-			(c >= '0' && c <= '9') ||
-			(c >= 'a' && c <= 'f')
-		)) return false;
-	}
-	return true;
 }
 
 bool isValidContainerID(const string& str) {

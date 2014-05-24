@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include "judge_interface.hpp"
 
 #include <odb/core.hxx>
 #include <odb/lazy-ptr.hxx>
@@ -49,30 +50,105 @@ typedef shared_ptr<File> MaybeFile;
 
 #pragma db value
 struct DockerImage {
-#pragma db type(STR_FIELD)
-	string repository;
-#pragma db type(STR_FIELD)
-	string id;
+public:
+	DockerImage(const string& repository, const string& id);
+	
+	static bool isValidRepositoryName(const string& value) {
+		return judge_interface::isSafeIdentifier(value);
+	}
+	static bool isValidImageID(const string& value) {
+		return judge_interface::isValidImageID(value);
+	}
+	
+	const string& getRepositoryName() const {
+		return repository;
+	}
+	const string& getImageID() const {
+		return id;
+	}
+	
+private:
+	DockerImage() { }
+	
+	StrField repository;
+	StrField id;
+	
+	friend class odb::access;
+	friend class Language;
 };
 
 
 #pragma db object abstract
 struct Language: HasID {
+public:
+	Language(
+		const string& name,
+		const string& suffix,
+		const DockerImage& compiler,
+		const DockerImage& runner
+	);
+	
+	DockerImage compiler;
+	DockerImage runner;
+	
+	const string& getName() const {
+		return name;
+	}
+	void setName(const string& value);
+	
+	// Language names must be strings of length 1-255.
+	static bool isValidName(const string& value);
+	
+	const string& getSuffix() const {
+		return suffix;
+	}
+	void setSuffix(const string& value);
+	
+	// Language suffixes must be strings of length 0-16.
+	// Empty suffix denotes no suffix.
+	static bool isValidSuffix(const string& value);
+protected:
+	Language() { }
+	
+private:
 	StrField name;
 #pragma db type(CHAR_FIELD(16))
 	string suffix;
-	DockerImage compiler;
-	DockerImage runner;
+	
+	friend class odb::access;
 };
 
 #pragma db object pointer(shared_ptr)
 struct SubmissionLanguage: Language {
+public:
 #pragma db index unique member(name)
+	SubmissionLanguage(
+		const string& name,
+		const string& suffix,
+		const DockerImage& compiler,
+		const DockerImage& runner
+	) : Language(name, suffix, compiler, runner) { }
+	
+private:
+	SubmissionLanguage() { }
+	
+	friend class odb::access;
 };
 
 #pragma db object pointer(shared_ptr)
 struct EvaluatorLanguage: Language {
+public:
 #pragma db index unique member(name)
+	EvaluatorLanguage(
+		const string& name,
+		const string& suffix,
+		const DockerImage& compiler,
+		const DockerImage& runner
+	) : Language(name, suffix, compiler, runner) { }
+	
+private:
+	EvaluatorLanguage() { }
+	friend class odb::access;
 };
 
 #pragma db value

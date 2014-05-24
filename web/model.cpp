@@ -43,6 +43,51 @@ string genSalt() {
 
 } // end anonymous namespace
 
+
+DockerImage::DockerImage(const string& repository, const string& id)
+	: repository(repository),
+	  id(id)
+{
+	if(!isValidRepositoryName(repository)) {
+		throw Error("DockerImage::DockerImage: Invalid repository name.");
+	}
+	if(!isValidImageID(id)) {
+		throw Error("DockerImage::DockerImage: Invalid image ID.");
+	}
+}
+
+
+Language::Language(
+	const string& name,
+	const string& suffix,
+	const DockerImage& compiler,
+	const DockerImage& runner
+) : compiler(compiler), runner(runner) {
+	setName(name);
+	setSuffix(suffix);
+}
+
+void Language::setName(const string& value) {
+	if(!isValidName(value)) throw Error("Language::setName: Invalid value.");
+	name = value;
+}
+
+bool Language::isValidName(const string& value) {
+	size_t codepointCount = countCodePoints(value);
+	return codepointCount != 0 && codepointCount <= 255;
+}
+
+void Language::setSuffix(const string& value) {
+	if(!isValidSuffix(value)) throw Error("Language::setSuffix: Invalid value.");
+	name = value;
+}
+
+bool Language::isValidSuffix(const string& value) {
+	size_t codepointCount = countCodePoints(value);
+	return codepointCount <= 16;
+}
+
+
 User::User(string name, string password, bool admin, bool active) {
 	setName(name);
 	setPassword(password);
@@ -90,16 +135,13 @@ void makeDB() {
 		shared_ptr<User> testUser(new User("a", "a", true));
 		db->persist(*testUser);
 		
-		shared_ptr<SubmissionLanguage> cpp(new SubmissionLanguage());
-		cpp->name = "C++";
-		cpp->suffix = "cpp";
-		cpp->compiler.repository = "repo";
-		cpp->compiler.id = "7989ad889d330ded7c203a599a3755a753234df21586129cb30884189e1f5d2e";
-		db->persist(*cpp);
-		shared_ptr<SubmissionLanguage> java(new SubmissionLanguage());
-		java->name = "Java";
-		java->suffix = "java";
-		db->persist(*java);
+		DockerImage cppCompiler("dummy", "7989ad889d330ded7c203a599a3755a753234df21586129cb30884189e1f5d2e");
+		DockerImage binaryRunner("dummy", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+		
+		shared_ptr<SubmissionLanguage> cpp(
+			new SubmissionLanguage("C++", "cpp", cppCompiler, binaryRunner)
+		);
+		db->persist(cpp);
 
 		JudgeHost host;
 		host.name = host.host = "localhost";
