@@ -170,8 +170,10 @@ struct Server: cppcms::application {
 		
 		ind = 0;
 		for (auto group : task->testGroups) {
-			if (remaining[ind] == 0) c.groups[ind].points = group->points;
-			c.points += group->points;
+			if (remaining[ind] == 0) {
+				c.groups[ind].points = group->points;
+				c.points += group->points;
+			}
 			ind++;
 		}
  		

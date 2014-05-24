@@ -157,7 +157,7 @@ void makeDB() {
 			r.testCase = cases[j];
 			r.timeInSeconds = 0.1*j;
 			r.memoryInBytes = 10*j;
-			if (j < 12) r.status = ResultStatus::CORRECT;
+			if (j < 15) r.status = ResultStatus::CORRECT;
 			else r.status = ResultStatus::TIME_LIMIT;
 			r.submission = s;
 			db->persist(r);
