@@ -14,6 +14,7 @@ public:
 	
 	void write(const char* data, size_t length);
 	void writeFileContents(const string& filename);
+	void writeStream(std::istream& in);
 	
 	// Save the file so that it can be opened with openFileByHash. Returns
 	// the hash. Should be called only once.
@@ -27,6 +28,10 @@ private:
 	std::string tmpfilename;
 	std::ofstream tmpfile;
 };
+
+string saveStringToFile(const string& data);
+
+string saveStreamToFile(std::istream& in);
 
 // Open file previously stored using FileSave by its hash. The stream is
 // returned as a pointer because of GCC bug, but it is never nullptr.
@@ -44,6 +49,9 @@ bool fileHashExists(const string& hash);
 // Check whether string is a valid file hash.
 bool isValidFileHash(const string& str);
 
-string readFileByHash(const string& hash);
+string readFile(std::istream& in);
 
+//string readFileByName(const string& name);
+
+string readFileByHash(const string& hash);
 }

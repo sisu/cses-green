@@ -379,16 +379,7 @@ struct Server: cppcms::application {
 				optional<ID> taskID = stringToInteger<ID>(c.form.task.selected_id());
 				optional<ID> languageID = stringToInteger<ID>(c.form.language.selected_id());
 				BOOSTER_DEBUG("lol") << c.form.task.selected_id() << " " << c.form.language.selected_id() << " " << c.form.file.value()->name();
-				std::istream &is = c.form.file.value()->data();
-				is.seekg(0, is.end);
-				int len = is.tellg();
-				is.seekg(0, is.beg);
-				char *buffer = new char[len];
-				is.read(buffer, len);
-				FileSave saver;
-				saver.write(buffer, len);
-				delete[] buffer;
-				string hash = saver.save();
+				string hash = saveStreamToFile(c.form.file.value()->data());
 				MaybeFile codeFile;
 				codeFile.hash = hash;
 				shared_ptr<Submission> submission(new Submission);
