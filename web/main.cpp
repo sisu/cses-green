@@ -109,6 +109,8 @@ struct Server: cppcms::application {
 	}
 
 	void list(string id) {
+		odb::session s2;
+
 		optional<ID> contestID = stringToInteger<ID>(id);
 		ListPage p;
 		p.id = *contestID;
@@ -274,6 +276,8 @@ struct Server: cppcms::application {
 	}
 	
 	void submit(string id) {
+		odb::session s2;
+		
 		SubmitPage c;
  		optional<ID> contestID = stringToInteger<ID>(id);
 		c.id = *contestID;

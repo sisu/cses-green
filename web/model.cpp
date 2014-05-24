@@ -110,6 +110,7 @@ void makeDB() {
 		cnt->name = "testikisa";
 		shared_ptr<Task> lastTask;
 		shared_ptr<TestCase> cases[20];
+		db->persist(cnt);
 		for (int i = 0; i < 3; i++) {
 			shared_ptr<Task> tsk(new Task());
 			if (i == 2) lastTask = tsk;
@@ -118,7 +119,7 @@ void makeDB() {
 			if (i == 2) tsk->name = "cembalo";
 			tsk->timeInSeconds = 2;
 			tsk->memoryInBytes = 16*1024*1024;
-			//tsk->contest = cnt;
+			tsk->contest = cnt;
 			db->persist(tsk);
 			
 			for(int j=0; j<3; ++j) {
@@ -144,7 +145,6 @@ void makeDB() {
 			}
 			cnt->tasks.push_back(tsk);
 		}
-		db->persist(cnt);
 		
 // 		t.commit();
 // 		return;
