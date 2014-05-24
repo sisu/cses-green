@@ -20,11 +20,11 @@ using namespace cses;
 typedef std::unordered_map<string,string> StringMap;
 
 struct JudgeConnection {
-	string host;
+	JudgeHost host;
 	protocol::JudgeClient client;
 	string token = "uolevi";
 
-	JudgeConnection(string host): host(host), client(makeProtocol(host)) {
+	JudgeConnection(JudgeHost host): host(host), client(makeProtocol(host.host, host.port)) {
 	}
 
 	StringMap runOnJudge(DockerImage image, const StringMap& inputs, double timeLimit, int memoryLimit) {
@@ -68,16 +68,18 @@ struct JudgeConnection {
 	}
 
 	bool operator<(const JudgeConnection& c) const {
-		return host < c.host;
+		if (host.name != c.host.name) return host.name < c.host.name;
+		if (host.host != c.host.host) return host.host < c.host.host;
+		return host.port < c.host.port;
 	}
 
 private:
-	static boost::shared_ptr<apache::thrift::protocol::TProtocol> makeProtocol(string host) {
+	static boost::shared_ptr<apache::thrift::protocol::TProtocol> makeProtocol(string host, int port) {
 		using namespace apache::thrift;
 		using namespace apache::thrift::protocol;
 		using namespace apache::thrift::transport;
 
-		boost::shared_ptr<TTransport> socket(new TSocket(host, 9090));
+		boost::shared_ptr<TTransport> socket(new TSocket(host, port));
 		boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
 		boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 		transport->open();

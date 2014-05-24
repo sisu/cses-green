@@ -247,6 +247,7 @@ struct Result: HasID {
 struct JudgeHost: HasID {
 	StrField name;
 	StrField host;
+	int port;
 };
 
 #pragma db object
