@@ -27,9 +27,12 @@ struct Server: cppcms::application {
 		dispatcher().assign("/contest/(\\d+)/", &Server::contest, this, 1);
 		mapper().assign("contest", "contest/{1}/");
 
-		dispatcher().assign("/contest/(\\d+)/submit/", &Server::submit, this, 1);
-		mapper().assign("submit", "contest/{1}/submit/");
+		dispatcher().assign("/submit/(\\d+)/", &Server::submit, this, 1);
+		mapper().assign("submit", "submit/{1}/");
 
+		dispatcher().assign("/view/(\\d+)/", &Server::view, this, 1);
+		mapper().assign("view", "view/{1}/");
+		
 		dispatcher().assign("/user/(\\d*)/", &Server::user, this, 1);
 		mapper().assign("user", "user/{1}/");
 		
@@ -97,6 +100,12 @@ struct Server: cppcms::application {
 		}
 #endif
 		render("contest", c);
+	}
+	
+	void view(string id) {
+		ViewPage c;
+		optional<ID> submissionID = stringToInteger<ID>(id);
+		render("view", c);
 	}
 	
 	void submit(string id) {

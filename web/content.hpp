@@ -194,5 +194,7 @@ struct SubmitPage: Page {
 	//vector<pair<string,string>> languages;
 };
 
+struct ViewPage: Page {	
+};
 
 }
