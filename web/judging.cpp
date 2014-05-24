@@ -262,6 +262,7 @@ private:
 		DockerImage image;
 		StringMap inputs;
 		inputs["output"] = result.output->hash;
+		inputs["input"] = result.testCase->input->hash;
 		inputs["correct"] = result.testCase->output->hash;
 		StringMap resMap = connection.runOnJudge(image, inputs, 1.0, 100<<20);
 		string resStr = readFileByHash(resMap["result"]);
