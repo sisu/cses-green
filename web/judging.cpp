@@ -53,7 +53,7 @@ struct JudgeConnection {
 		options.timeLimit = timeLimit;
 		options.memoryLimitBytes = memoryLimit;
 		protocol::RunResult result;
-		client.run(result, token, image.repository, image.id, fileRefs, options);
+		client.run(result, token, image.getRepositoryName(), image.getImageID(), fileRefs, options);
 		StringMap map;
 		for(protocol::FileRef outFile: result.outputs) {
 			if (!fileHashExists(outFile.hash)) {
@@ -259,7 +259,7 @@ private:
 	}
 
 	void evaluateOutput(JudgeConnection connection, Result result) {
-		DockerImage image;
+		DockerImage image = submission->task->evaluator.language->runner;
 		StringMap inputs;
 		inputs["output"] = result.output->hash;
 		inputs["input"] = result.testCase->input->hash;
