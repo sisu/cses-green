@@ -98,16 +98,23 @@ struct Server: cppcms::application {
 		render("contest", c);
 	}
 	
-	void submit(string cnt) {
+	void submit(string id) {
 		SubmitPage c;
+ 		optional<ID> contestID = stringToInteger<ID>(id);
+		
+		optional<Contest> cnt = getObjectIfExists<Contest>(*contestID);
+		//optional<Task> cnt = getObjectIfExists<Task>(*contestID);
+		
+ 		//odb::query<Task> q (odb::query<Task>::contest == contestID);
+ 		
+  		//odb::transaction t(db->begin());		
+  		//odb::result<Task> taskRes = db->query<Task>(q);
+		odb::transaction t(db->begin());
+		db->load(*cnt, cnt->sec);
 
-// 		odb::transaction t(db->begin());		
-// 		odb::result<Task> contestRes = db->query<Task>();
-// 		for (auto x : contestRes) {
-// 			c.form.task.add(to_string(x.id), x.name);
-// 		}		
-// 		
-// 		c.form.task.add();
+		for (auto x : cnt->tasks) {
+  			c.form.task.add(x->name, std::to_string(x->id));
+  		}
 		render("submit", c);
 	}
 
@@ -323,10 +330,12 @@ struct Server: cppcms::application {
 				odb::transaction t(db->begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
+				//db->persist(newContest.get());				
 				for (auto x : data) {
 					shared_ptr<Task> newTask(new Task());
-					string taskName = contestName + "_" + x.first;
+					string taskName = x.first;
 					newTask->name = taskName;
+					//newTask->contest = newContest;					
 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
 						unique_ptr<File> newInput(new File()), newOutput(new File());
 						newInput->name = data[x.first].first[i];
@@ -368,10 +377,11 @@ struct Server: cppcms::application {
 						newCase->input = move(newInput);
 						newCase->output = move(newOutput);
 						newCase->group = 1;
+						//newCase->task = newTask;
  						db->persist(newCase.get());
  						newTask->testCases.push_back(move(newCase));
 					}
-					db->persist(newTask.get());
+					db->persist(newTask.get());					
 					newContest->tasks.push_back(move(newTask));
 				}
 				db->persist(newContest.get());

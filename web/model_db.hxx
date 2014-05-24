@@ -123,7 +123,7 @@ private:
 };
 #endif
 
-//typedef shared_ptr<Contest> ContestPtr;
+typedef shared_ptr<Contest> ContestPtr;
 
 #pragma db object
 struct Task: HasID {
@@ -133,7 +133,8 @@ struct Task: HasID {
 	
 	//UniqueFile evaluator;
 	
-#pragma db value_not_null inverse(task) section(sec)
+//#pragma db value_not_null inverse(task) section(sec)
+#pragma db value_not_null section(sec)
 	vector<unique_ptr<TestCase>> testCases;
 //#pragma db value_not_null inverse(task)
 #pragma db value_not_null section(sec)
@@ -151,7 +152,7 @@ typedef shared_ptr<Task> TaskPtr;
 
 #pragma db object
 struct TestCase: HasID {
-	TaskPtr task;
+	//TaskPtr task;
 	UniqueFile input;
 	UniqueFile output;
 	int group;
@@ -166,6 +167,8 @@ private:
 struct Contest: HasID {
 #pragma db unique
 	StrField name;
+//#pragma db value_not_null inverse(contest) section(sec)	
+#pragma db value_not_null section(sec)	
 	vector<TaskPtr> tasks;
 
 #if 0
@@ -175,6 +178,9 @@ struct Contest: HasID {
 	vector<shared_ptr<Group>> groups;
 #endif
 
+#pragma db load(lazy) update(manual)	
+	odb::section sec;
+	
 	Contest() {}
 private:
 	friend class odb::access;
