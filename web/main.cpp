@@ -568,7 +568,7 @@ struct Server: cppcms::application {
 				odb::transaction t(db->begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
-				//db->persist(newContest.get());				
+				db->persist(newContest);				
 				for (auto x : data) {
 					BOOSTER_INFO("lol") << "banaani";
 					shared_ptr<Task> newTask(new Task());
@@ -578,7 +578,7 @@ struct Server: cppcms::application {
 					group->task = newTask;
 					group->points = 100;
 					newTask->testGroups.push_back(group);
-					//newTask->contest = newContest;					
+					newTask->contest = newContest;					
 					db->persist(newTask);					
 					db->persist(group);
 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
@@ -628,7 +628,6 @@ struct Server: cppcms::application {
 					}
 					newContest->tasks.push_back(move(newTask));
 				}
-				db->persist(newContest);
 				t.commit();
 				command = "rm -rf " + newName;
 				system(command.c_str());
