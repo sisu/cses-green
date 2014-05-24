@@ -269,7 +269,7 @@ public:
 		if (result.count("binary")) {
 			odb::transaction t(db->begin());
 			program.binary.reset(new File(result["binary"], "binary"));
-			db->persist(program.binary.get());
+			db->persist(program.binary);
 			db->update(owner);
 			t.commit();
 		}

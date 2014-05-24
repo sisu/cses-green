@@ -5,7 +5,7 @@
 #include <odb/lazy-ptr.hxx>
 #include <odb/section.hxx>
 
-#pragma db namespace session	
+#pragma db namespace session pointer(std::shared_ptr)
 namespace cses {
 
 extern unique_ptr<odb::database> db;
@@ -42,9 +42,9 @@ struct File: HasID {
 	File() {}
 	File(string hash, string name): hash(hash), name(name) {}
 };
-typedef unique_ptr<File> UniqueFile;
+typedef shared_ptr<File> UniqueFile;
 #pragma db value(UniqueFile) not_null
-typedef unique_ptr<File> MaybeFile;
+typedef shared_ptr<File> MaybeFile;
 #pragma db value(MaybeFile) null
 
 
@@ -169,7 +169,7 @@ struct TestGroup: HasID {
 	weak_ptr<Task> task;
 #pragma db value_not_null inverse(group)
 	vector<shared_ptr<TestCase>> tests;
-	int points;
+	int points = 1;
 };
 
 #pragma db object

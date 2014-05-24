@@ -67,7 +67,7 @@ struct Server: cppcms::application {
 	}
 #endif
 	void contests() {
-		optional<User> user = getCurrentUser();
+		shared_ptr<User> user = getCurrentUser();
 		if(user) {
 			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->getName() << "\" visited the page.";
 		} else {
@@ -108,12 +108,19 @@ struct Server: cppcms::application {
 		
 		ViewPage c;
 		optional<ID> submissionID = stringToInteger<ID>(id);
-		optional<Submission> s = getObjectIfExists<Submission>(*submissionID);
+		shared_ptr<Submission> s = getSharedPtr<Submission>(*submissionID);
 
 		odb::transaction t(db->begin());
 		//odb::query<Result> q (odb::query<Result>::submission == *submissionID);
 		odb::result<Result> sRes = db->query<Result>();
-		BOOSTER_DEBUG("lol") << sRes.size();
+// 		int cnt = 0;
+ 		for (auto &x : sRes) {
+ 			BOOSTER_DEBUG("lol") << x.id;
+// 			cnt++;
+		}
+// 		BOOSTER_DEBUG("lol") << cnt;
+		//sRes.cache();
+		//BOOSTER_DEBUG("lol") << sRes.size();
 		
 		c.points = 50;
 		c.total = 100;
@@ -140,7 +147,7 @@ struct Server: cppcms::application {
 		SubmitPage c;
  		optional<ID> contestID = stringToInteger<ID>(id);
 		
-		optional<Contest> cnt = getObjectIfExists<Contest>(*contestID);
+		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		
 		{
 			odb::transaction t(db->begin());
@@ -172,11 +179,11 @@ struct Server: cppcms::application {
 				saver.write(buffer, len);
 				delete[] buffer;
 				string hash = saver.save();
-				unique_ptr<File> codeFile(new File());
+				shared_ptr<File> codeFile(new File());
 				codeFile->hash = hash;
 				codeFile->name = c.form.file.value()->name();
 				shared_ptr<Submission> submission(new Submission);
-				shared_ptr<User> user = getCurrentUserPtr();
+				shared_ptr<User> user = getCurrentUser();
 				submission->user = user;
 				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
 				submission->task = task;
@@ -275,7 +282,7 @@ struct Server: cppcms::application {
 			return;
 		}
 		
-		optional<User> user = getObjectIfExists<User>(*userID);
+		shared_ptr<User> user = getSharedPtr<User>(*userID);
 		if(!user) {
 			sendRedirectHeader("/admin");
 			return;
@@ -344,7 +351,7 @@ struct Server: cppcms::application {
 		
 		optional<Language> lang;
 		if(!createNew) {
-			optional<Language> lang = getObjectIfExists<Language>(*langID);
+			shared_ptr<Language> lang = getSharedPtr<Language>(*langID);
 			if(!lang) {
 				sendRedirectHeader("/admin");
 				return;
@@ -426,7 +433,7 @@ struct Server: cppcms::application {
 					db->persist(group);
 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
 						BOOSTER_INFO("lol") << "cembalo";
-						unique_ptr<File> newInput(new File()), newOutput(new File());
+						shared_ptr<File> newInput(new File()), newOutput(new File());
 						newInput->name = data[x.first].first[i];
 						newOutput->name = data[x.first].second[i];
 						FileSave inputSaver, outputSaver;
@@ -460,18 +467,18 @@ struct Server: cppcms::application {
 						
 						newInput->hash = inputHash;
 						newOutput->hash = outputHash;
-						unique_ptr<TestCase> newCase(new TestCase());
- 						db->persist(newInput.get());
- 						db->persist(newOutput.get());
+						shared_ptr<TestCase> newCase(new TestCase());
+ 						db->persist(newInput);
+ 						db->persist(newOutput);
 						newCase->input = move(newInput);
 						newCase->output = move(newOutput);
 						newCase->group = group;
- 						db->persist(newCase.get());
+ 						db->persist(newCase);
  						group->tests.push_back(move(newCase));
 					}
 					newContest->tasks.push_back(move(newTask));
 				}
-				db->persist(newContest.get());
+				db->persist(newContest);
 				t.commit();
 				command = "rm -rf " + newName;
 				system(command.c_str());
@@ -483,22 +490,8 @@ struct Server: cppcms::application {
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
 	}
-	
-	// If the user has logged in and is active, return it.
-	optional<User> getCurrentUser() {
-		if(session().is_set("id")) {
-			ID userID = session().get<ID>("id");
-			optional<User> user = getObjectIfExists<User>(userID);
-			if(user && user->isActive()) {
-				return user;
-			}
-			session().reset_session();
-			session().erase("id");
-		}
-		return optional<User>();
-	}
 
-	shared_ptr<User> getCurrentUserPtr() {
+	shared_ptr<User> getCurrentUser() {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
 			shared_ptr<User> user = getSharedPtr<User>(userID);
@@ -508,11 +501,11 @@ struct Server: cppcms::application {
 			session().reset_session();
 			session().erase("id");
 		}
-		return {};
+		return nullptr;
 	}
 	
 	bool isCurrentUserAdmin() {
-		optional<User> user = getCurrentUser();
+		shared_ptr<User> user = getCurrentUser();
 		if(!user) return false;
 		return user->isAdmin();
 	}
