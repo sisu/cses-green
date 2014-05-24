@@ -31,6 +31,12 @@ struct Server: cppcms::application {
 		dispatcher().assign("/submit/(\\d+)/", &Server::submit, this, 1);
 		mapper().assign("submit", "submit/{1}/");
 
+		dispatcher().assign("/list/(\\d+)/", &Server::list, this, 1);
+		mapper().assign("list", "list/{1}/");
+
+		dispatcher().assign("/scores/(\\d+)/", &Server::scores, this, 1);
+		mapper().assign("scores", "scores/{1}/");		
+		
 		dispatcher().assign("/view/(\\d+)/", &Server::view, this, 1);
 		mapper().assign("view", "view/{1}/");
 		
@@ -52,8 +58,8 @@ struct Server: cppcms::application {
 		dispatcher().assign("/admin/language/(\\d+|new)/", &Server::adminEditLanguage, this, 1);
 		mapper().assign("adminEditLanguage", "admin/language/{1}/");
                 
-                dispatcher().assign("/admin/import/", &Server::adminImport, this);
-                mapper().assign("adminImport", "admin/import/");
+                dispatcher().assign("/import/", &Server::adminImport, this);
+                mapper().assign("adminImport", "import/");
 		
 		mapper().root("/");
 	}
@@ -95,13 +101,23 @@ struct Server: cppcms::application {
 	void contest(string cnt) {
 		(void)cnt;
 		ContestPage c;
-#if 0
-		c.info.load(context());
-		if (c.info.validate()) {
-		}
-#endif
 		render("contest", c);
 	}
+
+	void list(string id) {
+		optional<ID> contestID = stringToInteger<ID>(id);
+		ListPage p;
+		p.id = *contestID;
+		render("list", p);
+	}
+
+	void scores(string id) {
+		optional<ID> contestID = stringToInteger<ID>(id);
+		ScoresPage p;
+		p.id = *contestID;
+		render("scores", p);
+	}
+	
 	
 	void view(string id) {
 		odb::session s2;
@@ -222,6 +238,7 @@ struct Server: cppcms::application {
 	void submit(string id) {
 		SubmitPage c;
  		optional<ID> contestID = stringToInteger<ID>(id);
+		c.id = *contestID;
 		
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		

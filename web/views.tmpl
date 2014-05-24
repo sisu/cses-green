@@ -42,10 +42,14 @@
 <% foreach c in contests %>
 <ul>
 <% item %>
-	<li><a href="<% url "contest" using c.first %>"><%= c.second %></a></li>
+	<li><a href="<% url "submit" using c.first %>"><%= c.second %></a></li>
 <% end %>
 </ul>
 <% end %>
+<h1>Administration</h1>
+<ul>
+<li><a href="<% url "adminImport" %>">Import contest</a>
+</ul>
 </body>
 </html>
 <% end template %>
@@ -53,12 +57,8 @@
 
 <% view contest uses ContestPage extends page %>
 <% template body() %>
-<form method="post" action=""><%csrf%>
-<% form as_p info %>
-</form>
 <% end template %>
 <% end view %>
-
 
 <% view user uses UserPage extends page %>
 <% template body() %>
@@ -151,16 +151,6 @@ user
 <% end template %>
 <% end view %>
 
-<% view submit uses SubmitPage extends page %>
-<% template body() %>
-<h1>Contest</h1>
-<h2>Submit solution</h2>
-<form method="post" action="" enctype="multipart/form-data"><%csrf%>
-<% form as_p form %>
-</form>
-<% end template %>
-<% end view %>
-
 <% view view uses ViewPage extends page %>
 <% template body() %>
 <h1>Contest</h1>
@@ -181,7 +171,48 @@ user
   <% end %>
   <% end %>
 <% end %>
+<% end template %>
+<% end view %>
 
+<% view submit uses SubmitPage extends page %>
+<% template body() %>
+<h1>Contest <%= name %></h1>
+<p>
+<a href="<% url "submit" using id %>">Submit solution</a> |
+<a href="<% url "list" using id %>">View submissions</a> |
+<a href="<% url "scores" using id %>">Scoreboard</a>
+</p>
+<hr>
+<h2>Submit solution</h2>
+<form method="post" action="" enctype="multipart/form-data"><%csrf%>
+<% form as_p form %>
+</form>
+<% end template %>
+<% end view %>
+
+<% view list uses ListPage extends page %>
+<% template body() %>
+<h1>Contest <%= name %></h1>
+<p>
+<a href="<% url "submit" using id %>">Submit solution</a> |
+<a href="<% url "list" using id %>">View submissions</a> |
+<a href="<% url "scores" using id %>">Scoreboard</a>
+</p>
+<hr>
+<h2>View submissions</h2>
+<% end template %>
+<% end view %>
+
+<% view scores uses ScoresPage extends page %>
+<% template body() %>
+<h1>Contest <%= name %></h1>
+<p>
+<a href="<% url "submit" using id %>">Submit solution</a> |
+<a href="<% url "list" using id %>">View submissions</a> |
+<a href="<% url "scores" using id %>">Scoreboard</a>
+</p>
+<hr>
+<h2>Scoreboard</h2>
 <% end template %>
 <% end view %>
 
