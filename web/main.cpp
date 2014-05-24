@@ -40,6 +40,9 @@ struct Server: cppcms::application {
 		
 		dispatcher().assign("/view/(\\d+)/", &Server::view, this, 1);
 		mapper().assign("view", "view/{1}/");
+
+		dispatcher().assign("/code/(\\d+)/", &Server::code, this, 1);
+		mapper().assign("code", "code/{1}/");		
 		
 		dispatcher().assign("/user/(\\d*)/", &Server::user, this, 1);
 		mapper().assign("user", "user/{1}/");
@@ -215,6 +218,19 @@ struct Server: cppcms::application {
 		render("scores", p);
 	}
 	
+	void code(string id) {
+		odb::session s2;
+		
+		CodePage c;
+		optional<ID> submissionID = stringToInteger<ID>(id);
+		shared_ptr<Submission> s = getSharedPtr<Submission>(*submissionID);
+		shared_ptr<Task> task = s->task;
+		c.ownID = *submissionID;
+		c.taskName = task->name;
+		c.code = readFileByHash(s->program.source->hash);
+		addContestInfo(c, task->contest.lock()->id);
+		render("code", c);
+	}
 	
 	void view(string id) {
 		odb::session s2;
@@ -243,6 +259,9 @@ struct Server: cppcms::application {
 		map<int,float> time;
 		map<int,int> memory;
 		map<int,string> color;
+		
+		c.ownID = *submissionID;
+		c.taskName = task->name;
 		
 		c.groups.resize(task->testGroups.size());
 		for (auto group : task->testGroups) {

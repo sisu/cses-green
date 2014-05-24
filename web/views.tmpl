@@ -225,8 +225,9 @@ user
 
 <% view view uses ViewPage extends in_contest %>
 <% template body2() %>
-<h2>View submission</h2>
+<h2>Submission for task <%= taskName %></h2>
 <h3>Status: <%= status %></h3>
+<p><a href="<% url "code" using ownID %>">Show submitted code</a></p>
 <h3>Total score: <%= points %>/<%= total %> points</h3>
 <% foreach group in groups %>
   <% item %>
@@ -243,6 +244,16 @@ user
   <% end %>
   <% end %>
 <% end %>
+<% end template %>
+<% end view %>
+
+<% view code uses CodePage extends in_contest %>
+<% template body2() %>
+<h2>Submission for task <%= taskName %></h2>
+<p><a href="<% url "view" using ownID %>">Return to submission</a></p>
+<pre>
+<%= code %>
+</pre>
 <% end template %>
 <% end view %>
 

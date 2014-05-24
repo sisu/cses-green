@@ -227,6 +227,14 @@ struct ViewPage: InContestPage {
 	vector<group> groups;
 	int points, total;
 	string status;
+	int ownID;
+	string taskName;
+};
+
+struct CodePage: InContestPage {	
+	string code;
+	int ownID;
+	string taskName;
 };
 
 struct ListPage: InContestPage {
