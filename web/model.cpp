@@ -92,6 +92,8 @@ void makeDB() {
 		shared_ptr<Language> cpp(new Language());
 		cpp->name = "C++";
 		cpp->suffix = "cpp";
+		cpp->compiler.repository = "repo";
+		cpp->compiler.id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 		db->persist(*cpp);
 		shared_ptr<Language> java(new Language());
 		java->name = "Java";

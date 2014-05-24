@@ -102,7 +102,15 @@ public:
 		unique_ptr<UnitTask> self(this);
 		ReturnConnection ret{master, connection};
 		(void)ret;
-		run(connection, master);
+		try {
+			run(connection, master);
+		} catch(const ::apache::thrift::TException& e) {
+#if 0
+			auto d = dynamic_cast<const cses::protocol::InvalidDataError&>(e);
+			cerr<<"err "<<d.msg<<'\n';
+#endif
+			throw;
+		}
 	}
 
 protected:
