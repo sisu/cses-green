@@ -54,7 +54,7 @@ struct ContestPage: Page {
 		Info() {
 			name.message("Name");
 			time.message("Time (s)");
-			time.message("Memory (MiB)");
+			memory.message("Memory (MiB)");
 			submit.value("Submit");
 			add(name);
 			add(time);

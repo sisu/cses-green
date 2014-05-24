@@ -52,6 +52,10 @@ void FileSave::writeFileContents(const string& filename) {
 	}
 }
 
+void FileSave::writeStream(std::istream& in) {
+	tmpfile << in.rdbuf();
+}
+
 string FileSave::save() {
 	if(saveCalled) throw Error("FileSave::save: Called multiple times.");
 	saveCalled = true;
@@ -79,6 +83,18 @@ string FileSave::save() {
 	}
 	
 	return hash;
+}
+
+string saveStringToFile(const string& data) {
+	FileSave saver;
+	saver.write(&data[0], data.size());
+	return saver.save();
+}
+
+string saveStreamToFile(std::istream& in) {
+	FileSave saver;
+	saver.writeStream(in);
+	return saver.save();
 }
 
 unique_ptr<std::ifstream> openFileByHash(const string& hash) {
@@ -123,9 +139,7 @@ bool isValidFileHash(const string& str) {
 	return true;
 }
 
-string readFileByHash(const string& hash) {
-	unique_ptr<std::ifstream> inPtr = openFileByHash(hash);
-	std::ifstream& in = *inPtr;
+string readFile(std::istream& in) {
 	in.exceptions(std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit);
 	in.seekg(0,std::ios::end);
 	std::streampos length = in.tellg();
@@ -134,6 +148,11 @@ string readFileByHash(const string& hash) {
 	in.read(&buffer[0],length);
 	
 	return buffer;
+}
+
+string readFileByHash(const string& hash) {
+	unique_ptr<std::ifstream> inPtr = openFileByHash(hash);
+	return readFile(*inPtr);
 }
 
 }
