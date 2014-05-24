@@ -108,6 +108,8 @@ void makeDB() {
 		
 		shared_ptr<Contest> cnt(new Contest());
 		cnt->name = "testikisa";
+		cnt->beginTime = current_time();
+		cnt->endTime = cnt->beginTime+2*3600;
 		shared_ptr<Task> lastTask;
 		shared_ptr<TestCase> cases[20];
 		db->persist(cnt);

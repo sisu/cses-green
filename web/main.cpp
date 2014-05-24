@@ -568,6 +568,8 @@ struct Server: cppcms::application {
 				odb::transaction t(db->begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
+				newContest->beginTime = current_time();
+				newContest->endTime = newContest->beginTime+2*3600;
 				db->persist(newContest);				
 				for (auto x : data) {
 					BOOSTER_INFO("lol") << "banaani";
