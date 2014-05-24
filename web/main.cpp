@@ -629,105 +629,47 @@ struct Server: cppcms::application {
 			c.form.load(context());
 			if(c.form.validate()) {
 				string contestName = c.form.name.value();
-				char directoryName[] = "zipXXXXXX";
-				mkdtemp(directoryName);
-				string newName = directoryName;				
-				c.form.package.value()->save_to(newName + "/pelle.zip");
-				string command = "unzip " + newName + "/pelle.zip -d " + newName;
-				system(command.c_str());
-				DIR *dir = opendir((newName + "/.").c_str());
-				struct dirent *d;
-				map<string, pair<vector<string>, vector<string>>> data;
-				while ((d = readdir(dir)) != NULL) {
-					string dirName = d->d_name;
-					if (dirName == ".") continue;
-					if (dirName == "..") continue;
-					if (dirName == "pelle.zip") continue;
-					DIR *dir2 = opendir((newName + "/" + dirName + "/.").c_str());
-					struct dirent *d2;
-					vector<string> inputs, outputs;
-					while ((d2 = readdir(dir2)) != NULL) {
-						string fileName = d2->d_name;
-						if (fileName == ".") continue;
-						if (fileName == "..") continue;
-						if (fileName.find(".in") != string::npos) inputs.push_back(fileName);
-						if (fileName.find(".IN") != string::npos) inputs.push_back(fileName);
-						if (fileName.find(".out") != string::npos) outputs.push_back(fileName);
-						if (fileName.find(".OUT") != string::npos) outputs.push_back(fileName);
-					}
-					sort(inputs.begin(), inputs.end());
-					sort(outputs.begin(), outputs.end());
-					while (outputs.size() < inputs.size()) outputs.push_back("");
-					data[dirName] = make_pair(inputs, outputs);
-				}
-				BOOSTER_INFO("lol") << "apina";
+				Import import;
+				import.process(c.form.package.value()->data());
+				
 				odb::transaction t(db->begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
 				newContest->beginTime = current_time();
 				newContest->endTime = newContest->beginTime+2*3600;
 				db->persist(newContest);				
-				for (auto x : data) {
-					BOOSTER_INFO("lol") << "banaani";
+				
+				auto tasks = import.tasks();
+				for (auto task : tasks) {
 					shared_ptr<Task> newTask(new Task());
-					string taskName = x.first;
-					newTask->name = taskName;
+					newTask->name = task;
 					shared_ptr<TestGroup> group(new TestGroup());
 					group->task = newTask;
 					group->points = 100;
 					newTask->testGroups.push_back(group);
-					newTask->contest = newContest;					
-					db->persist(newTask);					
+					newTask->contest = newContest;
+					db->persist(newTask);
 					db->persist(group);
-					for (size_t i = 0; i < data[x.first].first.size(); i++) {
-						BOOSTER_INFO("lol") << "cembalo";
-						File newInput;
-						File newOutput;
-						string newInputName = data[x.first].first[i];
-						string newOutputName = data[x.first].second[i];
-						FileSave inputSaver, outputSaver;
-						
-						char *buffer;
-						FILE *file;
-						int fsize;
-						
-						file = fopen((newName + "/" + x.first + "/" + newInputName).c_str(), "rb");
-						fseek(file, 0, SEEK_END);
-						fsize = ftell(file);
-						rewind(file);
-						buffer = (char*)malloc(sizeof(char)*fsize);
-						fread(buffer, 1, fsize, file);
-						fclose(file);
-						//inputSaver.write(buffer, fsize);
-						free(buffer);
-
-						file = fopen((newName + "/" + x.first + "/" + newOutputName).c_str(), "rb");
-						fseek(file, 0, SEEK_END);
-						fsize = ftell(file);
-						rewind(file);
-						buffer = (char*)malloc(sizeof(char)*fsize);
-						fread(buffer, 1, fsize, file);
-						fclose(file);
-						//outputSaver.write(buffer, fsize);
-						free(buffer);
-
-						string inputHash = inputSaver.save();
-						string outputHash = outputSaver.save();
-						
-						newInput.hash = inputHash;
-						newOutput.hash = outputHash;
+					
+// 					vector<pair<string,string>> inputs = import.inputs()[task];
+// 					vector<pair<string,string>> outputs = import.outputs()[task];
+					vector<pair<string,string>> inputs;
+					vector<pair<string,string>> outputs;
+					int testCount = inputs.size();
+					
+					for (int i = 0; i < testCount; i++) {
 						shared_ptr<TestCase> newCase(new TestCase());
-						newCase->input = newInput;
-						newCase->output = newOutput;
+						newCase->input = {inputs[i].first};
+						newCase->output = {outputs[i].first};
+						newCase->inputName = inputs[i].second;
+						newCase->outputName = outputs[i].second;
 						newCase->group = group;
  						db->persist(newCase);
- 						group->tests.push_back(move(newCase));
+ 						group->tests.push_back(newCase);
 					}
-					newContest->tasks.push_back(move(newTask));
+					newContest->tasks.push_back(newTask);
 				}
 				t.commit();
-				command = "rm -rf " + newName;
-				system(command.c_str());
 			}
 		}
 		render("adminImport", c);

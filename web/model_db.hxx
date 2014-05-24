@@ -276,6 +276,8 @@ struct TestCase: HasID {
 	weak_ptr<TestGroup> group;
 	File input;
 	File output;
+	string inputName;
+	string outputName;
 
 private:
 	friend class odb::access;
