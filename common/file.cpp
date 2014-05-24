@@ -123,4 +123,15 @@ bool isValidFileHash(const string& str) {
 	return true;
 }
 
+string readFileByHash(const string& hash) {
+	unique_ptr<std::ifstream> inPtr = openFileByHash(hash);
+	std::ifstream& in = *inPtr;
+	in.seekg(0,std::ios::end);
+	std::streampos length = in.tellg();
+	in.seekg(0,std::ios::beg);
+	string buffer(length, '\0');
+	in.read(&buffer[0],length);
+	return buffer;
+}
+
 }

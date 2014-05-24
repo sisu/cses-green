@@ -44,4 +44,6 @@ bool fileHashExists(const string& hash);
 // Check whether string is a valid file hash.
 bool isValidFileHash(const string& str);
 
+string readFileByHash(const string& hash);
+
 }

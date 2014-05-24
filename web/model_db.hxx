@@ -139,6 +139,8 @@ struct Task: HasID {
 //#pragma db value_not_null inverse(task)
 #pragma db value_not_null section(sec)
 	vector<unique_ptr<Submission>> submissions;
+	double timeInSeconds;
+	int memoryInBytes;
 
 #pragma db load(lazy) update(manual)
 	odb::section sec;
@@ -156,8 +158,6 @@ struct TestCase: HasID {
 	UniqueFile input;
 	UniqueFile output;
 	int group;
-
-	TestCase() {}
 
 private:
 	friend class odb::access;
@@ -213,8 +213,8 @@ typedef shared_ptr<Submission> SubmissionPtr;
 struct Result: HasID {
 	SubmissionPtr submission;
 	shared_ptr<TestCase> testCase;
-	UniqueFile output;
-	UniqueFile errOutput;
+	MaybeFile output;
+	MaybeFile errOutput;
 	int result;
 	float time;
 	int memory;
@@ -224,6 +224,15 @@ struct Result: HasID {
 struct JudgeHost: HasID {
 	StrField name;
 	StrField host;
+};
+
+#pragma db object
+struct CompilationResult: HasID {
+	shared_ptr<Language> language;
+	UniqueFile source;
+	UniqueFile binary;
+
+#pragma db index("index") unique members(language, source)
 };
 
 }
