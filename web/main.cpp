@@ -102,9 +102,25 @@ struct Server: cppcms::application {
 #endif
 	}
 
-	void contest(string cnt) {
-		(void)cnt;
-		ContestPage c;
+	void contest(string id) {
+		auto user = getCurrentUser();
+		if (!user->isAdmin()) {
+			response().status(404);
+			return;
+		}
+		optional<ID> contestID = stringToInteger<ID>(id);
+		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
+		ContestPage c(*user);
+		if (isPost()) {
+			c.info.load(context());
+			if (c.info.validate()) {
+				odb::transaction t(db->begin());
+				cnt->name = c.info.name.value();
+				db->update(cnt);
+				t.commit();
+			}
+		}
+		c.info.name.value(cnt->name);
 		render("contest", c);
 	}
 
@@ -158,11 +174,13 @@ struct Server: cppcms::application {
 	}
 
 	void scores(string id) {
+		auto user = getCurrentUser();
 		odb::session s2;
 		optional<ID> contestID = stringToInteger<ID>(id);
 
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		ScoresPage p;
+		p.set(*user);
 
 		addContestInfo(p, *contestID);
 #if 1

@@ -43,6 +43,9 @@
 <a href="<% url "submit" using id %>">Submit solution</a> |
 <a href="<% url "list" using id %>">View submissions</a> |
 <a href="<% url "scores" using id %>">Scoreboard</a>
+<% if admin %>
+| <a href="<% url "contest" using id %>">Settings</a>
+<% end %>
 </p>
 </td><td width=400>
 <ul>
@@ -116,6 +119,12 @@ window.setInterval("update()", 1000);
 
 <% view contest uses ContestPage extends page %>
 <% template body() %>
+
+<h2>Contest settings</h2>
+<form method="post" action=""><%csrf%>
+<% form as_p info %>
+</form>
+
 <% end template %>
 <% end view %>
 

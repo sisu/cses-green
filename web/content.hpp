@@ -29,6 +29,16 @@ struct SetOptionalPasswordWidget: ValidatingWidget<ws::password> {
 };
 
 struct Page: cppcms::base_content {
+	string user;
+	bool admin=0;
+	void set(const User& u) {
+		user = u.getName();
+		admin = u.isAdmin();
+	}
+	Page() {}
+	Page(const User& u) {
+		set(u);
+	}
 };
 
 struct ContestsPage: Page {
@@ -38,9 +48,22 @@ struct ContestsPage: Page {
 struct ContestPage: Page {
 	struct Info: cppcms::form {
 		ws::text name;
+		ws::numeric<double> time;
+		ws::numeric<double> memory;
+		ws::submit submit;
+		Info() {
+			name.message("Name");
+			time.message("Time (s)");
+			time.message("Memory (MiB)");
+			submit.value("Submit");
+			add(name);
+			add(time);
+			add(memory);
+			add(submit);
+		}
 	};
+	ContestPage(const User& user): Page(user) {}
 	Info info;
-//	models::Contest* cnt;
 };
 
 

@@ -28,25 +28,14 @@ struct JudgeConnection {
 	}
 
 	StringMap runOnJudge(DockerImage image, const StringMap& inputs, double timeLimit, int memoryLimit) {
-		vector<File> files;
-		for(auto& input: inputs) {
-			File file;
-			file.hash = input.second;
-			file.name = input.first;
-			files.push_back(file);
-		}
-		return runOnJudge(image, files, timeLimit, memoryLimit);
-	}
-
-	StringMap runOnJudge(DockerImage image, vector<File> inputs, double timeLimit, int memoryLimit) {
 		vector<protocol::FileRef> fileRefs;
-		for(File file: inputs) {
-			if (!client.hasFile(token, file.hash)) {
-				client.sendFile(token, readFileByHash(file.hash));
+		for(const auto& i: inputs) {
+			if (!client.hasFile(token, i.second)) {
+				client.sendFile(token, readFileByHash(i.second));
 			}
 			protocol::FileRef ref;
-			ref.hash = file.hash;
-			ref.name = file.name;
+			ref.hash = i.second;
+			ref.name = i.first;
 			fileRefs.push_back(move(ref));
 		}
 		protocol::RunOptions options;
