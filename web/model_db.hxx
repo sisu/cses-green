@@ -168,6 +168,7 @@ struct TestGroup: HasID {
 	weak_ptr<Task> task;
 #pragma db value_not_null inverse(group)
 	vector<shared_ptr<TestCase>> tests;
+	int points;
 };
 
 #pragma db object

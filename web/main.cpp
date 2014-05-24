@@ -105,14 +105,13 @@ struct Server: cppcms::application {
 	
 	void view(string id) {
 		ViewPage c;
-		BOOSTER_DEBUG("lol") << id;
 		optional<ID> submissionID = stringToInteger<ID>(id);
 		optional<Submission> s = getObjectIfExists<Submission>(*submissionID);
 
 		odb::transaction t(db->begin());
 		//odb::query<Result> q (odb::query<Result>::submission == *submissionID);
-		//odb::result<Result> sRes = db->query<Result>();
-		//BOOSTER_DEBUG("lol") << sRes.size();
+		odb::result<Result> sRes = db->query<Result>();
+		BOOSTER_DEBUG("lol") << sRes.size();
 		
 		c.points = 50;
 		c.total = 100;
@@ -418,6 +417,7 @@ struct Server: cppcms::application {
 					newTask->name = taskName;
 					shared_ptr<TestGroup> group(new TestGroup());
 					group->task = newTask;
+					group->points = 100;
 					newTask->testGroups.push_back(group);
 					//newTask->contest = newContest;					
 					db->persist(newTask);					
