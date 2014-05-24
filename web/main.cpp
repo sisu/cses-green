@@ -179,10 +179,13 @@ struct Server: cppcms::application {
 
 		shared_ptr<Task> task = s->task;
 		
+
+		
 		odb::transaction t(db->begin());
 		db->load(*task, task->sec);
 		
-		BOOSTER_DEBUG("lol") << task->name;
+		c.id = 1; //TODO change correct contest
+		
 		int cnt = 0, ind = 0;
 		
 		map<int,int> id2group;
@@ -211,6 +214,11 @@ struct Server: cppcms::application {
 		}
 		c.points = 0;
 		c.total = cnt;
+
+ 		if (s->status == SubmissionStatus::PENDING) c.status = "PENDING";
+ 		if (s->status == SubmissionStatus::JUDGING) c.status = "JUDGING";
+ 		if (s->status == SubmissionStatus::READY) c.status = "READY";
+ 		if (s->status == SubmissionStatus::ERROR) c.status = "ERROR";
 		
 		odb::query<Result> q (odb::query<Result>::submission == *submissionID);
 		odb::result<Result> sRes = db->query<Result>(q);
@@ -306,6 +314,7 @@ struct Server: cppcms::application {
 				submission->user = user;
 				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
 				submission->task = task;
+				submission->time = current_time();
 				submission->program.language = getSharedPtr<Language>(*languageID);
 				submission->status = SubmissionStatus::PENDING;
 				odb::transaction t(db->begin());

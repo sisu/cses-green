@@ -170,10 +170,10 @@ user
 <% end template %>
 <% end view %>
 
-<% view view uses ViewPage extends page %>
-<% template body() %>
-<h1>Contest</h1>
+<% view view uses ViewPage extends in_contest %>
+<% template body2() %>
 <h2>View submission</h2>
+<h3>Status: <%= status %></h3>
 <h3>Total score: <%= points %>/<%= total %> points</h3>
 <% foreach group in groups %>
   <% item %>
@@ -208,9 +208,9 @@ user
 
 <% foreach item in items %>
   <table>
-  <tr><td width=150><b>task</b></td><td width=150><b>time</b></td><td width=150><b>status</b></td></tr>
+  <tr><td width=150><b>task</b></td><td width=200><b>time</b></td><td width=150><b>status</b></td></tr>
   <% item %>
-    <tr><td><%= item.task %></td><td><%= item.time %></td><td><%= item.status %></td></tr>
+    <tr><td><a href="<% url "view" using item.id %>"><%= item.task %></a></td><td><%= item.time %></td><td><%= item.status %></td></tr>
   <% end %>
   </table>
 <% end %>

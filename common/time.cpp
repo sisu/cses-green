@@ -8,7 +8,9 @@ long long current_time() {
 
 string format_time(long long t) {
 	time_t x = (time_t)t;
-	string result = std::asctime(std::localtime(&x));
+	char buffer[100];
+	strftime(buffer, 50, "%F %T", std::localtime(&x));
+	string result = buffer;
 	return result;
 }
 

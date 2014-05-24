@@ -197,7 +197,7 @@ struct SubmitPage: InContestPage {
 	Form form;
 };
 
-struct ViewPage: Page {	
+struct ViewPage: InContestPage {	
 	struct result {
 		int number;
 		float timeInSeconds;
@@ -212,6 +212,7 @@ struct ViewPage: Page {
 	};
 	vector<group> groups;
 	int points, total;
+	string status;
 };
 
 struct ListPage: InContestPage {
