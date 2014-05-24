@@ -229,16 +229,18 @@ private:
 		shared_ptr<Language> lang = submission->program.language;
 		TaskPtr task = submission->task;
 		StringMap inputs;
-		inputs["binary"] = submission->program.binary->hash;
-		inputs["input"] = test->input->hash;
+		inputs["binary"] = submission->program.binary.hash;
+		inputs["input"] = test->input.hash;
 		StringMap result = connection.runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
 		Result res;
 		res.submission = submission;
 //		res.testCase = test;
 		if (result.count("stdout")) {
-			res.output.reset(new File(result["stdout"], "stdout"));
+			res.output.hash = result["stdout"];
 		}
-		if (result.count("stderr")) res.errOutput.reset(new File(result["stderr"], "stderr"));
+		if (result.count("stderr")) {
+			res.errOutput.hash = result["stderr"];
+		}
 		{
 			odb::transaction t(db->begin());
 			db->persist(res);
@@ -250,9 +252,9 @@ private:
 	void evaluateOutput(JudgeConnection connection, Result result) {
 		DockerImage image = submission->task->evaluator.language->runner;
 		StringMap inputs;
-		inputs["output"] = result.output->hash;
-		inputs["input"] = result.testCase->input->hash;
-		inputs["correct"] = result.testCase->output->hash;
+		inputs["output"] = result.output.hash;
+		inputs["input"] = result.testCase->input.hash;
+		inputs["correct"] = result.testCase->output.hash;
 		StringMap resMap = connection.runOnJudge(image, inputs, 1.0, 100<<20);
 		string resStr = readFileByHash(resMap["result"]);
 
@@ -271,12 +273,11 @@ public:
 	void run(JudgeConnection connection, JudgeMaster&) override {
 		shared_ptr<Language> lang = program.language;
 		StringMap inputs;
-		inputs["source"] = program.source->hash;
+		inputs["source"] = program.source.hash;
 		StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
 		if (result.count("binary")) {
 			odb::transaction t(db->begin());
-			program.binary.reset(new File(result["binary"], "binary"));
-			db->persist(program.binary);
+			program.binary.hash = result["binary"];
 			db->update(owner);
 			t.commit();
 		}

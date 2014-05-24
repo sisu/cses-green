@@ -239,7 +239,7 @@ struct Server: cppcms::application {
 		shared_ptr<Task> task = s->task;
 		c.ownID = *submissionID;
 		c.taskName = task->name;
-		c.code = readFileByHash(s->program.source->hash);
+		c.code = readFileByHash(s->program.source.hash);
 		addContestInfo(c, task->contest.lock()->id);
 		render("code", c);
 	}
@@ -389,9 +389,8 @@ struct Server: cppcms::application {
 				saver.write(buffer, len);
 				delete[] buffer;
 				string hash = saver.save();
-				shared_ptr<File> codeFile(new File());
-				codeFile->hash = hash;
-				codeFile->name = c.form.file.value()->name();
+				MaybeFile codeFile;
+				codeFile.hash = hash;
 				shared_ptr<Submission> submission(new Submission);
 				shared_ptr<User> user = getCurrentUser();
 				submission->user = user;
@@ -401,8 +400,7 @@ struct Server: cppcms::application {
 				submission->program.language = getSharedPtr<SubmissionLanguage>(*languageID);
 				submission->status = SubmissionStatus::PENDING;
 				odb::transaction t(db->begin());
-				db->persist(*codeFile);
-				submission->program.source = move(codeFile);
+				submission->program.source = codeFile;
 				db->persist(*submission);
 				t.commit();
 				addForJudging(submission);
@@ -683,16 +681,17 @@ struct Server: cppcms::application {
 					db->persist(group);
 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
 						BOOSTER_INFO("lol") << "cembalo";
-						shared_ptr<File> newInput(new File()), newOutput(new File());
-						newInput->name = data[x.first].first[i];
-						newOutput->name = data[x.first].second[i];
+						File newInput;
+						File newOutput;
+						string newInputName = data[x.first].first[i];
+						string newOutputName = data[x.first].second[i];
 						FileSave inputSaver, outputSaver;
 						
 						char *buffer;
 						FILE *file;
 						int fsize;
 						
-						file = fopen((newName + "/" + x.first + "/" + newInput->name).c_str(), "rb");
+						file = fopen((newName + "/" + x.first + "/" + newInputName).c_str(), "rb");
 						fseek(file, 0, SEEK_END);
 						fsize = ftell(file);
 						rewind(file);
@@ -702,7 +701,7 @@ struct Server: cppcms::application {
 						//inputSaver.write(buffer, fsize);
 						free(buffer);
 
-						file = fopen((newName + "/" + x.first + "/" + newOutput->name).c_str(), "rb");
+						file = fopen((newName + "/" + x.first + "/" + newOutputName).c_str(), "rb");
 						fseek(file, 0, SEEK_END);
 						fsize = ftell(file);
 						rewind(file);
@@ -715,13 +714,11 @@ struct Server: cppcms::application {
 						string inputHash = inputSaver.save();
 						string outputHash = outputSaver.save();
 						
-						newInput->hash = inputHash;
-						newOutput->hash = outputHash;
+						newInput.hash = inputHash;
+						newOutput.hash = outputHash;
 						shared_ptr<TestCase> newCase(new TestCase());
- 						db->persist(newInput);
- 						db->persist(newOutput);
-						newCase->input = move(newInput);
-						newCase->output = move(newOutput);
+						newCase->input = newInput;
+						newCase->output = newOutput;
 						newCase->group = group;
  						db->persist(newCase);
  						group->tests.push_back(move(newCase));

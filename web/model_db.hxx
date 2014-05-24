@@ -32,21 +32,23 @@ struct HasID {
 typedef string StrField;
 #pragma db value(StrField) type(STR_FIELD)
 
-#pragma db object
-struct File: HasID {
-#pragma db type(STR_FIELD)
+#pragma db value
+struct File {
 	string hash;
-#pragma db type(STR_FIELD)
-	string name;
-
-	File() {}
-	File(string hash, string name): hash(hash), name(name) {}
 };
-typedef shared_ptr<File> UniqueFile;
-#pragma db value(UniqueFile) not_null
-typedef shared_ptr<File> MaybeFile;
-#pragma db value(MaybeFile) null
 
+#pragma db value
+struct MaybeFile {
+	string hash;
+	
+	operator UnpromotableBoolean::Type() {
+		if(hash.empty()) {
+			return UnpromotableBoolean::falseValue();
+		} else {
+			return UnpromotableBoolean::trueValue();
+		}
+	}
+};
 
 #pragma db value
 struct DockerImage {
@@ -272,8 +274,8 @@ struct TestGroup: HasID {
 #pragma db object
 struct TestCase: HasID {
 	weak_ptr<TestGroup> group;
-	UniqueFile input;
-	UniqueFile output;
+	File input;
+	File output;
 
 private:
 	friend class odb::access;
