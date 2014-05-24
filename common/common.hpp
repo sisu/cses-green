@@ -42,14 +42,32 @@ using std::stringstream;
 
 struct Error : std::exception {
 public:
-	Error(const string& msg) : msg(msg) { }
+	Error(const string& msg) {
+		this->msg = "CSES Error: " + msg;
+	}
 	
 	virtual const char* what() const throw() override {
-		return ("CSES Error: " + msg).c_str();
+		return msg.c_str();
 	}
 	
 private:
 	string msg;
+};
+
+class UnpromotableBoolean {
+public:
+	typedef void (UnpromotableBoolean::*Type)();
+	
+	static Type falseValue() {
+		return 0;
+	}
+	
+	static Type trueValue() {
+		return &UnpromotableBoolean::dummy;
+	}
+	
+private:
+	void dummy() { }
 };
 
 // Optional supporting move semantics, because boost::optional doesn't.
@@ -110,20 +128,16 @@ public:
 		return val.get();
 	}
 	
-private:
-	void unused() { }
-	typedef void (optional<T>::*unspecified_bool_type)();
-	
-	unique_ptr<T> val;
-	
-public:
-	operator unspecified_bool_type() {
+	operator UnpromotableBoolean::Type() {
 		if(val) {
-			return &optional<T>::unused;
+			return UnpromotableBoolean::trueValue();
 		} else {
-			return 0;
+			return UnpromotableBoolean::falseValue();
 		}
 	}
+	
+private:
+	unique_ptr<T> val;
 };
 
 }

@@ -18,6 +18,6 @@ shared_ptr<T> getSharedPtr(const typename odb::object_traits<T>::id_type& id) {
 	return res.begin().load();
 }
 
-//UniqueFile makeFile();
+//File makeFile();
 
 }
