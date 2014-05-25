@@ -40,20 +40,24 @@ void FileSave::writeFileContents(const string& filename) {
 	in.open(filename, std::ios_base::in | std::ios_base::binary);
 	if(!in.good()) throw Error("FileSave::writeFileContents: Opening file failed.");
 	
+	writeStream(in);
+}
+
+void FileSave::writeStream(std::istream& in) {
+	if(!in.good()) {
+		throw Error("FileSave::writeStream: Stream not good().");
+	}
+	
 	const size_t BUFSIZE = 4096;
 	
 	while(!in.eof()) {
 		char buf[BUFSIZE];
 		in.read(buf, BUFSIZE);
 		if(in.bad() || (in.fail() && !in.eof())) {
-			throw Error("FileSave::writeFileContents: Reading file failed.");
+			throw Error("FileSave::writeStream: Reading stream failed.");
 		}
 		write(buf, in.gcount());
 	}
-}
-
-void FileSave::writeStream(std::istream& in) {
-	tmpfile << in.rdbuf();
 }
 
 string FileSave::save() {

@@ -136,12 +136,18 @@ void makeDB() {
 		db->persist(*testUser);
 		
 		DockerImage cppCompiler("uolevin_repo", "64c4e93d9516515427c596281a87b04c4897d0300d350d15568e18cf6b8289f4");
-		DockerImage binaryRunner("uolevin_repo", "8ee631ba486ce7b4dfcf85fb5c035433670dd8af16d95c0b019e9759777ad82e");
+		DockerImage binaryRunner("uolevin_repo", "0d410d21d84053a2d15d2509528e34100c6be9fdfd57683a142132e4b66f6301");
+		DockerImage binaryEvaluator("uolevin_repo", "4e3652eaf1d4f603ad3cd43f1b4636468ea5e8818c85e753b9a3768122c178f5");
 		
-		shared_ptr<SubmissionLanguage> cpp(
+		shared_ptr<SubmissionLanguage> cppSubmissionLanguage(
 			new SubmissionLanguage("C++", "cpp", cppCompiler, binaryRunner)
 		);
-		db->persist(cpp);
+		db->persist(cppSubmissionLanguage);
+		
+		shared_ptr<EvaluatorLanguage> cppEvaluatorLanguage(
+			new EvaluatorLanguage("C++", "cpp", cppCompiler, binaryEvaluator)
+		);
+		db->persist(cppEvaluatorLanguage);
 
 		JudgeHost host;
 		host.name = host.host = "localhost";
@@ -196,7 +202,7 @@ void makeDB() {
 		shared_ptr<Submission> s(new Submission());
 		s->user = testUser;
 		s->task = lastTask;
-		s->program.language = cpp;
+		s->program.language = cppSubmissionLanguage;
 		s->time = current_time();
 		db->persist(s);
 		for (int j = 0; j < 20; j++) {

@@ -271,6 +271,7 @@ private:
 	void evaluateOutput(JudgeConnection connection, Result result) {
 		DockerImage image = submission->task->evaluator.language->runner;
 		StringMap inputs;
+		inputs["binary"] = submission->program.binary.hash;
 		inputs["output"] = result.output.hash;
 		inputs["input"] = result.testCase->input.hash;
 		inputs["correct"] = result.testCase->output.hash;

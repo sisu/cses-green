@@ -250,8 +250,8 @@ struct Task: HasID {
 	vector<shared_ptr<TestGroup>> testGroups;
 //#pragma db value_not_null inverse(task) section(sec)
 //	vector<shared_ptr<Submission>> submissions;
-	double timeInSeconds;
-	int memoryInBytes;
+	double timeInSeconds = 1.0;
+	int memoryInBytes = 64 * 1024 * 1024;
 
 #pragma db load(lazy) update(manual)
 	odb::section sec;
