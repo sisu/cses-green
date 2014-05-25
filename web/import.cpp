@@ -10,105 +10,62 @@ Import::~Import() {
 }
 	
 void Import::process(std::istream &zipData) {
-}
-
-vector<string> Import::tasks() {
-	vector<string> t;
-	return t;
-}
+	string fileName = getFileStoragePath(saveStreamToFile(zipData));
 	
-// map<string,vector<pair<string,string>>> Import::inputs {
-// 	map<string,vector<pair<string,string>>> m;
-// 	return m;
-// }
-// 
-// map<string,vector<pair<string,string>>> Import::outputs {
-// 	map<string,vector<pair<string,string>>> m;
-// 	return m;
-// }
+	char tempName[] = "zipXXXXXX";
+	mkdtemp(tempName);
+	string dirName = tempName;				
 	
+	string command = "unzip " + fileName + " -d " + dirName;
+	system(command.c_str());
+	DIR *dir = opendir((dirName + "/.").c_str());
+	struct dirent *d;
+	map<string, pair<vector<string>, vector<string>>> data;
+	while ((d = readdir(dir)) != NULL) {
+		string taskName = d->d_name;
+		if (taskName == ".") continue;
+		if (taskName == "..") continue;
+		DIR *dir2 = opendir((dirName + "/" + taskName + "/.").c_str());
+		struct dirent *d2;
+		vector<string> inputData, outputData;
+		while ((d2 = readdir(dir2)) != NULL) {
+			string fileName = d2->d_name;
+			if (fileName == ".") continue;
+			if (fileName == "..") continue;
+			if (fileName.find(".in") != string::npos) inputData.push_back(fileName);
+			if (fileName.find(".IN") != string::npos) inputData.push_back(fileName);
+			if (fileName.find(".out") != string::npos) outputData.push_back(fileName);
+			if (fileName.find(".OUT") != string::npos) outputData.push_back(fileName);
+		}
+		sort(inputData.begin(), inputData.end());
+		sort(outputData.begin(), outputData.end());
+		while (outputData.size() < inputData.size()) outputData.push_back("");
+		data[taskName] = make_pair(inputData, outputData);
+	}	
+	
+	for (auto x : data) {
+		string taskName = x.first;
+		tasks.push_back(taskName);
+		for (size_t i = 0; i < data[x.first].first.size(); i++) {
+			string newInputName = data[x.first].first[i];
+			string newOutputName = data[x.first].second[i];		
+			FileSave inputSaver, outputSaver;
+			inputSaver.writeFileContents(dirName + "/" + x.first + "/" + newInputName);
+			if (newOutputName != "") {
+				outputSaver.writeFileContents(dirName + "/" + x.first + "/" + newOutputName);
+			}
+			string inputHash = inputSaver.save();
+			string outputHash = outputSaver.save();
+			inputs[taskName].push_back(make_pair(inputHash, newInputName));
+			outputs[taskName].push_back(make_pair(outputHash, newOutputName));
+		}
+	}
+	
+	command = "rm -rf " + dirName;
+	system(command.c_str());	
 }
 
-// 				char directoryName[] = "zipXXXXXX";
-// 				mkdtemp(directoryName);
-// 				string newName = directoryName;				
-// 				c.form.package.value()->save_to(newName + "/pelle.zip");
-// 				string command = "unzip " + newName + "/pelle.zip -d " + newName;
-// 				system(command.c_str());
-// 				DIR *dir = opendir((newName + "/.").c_str());
-// 				struct dirent *d;
-// 				map<string, pair<vector<string>, vector<string>>> data;
-// 				while ((d = readdir(dir)) != NULL) {
-// 					string dirName = d->d_name;
-// 					if (dirName == ".") continue;
-// 					if (dirName == "..") continue;
-// 					if (dirName == "pelle.zip") continue;
-// 					DIR *dir2 = opendir((newName + "/" + dirName + "/.").c_str());
-// 					struct dirent *d2;
-// 					vector<string> inputs, outputs;
-// 					while ((d2 = readdir(dir2)) != NULL) {
-// 						string fileName = d2->d_name;
-// 						if (fileName == ".") continue;
-// 						if (fileName == "..") continue;
-// 						if (fileName.find(".in") != string::npos) inputs.push_back(fileName);
-// 						if (fileName.find(".IN") != string::npos) inputs.push_back(fileName);
-// 						if (fileName.find(".out") != string::npos) outputs.push_back(fileName);
-// 						if (fileName.find(".OUT") != string::npos) outputs.push_back(fileName);
-// 					}
-// 					sort(inputs.begin(), inputs.end());
-// 					sort(outputs.begin(), outputs.end());
-// 					while (outputs.size() < inputs.size()) outputs.push_back("");
-// 					data[dirName] = make_pair(inputs, outputs);
-// 				}
-// 				BOOSTER_INFO("lol") << "apina";
+}
 
 
-// 					for (size_t i = 0; i < data[x.first].first.size(); i++) {
-// 						BOOSTER_INFO("lol") << "cembalo";
-// 						File newInput;
-// 						File newOutput;
-// 						string newInputName = data[x.first].first[i];
-// 						string newOutputName = data[x.first].second[i];
-// 						FileSave inputSaver, outputSaver;
-// 						
-// 						char *buffer;
-// 						FILE *file;
-// 						int fsize;
-// 						
-// 						file = fopen((newName + "/" + x.first + "/" + newInputName).c_str(), "rb");
-// 						fseek(file, 0, SEEK_END);
-// 						fsize = ftell(file);
-// 						rewind(file);
-// 						buffer = (char*)malloc(sizeof(char)*fsize);
-// 						fread(buffer, 1, fsize, file);
-// 						fclose(file);
-// 						//inputSaver.write(buffer, fsize);
-// 						free(buffer);
-// 
-// 						file = fopen((newName + "/" + x.first + "/" + newOutputName).c_str(), "rb");
-// 						fseek(file, 0, SEEK_END);
-// 						fsize = ftell(file);
-// 						rewind(file);
-// 						buffer = (char*)malloc(sizeof(char)*fsize);
-// 						fread(buffer, 1, fsize, file);
-// 						fclose(file);
-// 						//outputSaver.write(buffer, fsize);
-// 						free(buffer);
-// 
-// 						string inputHash = inputSaver.save();
-// 						string outputHash = outputSaver.save();
-// 						
-// 						newInput.hash = inputHash;
-// 						newOutput.hash = outputHash;
-// 						shared_ptr<TestCase> newCase(new TestCase());
-// 						newCase->input = newInput;
-// 						newCase->output = newOutput;
-// 						newCase->group = group;
-//  						db->persist(newCase);
-//  						group->tests.push_back(move(newCase));
-// 					}
-
-
-// 				command = "rm -rf " + newName;
-// 				system(command.c_str());
 

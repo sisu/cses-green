@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <set>
 #include <unordered_set>
+#include <algorithm>
 //#include <boost/optional.hpp>
 
 namespace cses {
@@ -39,6 +40,7 @@ using std::cin;
 using std::cout;
 using std::cerr;
 using std::stringstream;
+using std::sort;
 
 struct Error : std::exception {
 public:

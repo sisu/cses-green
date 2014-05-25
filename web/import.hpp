@@ -3,6 +3,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <dirent.h>
+#include "common/file.hpp"
 
 namespace cses {
 
@@ -13,10 +14,10 @@ public:
 
 	void process(std::istream &zipData);
 	
-	vector<string> tasks();
+	vector<string> tasks;
 	
-// 	map<string,vector<pair<string,string>>> inputs;
-// 	map<string,vector<pair<string,string>>> outputs;
+	map<string,vector<pair<string,string>>> inputs;
+	map<string,vector<pair<string,string>>> outputs;
 
 
 private:

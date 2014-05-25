@@ -630,7 +630,7 @@ struct Server: cppcms::application {
 				newContest->endTime = newContest->beginTime+2*3600;
 				db->persist(newContest);				
 				
-				auto tasks = import.tasks();
+				auto tasks = import.tasks;
 				for (auto task : tasks) {
 					shared_ptr<Task> newTask(new Task());
 					newTask->name = task;
@@ -642,10 +642,8 @@ struct Server: cppcms::application {
 					db->persist(newTask);
 					db->persist(group);
 					
-// 					vector<pair<string,string>> inputs = import.inputs()[task];
-// 					vector<pair<string,string>> outputs = import.outputs()[task];
-					vector<pair<string,string>> inputs;
-					vector<pair<string,string>> outputs;
+ 					vector<pair<string,string>> inputs = import.inputs[task];
+ 					vector<pair<string,string>> outputs = import.outputs[task];
 					int testCount = inputs.size();
 					
 					for (int i = 0; i < testCount; i++) {
