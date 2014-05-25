@@ -210,6 +210,8 @@ void Judge::run(
 			}
 		}
 		
+		runCommand("chmod -R 777 " + tmpdirname);
+		
 		// Start container. TODO: handle full paths containing spaces correctly.
 		stringstream containerCommand;
 		containerCommand << "sudo docker.io run ";

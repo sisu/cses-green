@@ -84,6 +84,28 @@ struct ReturnConnection {
 	~ReturnConnection();
 };
 
+template<class...X>
+struct PrintError;
+
+template<>
+struct PrintError<> { static void printError(const ::apache::thrift::TException&) {} };
+
+template<class T, class...X>
+struct PrintError<T,X...> {
+	static void printError(const ::apache::thrift::TException& e) {
+		try {
+			const T& t = dynamic_cast<const T&>(e);
+			cerr<<"Exception from judge: "<<typeid(t).name()<<" : "<<t.msg<<'\n';
+		} catch(const std::bad_cast& b) {
+			PrintError<X...>::printError(e);
+		}
+	}
+};
+template<class...X>
+void printErrorForTypes(const ::apache::thrift::TException& e) {
+	PrintError<X...>::printError(e);
+}
+
 class UnitTask {
 public:
 	virtual ~UnitTask() {}
@@ -95,11 +117,8 @@ public:
 		try {
 			run(connection, master);
 		} catch(const ::apache::thrift::TException& e) {
-#if 0
-			auto d = dynamic_cast<const cses::protocol::InvalidDataError&>(e);
-			cerr<<"err "<<d.msg<<'\n';
-#endif
-			throw;
+			namespace P = protocol;
+			printErrorForTypes<P::InternalError, P::InvalidDataError, P::AuthError, P::DockerError>(e);
 		}
 	}
 
