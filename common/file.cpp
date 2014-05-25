@@ -42,9 +42,7 @@ void FileSave::writeFileContents(const string& filename) {
 	
 	const size_t BUFSIZE = 4096;
 	
-	std::cerr << filename << std::endl;
 	while(!in.eof()) {
-		std::cerr << "lol" << std::endl;
 		char buf[BUFSIZE];
 		in.read(buf, BUFSIZE);
 		if(in.bad() || (in.fail() && !in.eof())) {
