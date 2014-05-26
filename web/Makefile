@@ -20,7 +20,7 @@ THRIFT_CPP:=$(TFILE)_constants.cpp  $(TSRV).cpp  $(TFILE)_types.cpp
 THRIFT_OBJ:=$(patsubst %.cpp,obj/gen-cpp/%.o,$(THRIFT_CPP))
 THRIFT_SRC:=$(patsubst %.o,%.cpp,$(THRIFT_OBJ))
 
-BASEFLAGS:=-Wall -Wextra -std=c++0x -MMD -Wno-unknown-pragmas -I. -I$(ODIR) -Icommon/
+BASEFLAGS:=-Wall -Wextra -std=c++0x -MMD -Wno-unknown-pragmas -I. -I$(ODIR) -Icommon/ -pipe
 DFLAGS:=-g
 OFLAGS:=-O3
 CXXFLAGS:=$(BASEFLAGS) $(DFLAGS)
