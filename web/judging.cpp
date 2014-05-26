@@ -295,9 +295,17 @@ public:
 		StringMap inputs;
 		inputs["source"] = program.source.hash;
 		StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
+		bool changed = 0;
+		if (result.count("stderr") || result.count("stderr")) {
+			program.compileMessage = result["stdout"] + result["stderr"];
+			changed = 1;
+		}
 		if (result.count("binary")) {
-			odb::transaction t(db->begin());
 			program.binary.hash = result["binary"];
+			changed = 1;
+		}
+		if (changed) {
+			odb::transaction t(db->begin());
 			db->update(owner);
 			t.commit();
 		}
