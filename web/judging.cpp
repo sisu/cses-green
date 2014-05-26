@@ -110,20 +110,23 @@ class UnitTask {
 public:
 	virtual ~UnitTask() {}
 
-	void execute(JudgeConnection connection, JudgeMaster& master) {
+	void execute(JudgeConnection& connection, JudgeMaster& master) {
 		unique_ptr<UnitTask> self(this);
 		ReturnConnection ret{master, connection};
 		(void)ret;
+		this->connection = &connection;
+		this->master = &master;
 		try {
-			run(connection, master);
+			run();
 		} catch(const ::apache::thrift::TException& e) {
 			namespace P = protocol;
 			printErrorForTypes<P::InternalError, P::InvalidDataError, P::AuthError, P::DockerError>(e);
 		}
 	}
 
-protected:
-	virtual void run(JudgeConnection connection, JudgeMaster& master) = 0;
+	JudgeConnection* connection;
+	JudgeMaster* master;
+	virtual void run() = 0;
 
 private:
 };
@@ -195,7 +198,7 @@ private:
 			pendingTasks.pop_front();
 			JudgeConnection host = freeHosts.back();
 			freeHosts.pop_back();
-			std::thread(&UnitTask::execute, task, host, std::ref(*this)).detach();
+			std::thread(&UnitTask::execute, task, std::ref(host), std::ref(*this)).detach();
 		}
 	}
 
@@ -231,12 +234,12 @@ public:
 		submission(submission), testCases(move(testCases)) {
 	}
 protected:
-	void run(JudgeConnection connection, JudgeMaster&) override {
+	void run() override {
 		(void)connection;
 		for(shared_ptr<TestCase> test: testCases) {
-			Result result = runForInput(connection, test);
+			Result result = runForInput(test);
 			if (result.output) {
-				evaluateOutput(connection, move(result));
+				evaluateOutput(move(result));
 			}
 		}
 	}
@@ -244,13 +247,13 @@ private:
 	SubmissionPtr submission;
 	vector<shared_ptr<TestCase>> testCases;
 
-	Result runForInput(JudgeConnection connection, shared_ptr<TestCase> test) {
+	Result runForInput(shared_ptr<TestCase> test) {
 		shared_ptr<Language> lang = submission->program.language;
 		TaskPtr task = submission->task;
 		StringMap inputs;
 		inputs["binary"] = submission->program.binary.hash;
 		inputs["input"] = test->input.hash;
-		StringMap result = connection.runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
+		StringMap result = connection->runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
 		Result res;
 		res.submission = submission;
 //		res.testCase = test;
@@ -268,14 +271,14 @@ private:
 		return res;
 	}
 
-	void evaluateOutput(JudgeConnection connection, Result result) {
+	void evaluateOutput(Result result) {
 		DockerImage image = submission->task->evaluator.language->runner;
 		StringMap inputs;
 		inputs["binary"] = submission->program.binary.hash;
 		inputs["output"] = result.output.hash;
 		inputs["input"] = result.testCase->input.hash;
 		inputs["correct"] = result.testCase->output.hash;
-		StringMap resMap = connection.runOnJudge(image, inputs, 1.0, 100<<20);
+		StringMap resMap = connection->runOnJudge(image, inputs, 1.0, 100<<20);
 		string resStr = readFileByHash(resMap["result"]);
 
 		odb::transaction t(db->begin());
@@ -290,14 +293,22 @@ class CompileTask: public UnitTask {
 public:
 	CompileTask(ProgramT& program, shared_ptr<Owner> owner): program(program), owner(owner) {
 	}
-	void run(JudgeConnection connection, JudgeMaster&) override {
+	void run() override {
 		shared_ptr<Language> lang = program.language;
 		StringMap inputs;
 		inputs["source"] = program.source.hash;
-		StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
+		StringMap result = connection->runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
+		bool changed = 0;
+		if (result.count("stderr") || result.count("stderr")) {
+			program.compileMessage = result["stdout"] + result["stderr"];
+			changed = 1;
+		}
 		if (result.count("binary")) {
-			odb::transaction t(db->begin());
 			program.binary.hash = result["binary"];
+			changed = 1;
+		}
+		if (changed) {
+			odb::transaction t(db->begin());
 			db->update(owner);
 			t.commit();
 		}
@@ -313,24 +324,31 @@ public:
 	}
 
 protected:
-	void run(JudgeConnection connection, JudgeMaster& master) override {
+	void run() override {
 		CompileTask<SubmissionProgram, Submission> compile(submission->program, submission);
-		compile.run(connection, master);
+		compile.connection = connection;
+		compile.master = master;
+		compile.run();
 		if (submission->program.binary) {
-			startTestGroups(master);
+			startTestGroups();
+		} else {
+			odb::transaction t(db->begin());
+			submission->status = SubmissionStatus::COMPILE_ERROR;
+			db->update(*submission);
+			t.commit();
 		}
 	}
 
 private:
 	SubmissionPtr submission;
 
-	void startTestGroups(JudgeMaster& master) {
+	void startTestGroups() {
 		TaskPtr task = submission->task;
 		odb::session s;
 		odb::transaction t(db->begin());
 		db->load(*task, task->sec);
 		for(auto group: task->testGroups) {
-			master.addTask(new RunTestGroup(submission, move(group->tests)));
+			master->addTask(new RunTestGroup(submission, move(group->tests)));
 		}
 	}
 };
