@@ -313,6 +313,7 @@ private:
 enum class SubmissionStatus {
 	PENDING,
 	JUDGING,
+	COMPILE_ERROR,
 	READY,
 	ERROR,
 };

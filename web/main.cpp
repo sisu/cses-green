@@ -297,6 +297,7 @@ struct Server: cppcms::application {
 
  		if (s->status == SubmissionStatus::PENDING) c.status = "PENDING";
  		if (s->status == SubmissionStatus::JUDGING) c.status = "JUDGING";
+ 		if (s->status == SubmissionStatus::COMPILE_ERROR) c.status = "COMPILE ERROR";
  		if (s->status == SubmissionStatus::READY) c.status = "READY";
  		if (s->status == SubmissionStatus::ERROR) c.status = "ERROR";
 		
