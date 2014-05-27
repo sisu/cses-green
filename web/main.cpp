@@ -14,7 +14,6 @@
 #include <cppcms/url_dispatcher.h>
 #include <cppcms/url_mapper.h>
 #include <iostream>
-#include "common/time.hpp"
 
 using namespace cses;
 
@@ -110,7 +109,6 @@ struct Server: cppcms::application {
 		}
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		ContestPage c(*user, *cnt);
-		addContestInfo(c, cnt);
 		if (isPost()) {
 			c.form.load(context());
 			if (c.form.validate()) {
@@ -135,8 +133,7 @@ struct Server: cppcms::application {
 		odb::session ss;
 		auto user = getCurrentUser();
 		auto task = getByStringOrFail<Task>(id);
-		TaskPage t(*user, *task);
-		addContestInfo(t, task->contest.lock());
+		TaskPage t(*user, *task->contest.lock(), *task);
 		if (isPost()) {
 			t.form.load(context());
 			if (t.form.validate()) {
@@ -155,10 +152,7 @@ struct Server: cppcms::application {
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		auto user = getCurrentUser();
 		ID userID = user->id;
-		ListPage p(*user);
-
-		addContestInfo(p, cnt);
-		
+		ListPage p(*user, *cnt);
 
 		odb::transaction t(db->begin());
 		
@@ -203,10 +197,7 @@ struct Server: cppcms::application {
 		odb::session s2;
 
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		ScoresPage p(*user);
-		p.set(*user);
-
-		addContestInfo(p, cnt);
+		ScoresPage p(*user, *cnt);
 #if 1
 		odb::transaction t(db->begin());
 		odb::result<User> users = db->query<User>();
@@ -261,14 +252,12 @@ struct Server: cppcms::application {
 		odb::session s2;
 		
 		auto user = getCurrentUser();
-		CodePage c(*user);
-		optional<ID> submissionID = stringToInteger<ID>(id);
-		shared_ptr<Submission> s = getSharedPtr<Submission>(*submissionID);
+		shared_ptr<Submission> s = getByStringOrFail<Submission>(id);
 		shared_ptr<Task> task = s->task;
-		c.ownID = *submissionID;
+		CodePage c(*user, *task->contest.lock());
+		c.ownID = s->id;
 		c.taskName = task->name;
 		c.code = readFileByHash(s->program.source.hash);
-		addContestInfo(c, task->contest.lock());
 		render("code", c);
 	}
 	
@@ -276,19 +265,14 @@ struct Server: cppcms::application {
 		odb::session s2;
 
 		auto user = getCurrentUser();
-		ViewPage c(*user);
-		optional<ID> submissionID = stringToInteger<ID>(id);
-		shared_ptr<Submission> s = getSharedPtr<Submission>(*submissionID);
-
+		shared_ptr<Submission> s = getByStringOrFail<Submission>(id);
 		shared_ptr<Task> task = s->task;
-		
+		ViewPage c(*user, *task->contest.lock());
 
 		{
 			odb::transaction t(db->begin());
 			db->load(*task, task->sec);
 		}
-		
-		addContestInfo(c, task->contest.lock());
 
 		odb::transaction t(db->begin());
 		
@@ -301,7 +285,7 @@ struct Server: cppcms::application {
 		map<int,int> memory;
 		map<int,string> color;
 		
-		c.ownID = *submissionID;
+		c.ownID = s->id;
 		c.taskName = task->name;
 		
 		c.groups.resize(task->testGroups.size());
@@ -330,7 +314,7 @@ struct Server: cppcms::application {
  		if (s->status == SubmissionStatus::READY) c.status = "READY";
  		if (s->status == SubmissionStatus::ERROR) c.status = "ERROR";
 		
-		odb::query<Result> q (odb::query<Result>::submission == *submissionID);
+		odb::query<Result> q (odb::query<Result>::submission == s->id);
 		odb::result<Result> sRes = db->query<Result>(q);
  		for (auto x : sRes) {
  			int testId = x.testCase->id;
@@ -383,11 +367,9 @@ struct Server: cppcms::application {
 		odb::session s2;
 		
 		shared_ptr<User> user = getCurrentUser();
-		SubmitPage c(*user);
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		addContestInfo(c, cnt);
-		
-		
+		SubmitPage c(*user, *cnt);
+
 		{
 			odb::transaction t(db->begin());
 			db->load(*cnt, cnt->sec);
@@ -730,16 +712,6 @@ struct Server: cppcms::application {
 		std::stringstream url;
 		mapper().map(url, path, params...);
 		response().set_redirect_header(url.str());
-	}
-	
-	void addContestInfo(InContestPage &c, shared_ptr<Contest> cnt) {
-		c.beginTime = cnt->beginTime;
-		c.endTime = cnt->endTime;
-		c.curTime = current_time();
-		c.formatTime1 = format_time(cnt->beginTime);
-		c.formatTime2 = format_time(cnt->endTime);
-		c.id = cnt->id;
-		c.name = cnt->name;
 	}
 };
 

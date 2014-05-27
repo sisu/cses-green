@@ -3,6 +3,7 @@
 #include "widgets.hpp"
 #include "model.hpp"
 #include "form.hpp"
+#include "common/time.hpp"
 
 namespace cses {
 
@@ -199,7 +200,15 @@ struct InContestPage: Page {
 	long long endTime;
 	long long curTime;
 
-	InContestPage(const User& user): Page(user) {}
+	InContestPage(const User& user, const Contest& cnt): Page(user),
+		name(cnt.name),
+		id(cnt.id),
+		formatTime1(format_time(cnt.beginTime)),
+		formatTime2(format_time(cnt.endTime)),
+		beginTime(cnt.beginTime),
+		endTime(cnt.endTime),
+		curTime(current_time())
+	{}
 };
 
 struct SubmitPage: InContestPage {
@@ -221,7 +230,7 @@ struct SubmitPage: InContestPage {
 	};
 	Form form;
 
-	SubmitPage(const User& user): InContestPage(user) {}
+	SubmitPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ViewPage: InContestPage {	
@@ -243,7 +252,7 @@ struct ViewPage: InContestPage {
 	int ownID;
 	string taskName;
 
-	ViewPage(const User& user): InContestPage(user) {}
+	ViewPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct CodePage: InContestPage {	
@@ -251,7 +260,7 @@ struct CodePage: InContestPage {
 	int ownID;
 	string taskName;
 
-	CodePage(const User& user): InContestPage(user) {}
+	CodePage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ListPage: InContestPage {
@@ -263,7 +272,7 @@ struct ListPage: InContestPage {
 	};
 	vector<item> items;
 
-	ListPage(const User& user): InContestPage(user) {}
+	ListPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ScoresPage: InContestPage {
@@ -283,7 +292,7 @@ struct ScoresPage: InContestPage {
 	vector<string> tasks;
 	vector<Row> rows;
 
-	ScoresPage(const User& user): InContestPage(user) {}
+	ScoresPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ContestPage: InContestPage {
@@ -292,7 +301,7 @@ struct ContestPage: InContestPage {
 		ID id;
 	};
 
-	ContestPage(const User& user, Contest& c): InContestPage(user), builder(form) {
+	ContestPage(const User& user, Contest& c): InContestPage(user, c), builder(form) {
 		builder.add(c.name, "Name")
 			.add(c.beginTime, "Begin time")
 			.add(c.endTime, "End time")
@@ -304,7 +313,7 @@ struct ContestPage: InContestPage {
 };
 
 struct TaskPage: InContestPage {
-	TaskPage(const User& user, Task& t): InContestPage(user), builder(form) {
+	TaskPage(const User& user, const Contest& cnt, Task& t): InContestPage(user, cnt), builder(form) {
 		builder.add(t.name, "Name")
 			.add(t.timeInSeconds, "Time (s)")
 			.add(t.memoryInBytes, "Memory (B)")
