@@ -290,7 +290,6 @@ struct Contest: HasID {
 #pragma db unique
 	StrField name;
 #pragma db value_not_null inverse(contest) section(sec)	
-//#pragma db value_not_null section(sec)	
 	vector<TaskPtr> tasks;
 	long long beginTime;
 	long long endTime;

@@ -44,7 +44,7 @@
 <a href="<% url "list" using id %>">View submissions</a> |
 <a href="<% url "scores" using id %>">Scoreboard</a>
 <% if admin %>
-| <a href="<% url "contest" using id %>">Settings</a>
+| <a href="<% url "contest" using id %>">Contest</a>
 <% end %>
 </p>
 </td><td width=400>
@@ -114,17 +114,6 @@ window.setInterval("update()", 1000);
 </ul>
 </body>
 </html>
-<% end template %>
-<% end view %>
-
-<% view contest uses ContestPage extends page %>
-<% template body() %>
-
-<h2>Contest settings</h2>
-<form method="post" action=""><%csrf%>
-<% form as_table form %>
-</form>
-
 <% end template %>
 <% end view %>
 
@@ -329,6 +318,36 @@ window.setInterval("update()", 1000);
 
 </table>
 
+<% end template %>
+<% end view %>
+
+<% view contest uses ContestPage extends in_contest %>
+<% template body2() %>
+
+<h2>Contest settings</h2>
+<form method="post" action=""><%csrf%>
+<% form as_table form %>
+</form>
+<h3>Tasks</h3>
+<% foreach task in tasks %>
+<table>
+<% item %>
+	<tr>
+	<td>
+	<a href="<% url "task" using task.id %>"><%= task.name %></a>
+	</td>
+	</tr>
+<% end %>
+</table>
+<% end %>
+
+<% end template %>
+<% end view %>
+
+<% view task uses TaskPage extends in_contest %>
+<% template body2() %>
+<h2>Task</h2>
+<% form as_table form %>
 <% end template %>
 <% end view %>
 

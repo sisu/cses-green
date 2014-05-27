@@ -23,8 +23,11 @@ struct Server: cppcms::application {
 		dispatcher().assign("/", &Server::contests, this);
 		mapper().assign("");
 		
-		dispatcher().assign("/contest/(\\d+)/", &Server::contest, this, 1);
+		dispatcher().assign("/contest/(\\d+)/", &Server::editContest, this, 1);
 		mapper().assign("contest", "contest/{1}/");
+
+		dispatcher().assign("/task/(\\d+)/", &Server::editTask, this, 1);
+		mapper().assign("task", "task/{1}/");
 
 		dispatcher().assign("/submit/(\\d+)/", &Server::submit, this, 1);
 		mapper().assign("submit", "submit/{1}/");
@@ -99,7 +102,7 @@ struct Server: cppcms::application {
 #endif
 	}
 
-	void contest(string id) {
+	void editContest(string id) {
 		auto user = getCurrentUser();
 		if (!user->isAdmin()) {
 			response().status(404);
@@ -117,20 +120,44 @@ struct Server: cppcms::application {
 				t.commit();
 			}
 		}
+		{
+			odb::session s;
+			odb::transaction t(db->begin());
+			db->load(*cnt, cnt->sec);
+			for(auto t: cnt->tasks) {
+				c.tasks.push_back({t->name, t->id});
+			}
+		}
 		render("contest", c);
+	}
+
+	void editTask(string id) {
+		auto user = getCurrentUser();
+		optional<ID> taskID = stringToInteger<ID>(id);
+		auto task = getSharedPtr<Task>(*taskID);
+		TaskPage t(*user, *task);
+		if (isPost()) {
+			t.form.load(context());
+			if (t.form.validate()) {
+				t.builder.readForm();
+				odb::transaction tr(db->begin());
+				db->update(task);
+				tr.commit();
+			}
+		}
+		render("task", t);
 	}
 
 	void list(string id) {
 		odb::session s2;
 
-		optional<ID> contestID = stringToInteger<ID>(id);
+		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		auto user = getCurrentUser();
 		ID userID = user->id;
 		ListPage p(*user);
 
-		addContestInfo(p, *contestID);
+		addContestInfo(p, cnt);
 		
-		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 
 		odb::transaction t(db->begin());
 		
@@ -173,13 +200,12 @@ struct Server: cppcms::application {
 	void scores(string id) {
 		auto user = getCurrentUser();
 		odb::session s2;
-		optional<ID> contestID = stringToInteger<ID>(id);
 
-		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
+		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		ScoresPage p(*user);
 		p.set(*user);
 
-		addContestInfo(p, *contestID);
+		addContestInfo(p, cnt);
 #if 1
 		odb::transaction t(db->begin());
 		odb::result<User> users = db->query<User>();
@@ -226,7 +252,7 @@ struct Server: cppcms::application {
 		p.rows.push_back({"x", {{0,0}, {1,100}}});
 		p.rows.push_back({"y", {{1,50}, {1,30}}});
 #endif
-		p.id = *contestID;
+		p.id = cnt->id;
 		render("scores", p);
 	}
 	
@@ -241,7 +267,7 @@ struct Server: cppcms::application {
 		c.ownID = *submissionID;
 		c.taskName = task->name;
 		c.code = readFileByHash(s->program.source.hash);
-		addContestInfo(c, task->contest.lock()->id);
+		addContestInfo(c, task->contest.lock());
 		render("code", c);
 	}
 	
@@ -261,7 +287,7 @@ struct Server: cppcms::application {
 			db->load(*task, task->sec);
 		}
 		
-		addContestInfo(c, task->contest.lock()->id);
+		addContestInfo(c, task->contest.lock());
 
 		odb::transaction t(db->begin());
 		
@@ -357,11 +383,9 @@ struct Server: cppcms::application {
 		
 		shared_ptr<User> user = getCurrentUser();
 		SubmitPage c(*user);
- 		optional<ID> contestID = stringToInteger<ID>(id);
-
-		addContestInfo(c, *contestID);
+		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
+		addContestInfo(c, cnt);
 		
-		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
 		
 		{
 			odb::transaction t(db->begin());
@@ -707,14 +731,13 @@ struct Server: cppcms::application {
 		response().set_redirect_header(url.str());
 	}
 	
-	void addContestInfo(InContestPage &c, int contestID) {
-		shared_ptr<Contest> cnt = getSharedPtr<Contest>(contestID);
+	void addContestInfo(InContestPage &c, shared_ptr<Contest> cnt) {
 		c.beginTime = cnt->beginTime;
 		c.endTime = cnt->endTime;
 		c.curTime = current_time();
 		c.formatTime1 = format_time(cnt->beginTime);
 		c.formatTime2 = format_time(cnt->endTime);
-		c.id = contestID;
+		c.id = cnt->id;
 		c.name = cnt->name;
 	}
 };

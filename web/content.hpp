@@ -287,6 +287,11 @@ struct ScoresPage: InContestPage {
 };
 
 struct ContestPage: InContestPage {
+	struct Task {
+		string name;
+		ID id;
+	};
+
 	ContestPage(const User& user, Contest& c): InContestPage(user), builder(form) {
 		builder.add(c.name, "Name")
 			.add(c.beginTime, "Begin time")
@@ -295,7 +300,17 @@ struct ContestPage: InContestPage {
 	}
 	cppcms::form form;
 	FormBuilder builder;
-//	Info info;
+	vector<Task> tasks;
+};
+
+struct TaskPage: InContestPage {
+	TaskPage(const User& user, Task& t): InContestPage(user), builder(form) {
+		builder.add(t.name, "Name");
+		builder.add(t.timeInSeconds, "Time (s)");
+		builder.add(t.memoryInBytes, "Memory (b)");
+	}
+	cppcms::form form;
+	FormBuilder builder;
 };
 
 }
