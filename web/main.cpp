@@ -124,12 +124,13 @@ struct Server: cppcms::application {
 		odb::session s2;
 
 		optional<ID> contestID = stringToInteger<ID>(id);
-		ListPage p;
+		auto user = getCurrentUser();
+		ID userID = user->id;
+		ListPage p(*user);
 
 		addContestInfo(p, *contestID);
 		
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
-		ID userID = getCurrentUser()->id;
 
 		odb::transaction t(db->begin());
 		
@@ -175,7 +176,7 @@ struct Server: cppcms::application {
 		optional<ID> contestID = stringToInteger<ID>(id);
 
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
-		ScoresPage p;
+		ScoresPage p(*user);
 		p.set(*user);
 
 		addContestInfo(p, *contestID);
@@ -232,7 +233,8 @@ struct Server: cppcms::application {
 	void code(string id) {
 		odb::session s2;
 		
-		CodePage c;
+		auto user = getCurrentUser();
+		CodePage c(*user);
 		optional<ID> submissionID = stringToInteger<ID>(id);
 		shared_ptr<Submission> s = getSharedPtr<Submission>(*submissionID);
 		shared_ptr<Task> task = s->task;
@@ -245,8 +247,9 @@ struct Server: cppcms::application {
 	
 	void view(string id) {
 		odb::session s2;
-		
-		ViewPage c;
+
+		auto user = getCurrentUser();
+		ViewPage c(*user);
 		optional<ID> submissionID = stringToInteger<ID>(id);
 		shared_ptr<Submission> s = getSharedPtr<Submission>(*submissionID);
 
@@ -352,7 +355,8 @@ struct Server: cppcms::application {
 	void submit(string id) {
 		odb::session s2;
 		
-		SubmitPage c;
+		shared_ptr<User> user = getCurrentUser();
+		SubmitPage c(*user);
  		optional<ID> contestID = stringToInteger<ID>(id);
 
 		addContestInfo(c, *contestID);
@@ -383,7 +387,6 @@ struct Server: cppcms::application {
 				MaybeFile codeFile;
 				codeFile.hash = hash;
 				shared_ptr<Submission> submission(new Submission);
-				shared_ptr<User> user = getCurrentUser();
 				submission->user = user;
 				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
 				submission->task = task;

@@ -46,19 +46,6 @@ struct ContestsPage: Page {
 	vector<pair<unsigned,string>> contests;
 };
 
-struct ContestPage: Page {
-	ContestPage(const User& user, Contest& c): Page(user), builder(form) {
-		builder.add(c.name, "Name")
-			.add(c.beginTime, "Begin time")
-			.add(c.endTime, "End time")
-			.buildSubmit();
-	}
-	cppcms::form form;
-	FormBuilder builder;
-//	Info info;
-};
-
-
 struct RegistrationPage: Page {
 	struct Info: cppcms::form {
 		SetUsernameWidget name;
@@ -211,6 +198,8 @@ struct InContestPage: Page {
 	long long beginTime;
 	long long endTime;
 	long long curTime;
+
+	InContestPage(const User& user): Page(user) {}
 };
 
 struct SubmitPage: InContestPage {
@@ -231,6 +220,8 @@ struct SubmitPage: InContestPage {
 		}
 	};
 	Form form;
+
+	SubmitPage(const User& user): InContestPage(user) {}
 };
 
 struct ViewPage: InContestPage {	
@@ -251,12 +242,16 @@ struct ViewPage: InContestPage {
 	string status;
 	int ownID;
 	string taskName;
+
+	ViewPage(const User& user): InContestPage(user) {}
 };
 
 struct CodePage: InContestPage {	
 	string code;
 	int ownID;
 	string taskName;
+
+	CodePage(const User& user): InContestPage(user) {}
 };
 
 struct ListPage: InContestPage {
@@ -267,6 +262,8 @@ struct ListPage: InContestPage {
 		string status;
 	};
 	vector<item> items;
+
+	ListPage(const User& user): InContestPage(user) {}
 };
 
 struct ScoresPage: InContestPage {
@@ -285,6 +282,20 @@ struct ScoresPage: InContestPage {
 	};
 	vector<string> tasks;
 	vector<Row> rows;
+
+	ScoresPage(const User& user): InContestPage(user) {}
+};
+
+struct ContestPage: InContestPage {
+	ContestPage(const User& user, Contest& c): InContestPage(user), builder(form) {
+		builder.add(c.name, "Name")
+			.add(c.beginTime, "Begin time")
+			.add(c.endTime, "End time")
+			.buildSubmit();
+	}
+	cppcms::form form;
+	FormBuilder builder;
+//	Info info;
 };
 
 }

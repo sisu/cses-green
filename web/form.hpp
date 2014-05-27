@@ -37,30 +37,30 @@ struct DefaultWidgetProvider;
 template<>
 struct DefaultWidgetProvider<string> {typedef TextWidgetProvider type;};
 
-#if 0
-template<class T>
-struct DefaultWidgetProvider<std::enable_if<std::is_arithmetic<T>::value, T>> {typedef NumWidgetProvider<T> type;};
-#endif
-#if 0
-template<class T, std::enable_if<std::is_arithmetic<T>::value,T>::type*=nullptr>
-struct DefaultWidgetProvider<T> {typedef NumWidgetProvider<T> type;};
-#endif
-
-#if 1
 template<>
 struct DefaultWidgetProvider<int> {typedef NumWidgetProvider<int> type;};
 template<>
 struct DefaultWidgetProvider<long long> {typedef NumWidgetProvider<long long> type;};
 template<>
 struct DefaultWidgetProvider<double> {typedef NumWidgetProvider<double> type;};
-#endif
 
 struct FormBuilder {
 	FormBuilder(cppcms::form& form): form(form) {}
 
 	template<class T>
-	FormBuilder& add(T& value, string name) {
+	FormBuilder& add(T& value, const string& name) {
 		typedef typename DefaultWidgetProvider<T>::type W;
+		return add(unique_ptr<WidgetProvider>(new W(value, name)));
+	}
+
+	template<class W, class T>
+	FormBuilder& addWidget(T& value, const string& name) {
+		typedef BasicWidgetProvider<T,W> B;
+		return add(unique_ptr<WidgetProvider>(new B(value, name)));
+	}
+
+	template<class W, class T>
+	FormBuilder& addProvider(T& value, const string& name) {
 		return add(unique_ptr<WidgetProvider>(new W(value, name)));
 	}
 
