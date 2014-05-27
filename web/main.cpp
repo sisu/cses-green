@@ -387,22 +387,21 @@ struct Server: cppcms::application {
 		if (isPost()) {
 			c.form.load(context());
 			if (c.form.validate()) {
-				optional<ID> taskID = stringToInteger<ID>(c.form.task.selected_id());
-				optional<ID> languageID = stringToInteger<ID>(c.form.language.selected_id());
+				auto task = getByStringOrFail<Task>(c.form.task.selected_id());
+				auto language = getByStringOrFail<SubmissionLanguage>(c.form.language.selected_id());
 				BOOSTER_DEBUG("lol") << c.form.task.selected_id() << " " << c.form.language.selected_id() << " " << c.form.file.value()->name();
 				string hash = saveStreamToFile(c.form.file.value()->data());
 				MaybeFile codeFile;
 				codeFile.hash = hash;
 				shared_ptr<Submission> submission(new Submission);
 				submission->user = user;
-				shared_ptr<Task> task = getSharedPtr<Task>(*taskID);
 				submission->task = task;
 				submission->time = current_time();
-				submission->program.language = getSharedPtr<SubmissionLanguage>(*languageID);
+				submission->program.language = language;
 				submission->status = SubmissionStatus::PENDING;
 				odb::transaction t(db->begin());
 				submission->program.source = codeFile;
-				db->persist(*submission);
+				db->persist(submission);
 				t.commit();
 				addForJudging(submission);
 			}
