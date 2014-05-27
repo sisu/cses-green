@@ -134,9 +134,9 @@ struct Server: cppcms::application {
 	void editTask(string id) {
 		odb::session ss;
 		auto user = getCurrentUser();
-		optional<ID> taskID = stringToInteger<ID>(id);
-		auto task = getSharedPtr<Task>(*taskID);
+		auto task = getByStringOrFail<Task>(id);
 		TaskPage t(*user, *task);
+		addContestInfo(t, task->contest.lock());
 		if (isPost()) {
 			t.form.load(context());
 			if (t.form.validate()) {
