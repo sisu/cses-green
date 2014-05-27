@@ -5,7 +5,7 @@
 
 namespace cses {
 
-void makeDB();
+void makeDB(bool reset);
 
 // Return ID of active user with given username and password, if exists.
 optional<ID> testLogin(string user, string pass);

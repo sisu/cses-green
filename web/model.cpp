@@ -120,7 +120,11 @@ bool User::isValidPassword(const string& password) {
 	return codepointCount != 0 && codepointCount <= 255;
 }
 
-void makeDB() {
+void makeDB(bool reset) {
+	if (!reset) {
+		db.reset(new odb::sqlite::database("cses.db"));
+		return;
+	}
 	system("rm -f cses.db");
 	db.reset(new odb::sqlite::database("cses.db", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
 #if 1

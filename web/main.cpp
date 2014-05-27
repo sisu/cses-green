@@ -717,8 +717,8 @@ struct Server: cppcms::application {
 	}
 };
 
-int main() {
-	makeDB();
+int main(int argc, char**) {
+	makeDB(argc > 1);
 	std::ifstream configFile("config.js");
 	cppcms::json::value config;
 	int line=0;
