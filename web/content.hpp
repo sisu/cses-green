@@ -305,10 +305,13 @@ struct ContestPage: InContestPage {
 
 struct TaskPage: InContestPage {
 	TaskPage(const User& user, Task& t): InContestPage(user), builder(form) {
-		builder.add(t.name, "Name");
-		builder.add(t.timeInSeconds, "Time (s)");
-		builder.add(t.memoryInBytes, "Memory (b)");
+		builder.add(t.name, "Name")
+			.add(t.timeInSeconds, "Time (s)")
+			.add(t.memoryInBytes, "Memory (B)")
+			.buildSubmit();
+		name = t.name;
 	}
+	string name;
 	cppcms::form form;
 	FormBuilder builder;
 };

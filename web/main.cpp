@@ -132,6 +132,7 @@ struct Server: cppcms::application {
 	}
 
 	void editTask(string id) {
+		odb::session ss;
 		auto user = getCurrentUser();
 		optional<ID> taskID = stringToInteger<ID>(id);
 		auto task = getSharedPtr<Task>(*taskID);

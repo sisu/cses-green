@@ -346,8 +346,12 @@ window.setInterval("update()", 1000);
 
 <% view task uses TaskPage extends in_contest %>
 <% template body2() %>
-<h2>Task</h2>
+<h2>Task <%= name %> </h2>
+<form method="post" action=""><%csrf%>
+<table>
 <% form as_table form %>
+</table>
+</form>
 <% end template %>
 <% end view %>
 
