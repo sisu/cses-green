@@ -108,9 +108,9 @@ struct Server: cppcms::application {
 			response().status(404);
 			return;
 		}
-		optional<ID> contestID = stringToInteger<ID>(id);
-		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
+		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		ContestPage c(*user, *cnt);
+		addContestInfo(c, cnt);
 		if (isPost()) {
 			c.form.load(context());
 			if (c.form.validate()) {
