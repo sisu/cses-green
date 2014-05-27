@@ -2,6 +2,7 @@
 #include "common.hpp"
 #include "widgets.hpp"
 #include "model.hpp"
+#include "form.hpp"
 
 namespace cses {
 
@@ -46,24 +47,15 @@ struct ContestsPage: Page {
 };
 
 struct ContestPage: Page {
-	struct Info: cppcms::form {
-		ws::text name;
-		ws::numeric<double> time;
-		ws::numeric<double> memory;
-		ws::submit submit;
-		Info() {
-			name.message("Name");
-			time.message("Time (s)");
-			memory.message("Memory (MiB)");
-			submit.value("Submit");
-			add(name);
-			add(time);
-			add(memory);
-			add(submit);
-		}
-	};
-	ContestPage(const User& user): Page(user) {}
-	Info info;
+	ContestPage(const User& user, Contest& c): Page(user), builder(form) {
+		builder.add(c.name, "Name")
+			.add(c.beginTime, "Begin time")
+			.add(c.endTime, "End time")
+			.buildSubmit();
+	}
+	cppcms::form form;
+	FormBuilder builder;
+//	Info info;
 };
 
 

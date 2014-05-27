@@ -304,7 +304,7 @@ struct Contest: HasID {
 
 #pragma db load(lazy) update(manual)	
 	odb::section sec;
-	
+
 	Contest() {}
 private:
 	friend class odb::access;

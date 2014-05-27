@@ -107,17 +107,16 @@ struct Server: cppcms::application {
 		}
 		optional<ID> contestID = stringToInteger<ID>(id);
 		shared_ptr<Contest> cnt = getSharedPtr<Contest>(*contestID);
-		ContestPage c(*user);
+		ContestPage c(*user, *cnt);
 		if (isPost()) {
-			c.info.load(context());
-			if (c.info.validate()) {
+			c.form.load(context());
+			if (c.form.validate()) {
+				c.builder.readForm();
 				odb::transaction t(db->begin());
-				cnt->name = c.info.name.value();
 				db->update(cnt);
 				t.commit();
 			}
 		}
-		c.info.name.value(cnt->name);
 		render("contest", c);
 	}
 
