@@ -721,8 +721,16 @@ struct Server: cppcms::application {
 	}
 };
 
-int main(int argc, char**) {
-	makeDB(argc > 1);
+int main(int argc, char** argv) {
+	bool resetDB = 0;
+	bool connectToJudge = 0;
+	for(int i=1; i<argc; ++i) {
+		string s = argv[i];
+		if (s=="-d") resetDB = 1;
+		else if (s=="-c") connectToJudge = 1;
+		else cerr << "Unknown argument " << s << '\n';
+	}
+	makeDB(resetDB);
 	std::ifstream configFile("config.js");
 	cppcms::json::value config;
 	int line=0;
@@ -731,7 +739,9 @@ int main(int argc, char**) {
 		std::cerr<<"Config syntax error on line "<<line<<'\n';
 		return 1;
 	}
-	updateJudgeHosts();
+	if (connectToJudge) {
+		updateJudgeHosts();
+	}
 	cppcms::service srv(config);
 	srv.applications_pool().mount(cppcms::applications_factory<Server>());
 	srv.run();
