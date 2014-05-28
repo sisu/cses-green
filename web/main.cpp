@@ -141,6 +141,7 @@ struct Server: cppcms::application {
 				odb::transaction tr(db->begin());
 				db->update(task);
 				tr.commit();
+				BOOSTER_INFO("edit task")<<"got evaluator: "<<task->evaluator.source.hash<<'\n';
 			}
 		}
 		render("task", t);

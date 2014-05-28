@@ -1,11 +1,16 @@
 #pragma once
 #include "common.hpp"
 #include "widgets.hpp"
+#include "file.hpp"
+#include <cppcms/http_file.h>
 
 namespace cses {
 
 struct WidgetProvider {
 	virtual ~WidgetProvider() {}
+	WidgetProvider() {}
+	WidgetProvider(const WidgetProvider&) = delete;
+	WidgetProvider(const WidgetProvider&&) = delete;
 	virtual ws::base_widget& getWidget() = 0;
 	virtual void readWidget() = 0;
 };
@@ -30,6 +35,22 @@ struct BasicWidgetProvider: WidgetProvider {
 template<class T>
 using NumWidgetProvider = BasicWidgetProvider<T, ws::numeric<T>>;
 using TextWidgetProvider = BasicWidgetProvider<string, ws::text>;
+
+template<class T>
+struct FileUploadProvider: WidgetProvider {
+	ws::base_widget& getWidget() override {
+		return widget;
+	}
+	void readWidget() override {
+		if (widget.set()) ref.hash = saveStreamToFile(widget.value()->data());
+	}
+
+	FileUploadProvider(T& v, const string& name): ref(v) {
+		widget.message(name);
+	}
+	ws::file widget;
+	T& ref;
+};
 
 template<class T>
 struct DefaultWidgetProvider;
@@ -65,18 +86,12 @@ struct FormBuilder {
 	}
 
 	FormBuilder& add(unique_ptr<WidgetProvider> provider) {
+		form.add(provider->getWidget());
 		providers.push_back(move(provider));
 		return *this;
 	}
 
-	FormBuilder& build() {
-		form.clear();
-		for(auto& provider: providers)
-			form.add(provider->getWidget());
-		return *this;
-	}
-	FormBuilder& buildSubmit(const string& msg="Submit") {
-		build();
+	FormBuilder& addSubmit(const string& msg="Submit") {
 		submit.value(msg);
 		form.add(submit);
 		return *this;

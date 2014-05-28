@@ -76,7 +76,7 @@ private:
 	StrField id;
 	
 	friend class odb::access;
-	friend class Language;
+	friend struct Language;
 };
 
 

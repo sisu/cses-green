@@ -310,7 +310,7 @@ struct ContestPage: InContestPage {
 		builder.add(c.name, "Name")
 			.add(c.beginTime, "Begin time")
 			.add(c.endTime, "End time")
-			.buildSubmit();
+			.addSubmit();
 	}
 	cppcms::form form;
 	FormBuilder builder;
@@ -319,10 +319,12 @@ struct ContestPage: InContestPage {
 
 struct TaskPage: InContestPage {
 	TaskPage(UserPtr user, const Contest& cnt, Task& t): InContestPage(user, cnt), builder(form) {
+		auto& e = t.evaluator;
 		builder.add(t.name, "Name")
 			.add(t.timeInSeconds, "Time (s)")
 			.add(t.memoryInBytes, "Memory (B)")
-			.buildSubmit();
+			.addProvider<FileUploadProvider<MaybeFile>>(e.source, "Evaluator source")
+			.addSubmit();
 		name = t.name;
 	}
 	string name;
