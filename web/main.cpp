@@ -37,7 +37,7 @@ struct Server: cppcms::application {
 		dispatcher().assign("/scores/(\\d+)/", &Server::scoreBoard, this, 1);
 		mapper().assign("scores", "scores/{1}/");		
 		
-		dispatcher().assign("/view/(\\d+)/", &Server::viewSubmissions, this, 1);
+		dispatcher().assign("/view/(\\d+)/", &Server::viewSubmission, this, 1);
 		mapper().assign("view", "view/{1}/");
 
 		dispatcher().assign("/code/(\\d+)/", &Server::viewCode, this, 1);
@@ -261,7 +261,7 @@ struct Server: cppcms::application {
 		render("code", c);
 	}
 	
-	void viewSubmissions(string id) {
+	void viewSubmission(string id) {
 		odb::session s2;
 
 		auto user = getCurrentUser();
