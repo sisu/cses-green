@@ -242,7 +242,6 @@ typedef shared_ptr<Contest> ContestPtr;
 
 #pragma db object pointer(shared_ptr)
 struct Task: HasID {
-#pragma db unique
 	StrField name;
 	weak_ptr<Contest> contest;
 

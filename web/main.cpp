@@ -646,7 +646,7 @@ struct Server: cppcms::application {
 				newContest->name = contestName;
 				newContest->beginTime = current_time();
 				newContest->endTime = newContest->beginTime+2*3600;
-				db->persist(newContest);				
+				db->persist(newContest);
 				
 				auto tasks = import.tasks;
 				for (auto task : tasks) {
@@ -659,7 +659,7 @@ struct Server: cppcms::application {
 					newTask->contest = newContest;
 					db->persist(newTask);
 					db->persist(group);
-					
+
  					vector<pair<string,string>> inputs = import.inputs[task];
  					vector<pair<string,string>> outputs = import.outputs[task];
 					int testCount = inputs.size();
@@ -677,6 +677,8 @@ struct Server: cppcms::application {
 					newContest->tasks.push_back(newTask);
 				}
 				t.commit();
+				sendRedirectHeader("/contest", newContest->id);
+				return;
 			}
 		}
 		render("adminImport", c);
