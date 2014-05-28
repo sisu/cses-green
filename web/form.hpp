@@ -51,6 +51,39 @@ struct FileUploadProvider: WidgetProvider {
 	ws::file widget;
 	T& ref;
 };
+template<class T, class Ptr>
+struct SelectProvider: WidgetProvider {
+	ws::base_widget& getWidget() override {
+		for(const auto& i: choises) widget.add(i.first, std::to_string(i.second->id));
+		return widget;
+	}
+	void readWidget() override {
+		optional<ID> id = stringToInteger<ID>(widget.selected_id());
+		if (!id) return;
+		for(const auto& i: choises) {
+			if (*id == i.second->id) ref = i.second;
+		}
+	}
+
+	SelectProvider(Ptr& v, const string& name, vector<pair<string,shared_ptr<T>>> choises):
+		ref(v), choises(choises)
+	{
+		widget.message(name);
+	}
+	ws::select widget;
+	Ptr& ref;
+	vector<pair<string, shared_ptr<T>>> choises;
+};
+
+template<class T, class...A>
+unique_ptr<T> makeUnique(A&&...args) {
+	return unique_ptr<T>(new T(std::forward<A>(args)...));
+}
+
+template<class T, class Ptr>
+unique_ptr<SelectProvider<T,Ptr>> makeSelectProvider(Ptr& v, const string& name, vector<pair<string,shared_ptr<T>>> choises) {
+	return makeUnique<SelectProvider<T,Ptr>>(v,name,choises);
+}
 
 template<class T>
 struct DefaultWidgetProvider;

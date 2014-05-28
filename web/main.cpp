@@ -133,8 +133,11 @@ struct Server: cppcms::application {
 		odb::session ss;
 		auto user = getRequiredUser();
 		auto task = getByStringOrFail<Task>(id);
-		TaskPage t(user, *task->contest.lock(), *task);
+		auto languages = loadAllObjects<EvaluatorLanguage>();
+		TaskPage t(user, *task->contest.lock(), *task, languages);
+		auto& eval = task->evaluator;
 		if (isPost()) {
+			string oldHash = eval.source.hash;
 			t.form.load(context());
 			if (t.form.validate()) {
 				t.builder.readForm();
@@ -142,8 +145,13 @@ struct Server: cppcms::application {
 				db->update(task);
 				tr.commit();
 				BOOSTER_INFO("edit task")<<"got evaluator: "<<task->evaluator.source.hash<<'\n';
+				string newHash = eval.source.hash;
+				if (!newHash.empty() && newHash != oldHash) {
+					compileEvaluator(task);
+				}
 			}
 		}
+		t.compileMessage = eval.source ? eval.binary ? eval.compileMessage : "Compiling..." : "No evaluator";
 		render("task", t);
 	}
 
@@ -719,6 +727,7 @@ struct Server: cppcms::application {
 		mapper().map(url, path, params...);
 		response().set_redirect_header(url.str());
 	}
+
 };
 
 int main(int argc, char** argv) {

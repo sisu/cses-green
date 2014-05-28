@@ -318,16 +318,23 @@ struct ContestPage: InContestPage {
 };
 
 struct TaskPage: InContestPage {
-	TaskPage(UserPtr user, const Contest& cnt, Task& t): InContestPage(user, cnt), builder(form) {
+	TaskPage(UserPtr user, const Contest& cnt, Task& t, vector<shared_ptr<EvaluatorLanguage>> languages): InContestPage(user, cnt), builder(form) {
 		auto& e = t.evaluator;
+		vector<pair<string,shared_ptr<EvaluatorLanguage>>> choises;
+		for(auto lang: languages) {
+			choises.emplace_back(lang->getName(), lang);
+		}
 		builder.add(t.name, "Name")
 			.add(t.timeInSeconds, "Time (s)")
 			.add(t.memoryInBytes, "Memory (B)")
 			.addProvider<FileUploadProvider<MaybeFile>>(e.source, "Evaluator source")
+			.add(makeSelectProvider(e.language, "Evaluator language", choises))
 			.addSubmit();
 		name = t.name;
 	}
 	string name;
+	string compileMessage;
+
 	cppcms::form form;
 	FormBuilder builder;
 };

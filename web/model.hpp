@@ -41,6 +41,17 @@ shared_ptr<T> getByStringOrFail(string id) {
 	throw InvalidID(id);
 }
 
+template<class T>
+inline vector<shared_ptr<T>> loadAllObjects() {
+	odb::transaction t(db->begin());
+	odb::result<T> res = db->query<T>();
+	vector<shared_ptr<T>> objects;
+	for(auto i=res.begin(); i!=res.end(); ++i) {
+		objects.push_back(i.load());
+	}
+	return objects;
+}
+
 //File makeFile();
 
 }
