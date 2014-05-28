@@ -33,12 +33,17 @@ struct SetOptionalPasswordWidget: ValidatingWidget<ws::password> {
 struct Page: cppcms::base_content {
 	string user;
 	bool admin=0;
-	void set(const User& u) {
-		user = u.getName();
-		admin = u.isAdmin();
+	void set(UserPtr u) {
+		if (u) {
+			user = u->getName();
+			admin = u->isAdmin();
+		} else {
+			user.clear();
+			admin = 0;
+		}
 	}
 	Page() {}
-	Page(const User& u) {
+	Page(UserPtr u) {
 		set(u);
 	}
 };
@@ -200,7 +205,7 @@ struct InContestPage: Page {
 	long long endTime;
 	long long curTime;
 
-	InContestPage(const User& user, const Contest& cnt): Page(user),
+	InContestPage(UserPtr user, const Contest& cnt): Page(user),
 		name(cnt.name),
 		id(cnt.id),
 		formatTime1(format_time(cnt.beginTime)),
@@ -230,7 +235,7 @@ struct SubmitPage: InContestPage {
 	};
 	Form form;
 
-	SubmitPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
+	SubmitPage(UserPtr user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ViewPage: InContestPage {	
@@ -252,7 +257,7 @@ struct ViewPage: InContestPage {
 	int ownID;
 	string taskName;
 
-	ViewPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
+	ViewPage(UserPtr user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct CodePage: InContestPage {	
@@ -260,7 +265,7 @@ struct CodePage: InContestPage {
 	int ownID;
 	string taskName;
 
-	CodePage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
+	CodePage(UserPtr user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ListPage: InContestPage {
@@ -272,7 +277,7 @@ struct ListPage: InContestPage {
 	};
 	vector<item> items;
 
-	ListPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
+	ListPage(UserPtr user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ScoresPage: InContestPage {
@@ -292,7 +297,7 @@ struct ScoresPage: InContestPage {
 	vector<string> tasks;
 	vector<Row> rows;
 
-	ScoresPage(const User& user, const Contest& cnt): InContestPage(user, cnt) {}
+	ScoresPage(UserPtr user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
 struct ContestPage: InContestPage {
@@ -301,7 +306,7 @@ struct ContestPage: InContestPage {
 		ID id;
 	};
 
-	ContestPage(const User& user, Contest& c): InContestPage(user, c), builder(form) {
+	ContestPage(UserPtr user, Contest& c): InContestPage(user, c), builder(form) {
 		builder.add(c.name, "Name")
 			.add(c.beginTime, "Begin time")
 			.add(c.endTime, "End time")
@@ -313,7 +318,7 @@ struct ContestPage: InContestPage {
 };
 
 struct TaskPage: InContestPage {
-	TaskPage(const User& user, const Contest& cnt, Task& t): InContestPage(user, cnt), builder(form) {
+	TaskPage(UserPtr user, const Contest& cnt, Task& t): InContestPage(user, cnt), builder(form) {
 		builder.add(t.name, "Name")
 			.add(t.timeInSeconds, "Time (s)")
 			.add(t.memoryInBytes, "Memory (B)")

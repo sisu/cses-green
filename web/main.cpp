@@ -31,16 +31,16 @@ struct Server: cppcms::application {
 		dispatcher().assign("/submit/(\\d+)/", &Server::submit, this, 1);
 		mapper().assign("submit", "submit/{1}/");
 
-		dispatcher().assign("/list/(\\d+)/", &Server::list, this, 1);
+		dispatcher().assign("/list/(\\d+)/", &Server::listSubmissions, this, 1);
 		mapper().assign("list", "list/{1}/");
 
-		dispatcher().assign("/scores/(\\d+)/", &Server::scores, this, 1);
+		dispatcher().assign("/scores/(\\d+)/", &Server::scoreBoard, this, 1);
 		mapper().assign("scores", "scores/{1}/");		
 		
-		dispatcher().assign("/view/(\\d+)/", &Server::view, this, 1);
+		dispatcher().assign("/view/(\\d+)/", &Server::viewSubmissions, this, 1);
 		mapper().assign("view", "view/{1}/");
 
-		dispatcher().assign("/code/(\\d+)/", &Server::code, this, 1);
+		dispatcher().assign("/code/(\\d+)/", &Server::viewCode, this, 1);
 		mapper().assign("code", "code/{1}/");		
 		
 		dispatcher().assign("/register/", &Server::registration, this);
@@ -76,7 +76,7 @@ struct Server: cppcms::application {
 	}
 #endif
 	void contests() {
-		shared_ptr<User> user = getCurrentUser();
+		UserPtr user = getCurrentUser();
 		if(user) {
 			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->getName() << "\" visited the page.";
 		} else {
@@ -102,13 +102,13 @@ struct Server: cppcms::application {
 	}
 
 	void editContest(string id) {
-		auto user = getCurrentUser();
+		auto user = getRequiredUser();
 		if (!user->isAdmin()) {
 			response().status(404);
 			return;
 		}
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		ContestPage c(*user, *cnt);
+		ContestPage c(user, *cnt);
 		if (isPost()) {
 			c.form.load(context());
 			if (c.form.validate()) {
@@ -131,9 +131,9 @@ struct Server: cppcms::application {
 
 	void editTask(string id) {
 		odb::session ss;
-		auto user = getCurrentUser();
+		auto user = getRequiredUser();
 		auto task = getByStringOrFail<Task>(id);
-		TaskPage t(*user, *task->contest.lock(), *task);
+		TaskPage t(user, *task->contest.lock(), *task);
 		if (isPost()) {
 			t.form.load(context());
 			if (t.form.validate()) {
@@ -146,13 +146,13 @@ struct Server: cppcms::application {
 		render("task", t);
 	}
 
-	void list(string id) {
+	void listSubmissions(string id) {
 		odb::session s2;
 
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		auto user = getCurrentUser();
+		auto user = getRequiredUser();
 		ID userID = user->id;
-		ListPage p(*user, *cnt);
+		ListPage p(user, *cnt);
 
 		odb::transaction t(db->begin());
 		
@@ -192,12 +192,12 @@ struct Server: cppcms::application {
 		render("list", p);
 	}
 
-	void scores(string id) {
+	void scoreBoard(string id) {
 		auto user = getCurrentUser();
 		odb::session s2;
 
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		ScoresPage p(*user, *cnt);
+		ScoresPage p(user, *cnt);
 #if 1
 		odb::transaction t(db->begin());
 		odb::result<User> users = db->query<User>();
@@ -248,26 +248,26 @@ struct Server: cppcms::application {
 		render("scores", p);
 	}
 	
-	void code(string id) {
+	void viewCode(string id) {
 		odb::session s2;
 		
 		auto user = getCurrentUser();
 		shared_ptr<Submission> s = getByStringOrFail<Submission>(id);
 		shared_ptr<Task> task = s->task;
-		CodePage c(*user, *task->contest.lock());
+		CodePage c(user, *task->contest.lock());
 		c.ownID = s->id;
 		c.taskName = task->name;
 		c.code = readFileByHash(s->program.source.hash);
 		render("code", c);
 	}
 	
-	void view(string id) {
+	void viewSubmissions(string id) {
 		odb::session s2;
 
 		auto user = getCurrentUser();
 		shared_ptr<Submission> s = getByStringOrFail<Submission>(id);
 		shared_ptr<Task> task = s->task;
-		ViewPage c(*user, *task->contest.lock());
+		ViewPage c(user, *task->contest.lock());
 
 		{
 			odb::transaction t(db->begin());
@@ -366,9 +366,9 @@ struct Server: cppcms::application {
 	void submit(string id) {
 		odb::session s2;
 		
-		shared_ptr<User> user = getCurrentUser();
+		UserPtr user = getRequiredUser();
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		SubmitPage c(*user, *cnt);
+		SubmitPage c(user, *cnt);
 
 		{
 			odb::transaction t(db->begin());
@@ -488,7 +488,7 @@ struct Server: cppcms::application {
 			return;
 		}
 		
-		shared_ptr<User> user = getSharedPtr<User>(*userID);
+		UserPtr user = getSharedPtr<User>(*userID);
 		if(!user) {
 			sendRedirectHeader("/admin");
 			return;
@@ -520,7 +520,7 @@ struct Server: cppcms::application {
 					}
 					
 					if(!c.nameInUse) {
-						db->update(*user);
+						db->update(user);
 						t.commit();
 						c.success = true;
 					}
@@ -687,10 +687,16 @@ struct Server: cppcms::application {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
 	}
 
-	shared_ptr<User> getCurrentUser() {
+	UserPtr getRequiredUser() {
+		auto res = getCurrentUser();
+		if (!res) throw std::logic_error("Login required.");
+		return res;
+	}
+
+	UserPtr getCurrentUser() {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
-			shared_ptr<User> user = getSharedPtr<User>(userID);
+			UserPtr user = getSharedPtr<User>(userID);
 			if(user && user->isActive()) {
 				return user;
 			}
@@ -701,7 +707,7 @@ struct Server: cppcms::application {
 	}
 	
 	bool isCurrentUserAdmin() {
-		shared_ptr<User> user = getCurrentUser();
+		UserPtr user = getCurrentUser();
 		if(!user) return false;
 		return user->isAdmin();
 	}
