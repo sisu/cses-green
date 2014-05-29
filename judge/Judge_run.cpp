@@ -73,7 +73,7 @@ string runCommand(const string& command) {
 		throw Error("runCommand: Calling system failed.");
 	}
 	if(WEXITSTATUS(res) != 0) {
-		throw Error("runCommand: Command returned nonzero exit status.");
+		throw Error("runCommand: Command returned nonzero exit status: " + command);
 	}
 	
 	string out = readWholeFile(stdoutfilename);
@@ -285,7 +285,9 @@ void Judge::run(
 		throw;
 	} catch(std::exception& e) {
 		cerr << "Judge::run exception: " << e.what() << "\n";
-		throw protocol::InternalError();
+		protocol::InternalError err;
+		err.msg = e.what();
+		throw err;
 	}
 }
 

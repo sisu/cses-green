@@ -21,17 +21,20 @@ typedef std::unordered_map<string,string> StringMap;
 
 struct JudgeConnection {
 	JudgeHost host;
-	protocol::JudgeClient client;
+	const shared_ptr<protocol::JudgeClient> client;
 	string token = "uolevi";
 
-	JudgeConnection(JudgeHost host): host(host), client(makeProtocol(host.host, host.port)) {
+	JudgeConnection(JudgeHost host): host(host), client(new protocol::JudgeClient(makeProtocol(host.host, host.port))) {
 	}
 
 	StringMap runOnJudge(DockerImage image, const StringMap& inputs, double timeLimit, int memoryLimit) {
+		cerr<<"running on judge "<<host.name<<' '<<inputs.size()<<'\n';
 		vector<protocol::FileRef> fileRefs;
 		for(const auto& i: inputs) {
-			if (!client.hasFile(token, i.second)) {
-				client.sendFile(token, readFileByHash(i.second));
+			cerr<<"input "<<i.first<<' '<<i.second<<'\n';
+			if (!client->hasFile(token, i.second)) {
+				cerr<<"sending input\n";
+				client->sendFile(token, readFileByHash(i.second));
 			}
 			protocol::FileRef ref;
 			ref.hash = i.second;
@@ -42,17 +45,20 @@ struct JudgeConnection {
 		options.timeLimit = timeLimit;
 		options.memoryLimitBytes = memoryLimit;
 		protocol::RunResult result;
-		client.run(result, token, image.getRepositoryName(), image.getImageID(), fileRefs, options);
+		cerr<<"calling run\n";
+		client->run(result, token, image.getRepositoryName(), image.getImageID(), fileRefs, options);
+		cerr<<"return from run\n";
 		StringMap map;
 		for(protocol::FileRef outFile: result.outputs) {
 			if (!fileHashExists(outFile.hash)) {
 				string data;
-				client.getFile(data, token, outFile.hash);
+				client->getFile(data, token, outFile.hash);
 				FileSave save;
 				save.write(&data[0], data.size());
 				save.save();
 			}
 			map[outFile.name] = outFile.hash;
+			cerr<<"result "<<outFile.name<<'\n';
 		}
 		return map;
 	}
@@ -80,7 +86,7 @@ private:
 class JudgeMaster;
 struct ReturnConnection {
 	JudgeMaster& master;
-	JudgeConnection connection;
+	JudgeConnection& connection;
 	~ReturnConnection();
 };
 
@@ -110,7 +116,7 @@ class UnitTask {
 public:
 	virtual ~UnitTask() {}
 
-	void execute(JudgeConnection& connection, JudgeMaster& master) {
+	void execute(JudgeConnection connection, JudgeMaster& master) {
 		unique_ptr<UnitTask> self(this);
 		ReturnConnection ret{master, connection};
 		(void)ret;
@@ -193,12 +199,13 @@ private:
 		std::vector<JudgeConnection> freeHosts;
 		std::set_difference(allJudgeHosts.begin(), allJudgeHosts.end(), usedJudgeHosts.begin(), usedJudgeHosts.end(), std::back_inserter(freeHosts));
 		while(!freeHosts.empty() && !pendingTasks.empty()) {
-			cerr<<"Starting judging of submission\n";
+			cerr<<"Starting tasks\n";
 			UnitTask* task = pendingTasks.front();
 			pendingTasks.pop_front();
 			JudgeConnection host = freeHosts.back();
 			freeHosts.pop_back();
-			std::thread(&UnitTask::execute, task, std::ref(host), std::ref(*this)).detach();
+			cerr<<"starting on host "<<host.host.name<<'\n';
+			std::thread(&UnitTask::execute, task, host, std::ref(*this)).detach();
 		}
 	}
 
@@ -288,15 +295,23 @@ private:
 	}
 };
 
-template<class ProgramT, class Owner>
+template<class Owner, class ProgGet>
 class CompileTask: public UnitTask {
 public:
-	CompileTask(ProgramT& program, shared_ptr<Owner> owner): program(program), owner(owner) {
-	}
+	CompileTask(ID id, ProgGet progGet): id(id), progGet(progGet) {}
 	void run() override {
+		odb::session session;
+		shared_ptr<Owner> owner;
+		{
+			odb::transaction t(db->begin());
+			owner = db->load<Owner>(id);
+		}
+		auto& program = progGet(owner);
+
 		shared_ptr<Language> lang = program.language;
 		StringMap inputs;
 		inputs["source"] = program.source.hash;
+		cerr<<"compiling with lang "<<lang->getName()<<" program "<<program.source.hash<<'\n';
 		StringMap result = connection->runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
 		bool changed = 0;
 		if (result.count("stderr") || result.count("stderr")) {
@@ -307,6 +322,7 @@ public:
 			program.binary.hash = result["binary"];
 			changed = 1;
 		}
+		cerr<<"changed: "<<changed<<'\n';
 		if (changed) {
 			odb::transaction t(db->begin());
 			db->update(owner);
@@ -314,8 +330,9 @@ public:
 		}
 	}
 private:
-	ProgramT& program;
-	shared_ptr<Owner> owner;
+	typedef typename odb::object_traits<Owner>::id_type ID;
+	ID id;
+	ProgGet progGet;
 };
 
 class CompileAndRunTask: public UnitTask {
@@ -325,7 +342,8 @@ public:
 
 protected:
 	void run() override {
-		CompileTask<SubmissionProgram, Submission> compile(submission->program, submission);
+		auto progGet = [](shared_ptr<Submission> s)->SubmissionProgram&{return s->program;};
+		CompileTask<Submission, decltype(progGet)> compile(submission->id, progGet);
 		compile.connection = connection;
 		compile.master = master;
 		compile.run();
@@ -368,8 +386,9 @@ void updateJudgeHosts() {
 }
 
 void compileEvaluator(TaskPtr task) {
+	auto get = [](TaskPtr t)->EvaluatorProgram&{return t->evaluator;};
 	JudgeMaster::instance().addTask(
-		new CompileTask<EvaluatorProgram, Task>(task->evaluator, task)
+		new CompileTask<Task, decltype(get)>(task->id, get)
 	);
 }
 

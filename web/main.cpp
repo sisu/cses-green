@@ -137,7 +137,6 @@ struct Server: cppcms::application {
 		TaskPage t(user, *task->contest.lock(), *task, languages);
 		auto& eval = task->evaluator;
 		if (isPost()) {
-			string oldHash = eval.source.hash;
 			t.form.load(context());
 			if (t.form.validate()) {
 				t.builder.readForm();
@@ -145,8 +144,7 @@ struct Server: cppcms::application {
 				db->update(task);
 				tr.commit();
 				BOOSTER_INFO("edit task")<<"got evaluator: "<<task->evaluator.source.hash<<'\n';
-				string newHash = eval.source.hash;
-				if (!newHash.empty() && newHash != oldHash) {
+				if (!eval.source.hash.empty()) {
 					compileEvaluator(task);
 				}
 			}
