@@ -269,7 +269,7 @@ private:
 		StringMap result = connection->runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
 		Result res;
 		res.submission = submission;
-//		res.testCase = test;
+		res.testCase = test;
 		if (result.count("stdout")) {
 			res.output.hash = result["stdout"];
 		}
