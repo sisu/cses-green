@@ -237,24 +237,30 @@ ReturnConnection::~ReturnConnection() {
 
 class RunTestGroup: public UnitTask {
 public:
-	RunTestGroup(SubmissionPtr submission, vector<shared_ptr<TestCase>>&& testCases):
-		submission(submission), testCases(move(testCases)) {
-	}
+	RunTestGroup(SubmissionPtr submission, shared_ptr<TestGroup> testGroup):
+		submissionID(submission->id), testGroupID(testGroup->id) {}
 protected:
 	void run() override {
-		(void)connection;
-		for(shared_ptr<TestCase> test: testCases) {
-			Result result = runForInput(test);
+		odb::session session;
+		shared_ptr<TestGroup> group;
+		shared_ptr<Submission> submission;
+		{
+			odb::transaction t(db->begin());
+			group = db->load<TestGroup>(testGroupID);
+			submission = db->load<Submission>(submissionID);
+		}
+		for(shared_ptr<TestCase> test: group->tests) {
+			Result result = runForInput(submission, test);
 			if (result.output) {
-				evaluateOutput(move(result));
+				evaluateOutput(submission, move(result));
 			}
 		}
 	}
 private:
-	SubmissionPtr submission;
-	vector<shared_ptr<TestCase>> testCases;
+	ID submissionID;
+	ID testGroupID;
 
-	Result runForInput(shared_ptr<TestCase> test) {
+	Result runForInput(SubmissionPtr submission, shared_ptr<TestCase> test) {
 		shared_ptr<Language> lang = submission->program.language;
 		TaskPtr task = submission->task;
 		StringMap inputs;
@@ -278,7 +284,7 @@ private:
 		return res;
 	}
 
-	void evaluateOutput(Result result) {
+	void evaluateOutput(SubmissionPtr submission, Result result) {
 		DockerImage image = submission->task->evaluator.language->runner;
 		StringMap inputs;
 		inputs["binary"] = submission->program.binary.hash;
@@ -295,78 +301,90 @@ private:
 	}
 };
 
-template<class Owner, class ProgGet>
-class CompileTask: public UnitTask {
+template<class Owner, class Program>
+void compileProgram(shared_ptr<Owner> owner, Program& program, JudgeConnection connection) {
+	shared_ptr<Language> lang = program.language;
+	StringMap inputs;
+	inputs["source"] = program.source.hash;
+	cerr<<"compiling with lang "<<lang->getName()<<" program "<<program.source.hash<<'\n';
+	StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
+	bool changed = 0;
+	if (result.count("stderr") || result.count("stderr")) {
+		program.compileMessage = result["stdout"] + result["stderr"];
+		changed = 1;
+	}
+	if (result.count("binary")) {
+		program.binary.hash = result["binary"];
+		changed = 1;
+	}
+	cerr<<"changed: "<<changed<<'\n';
+	if (changed) {
+		odb::transaction t(db->begin());
+		db->update(owner);
+		t.commit();
+	}
+}
+
+class CompileEvaluatorTask: public UnitTask {
 public:
-	CompileTask(ID id, ProgGet progGet): id(id), progGet(progGet) {}
+	CompileEvaluatorTask(ID id): id(id) {}
 	void run() override {
 		odb::session session;
-		shared_ptr<Owner> owner;
+		shared_ptr<Task> task;
 		{
 			odb::transaction t(db->begin());
-			owner = db->load<Owner>(id);
+			task = db->load<Task>(id);
 		}
-		auto& program = progGet(owner);
-
-		shared_ptr<Language> lang = program.language;
-		StringMap inputs;
-		inputs["source"] = program.source.hash;
-		cerr<<"compiling with lang "<<lang->getName()<<" program "<<program.source.hash<<'\n';
-		StringMap result = connection->runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
-		bool changed = 0;
-		if (result.count("stderr") || result.count("stderr")) {
-			program.compileMessage = result["stdout"] + result["stderr"];
-			changed = 1;
-		}
-		if (result.count("binary")) {
-			program.binary.hash = result["binary"];
-			changed = 1;
-		}
-		cerr<<"changed: "<<changed<<'\n';
-		if (changed) {
-			odb::transaction t(db->begin());
-			db->update(owner);
-			t.commit();
-		}
+		compileProgram(task, task->evaluator, *connection);
 	}
 private:
-	typedef typename odb::object_traits<Owner>::id_type ID;
 	ID id;
-	ProgGet progGet;
 };
 
 class CompileAndRunTask: public UnitTask {
 public:
-	CompileAndRunTask(SubmissionPtr submission): submission(submission) {
+	CompileAndRunTask(SubmissionPtr submission): submissionID(submission->id) {
 	}
 
 protected:
 	void run() override {
-		auto progGet = [](shared_ptr<Submission> s)->SubmissionProgram&{return s->program;};
-		CompileTask<Submission, decltype(progGet)> compile(submission->id, progGet);
-		compile.connection = connection;
-		compile.master = master;
-		compile.run();
+		odb::session session;
+		SubmissionPtr submission;
+		{
+			odb::transaction t(db->begin());
+			submission = db->load<Submission>(submissionID);
+			submission->status = SubmissionStatus::JUDGING;
+			db->update(submission);
+			t.commit();
+		}
+		try {
+			compileProgram(submission, submission->program, *connection);
+		} catch(const ::apache::thrift::TException&) {
+			odb::transaction t(db->begin());
+			submission->status = SubmissionStatus::ERROR;
+			db->update(submission);
+			t.commit();
+			throw;
+		}
 		if (submission->program.binary) {
-			startTestGroups();
+			startTestGroups(submission);
 		} else {
 			odb::transaction t(db->begin());
 			submission->status = SubmissionStatus::COMPILE_ERROR;
-			db->update(*submission);
+			db->update(submission);
 			t.commit();
 		}
 	}
 
 private:
-	SubmissionPtr submission;
+	ID submissionID;
 
-	void startTestGroups() {
+	void startTestGroups(SubmissionPtr submission) {
 		TaskPtr task = submission->task;
-		odb::session s;
 		odb::transaction t(db->begin());
 		db->load(*task, task->sec);
 		for(auto group: task->testGroups) {
-			master->addTask(new RunTestGroup(submission, move(group->tests)));
+			master->addTask(new RunTestGroup(submission, group));
 		}
 	}
 };
@@ -386,10 +404,7 @@ void updateJudgeHosts() {
 }
 
 void compileEvaluator(TaskPtr task) {
-	auto get = [](TaskPtr t)->EvaluatorProgram&{return t->evaluator;};
-	JudgeMaster::instance().addTask(
-		new CompileTask<Task, decltype(get)>(task->id, get)
-	);
+	JudgeMaster::instance().addTask(new CompileEvaluatorTask(task->id));
 }
 
 }
