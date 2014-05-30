@@ -324,6 +324,7 @@ struct Submission: HasID {
 	SubmissionStatus status;
 	int score = 0;
 	long long time = 0;
+	int missingResults = 0;
 };
 typedef shared_ptr<Submission> SubmissionPtr;
 #pragma db value(SubmissionPtr) not_null
@@ -342,9 +343,9 @@ struct Result: HasID {
 	shared_ptr<TestCase> testCase;
 	MaybeFile output;
 	MaybeFile errOutput;
-	ResultStatus status;
-	float timeInSeconds;
-	int memoryInBytes;
+	ResultStatus status = ResultStatus::INTERNAL_ERROR;
+	float timeInSeconds = 0;
+	int memoryInBytes = 0;
 };
 
 #pragma db object

@@ -182,7 +182,7 @@ struct Server: cppcms::application {
 				if (ss == SubmissionStatus::PENDING) status = "PENDING";
 				if (ss == SubmissionStatus::JUDGING) status = "JUDGING";
 				if (ss == SubmissionStatus::COMPILE_ERROR) status = "COMPILE ERROR";
-				if (ss == SubmissionStatus::READY) status = "READY";
+				if (ss == SubmissionStatus::READY) status = std::to_string(s.score);
 				if (ss == SubmissionStatus::ERROR) status = "WTF";
 				int submissionID = s.id;
 				data.push_back(make_tuple(-time, submissionID, task, status));

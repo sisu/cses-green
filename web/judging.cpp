@@ -58,8 +58,9 @@ struct JudgeConnection {
 				save.save();
 			}
 			map[outFile.name] = outFile.hash;
-			cerr<<"result "<<outFile.name<<'\n';
+			cerr<<' '<<outFile.name;
 		}
+		cerr<<'\n';
 		return map;
 	}
 
@@ -249,11 +250,26 @@ protected:
 			group = db->load<TestGroup>(testGroupID);
 			submission = db->load<Submission>(submissionID);
 		}
-		for(shared_ptr<TestCase> test: group->tests) {
-			Result result = runForInput(submission, test);
-			if (result.output) {
-				evaluateOutput(submission, move(result));
+		try {
+			SubmissionUpdate update{submission, 0};
+			bool allOK = 1;
+			for(shared_ptr<TestCase> test: group->tests) {
+				Result result = runForInput(submission, test);
+				if (result.output) {
+					allOK &= evaluateOutput(submission, move(result));
+				} else {
+					allOK = 0;
+				}
+				if (!allOK) break;
 			}
+			update.score = allOK ? group->points : 0;
+		} catch(const ::apache::thrift::TException&) {
+			auto lock = getLock();
+			odb::transaction t(db->begin());
+			submission->status = SubmissionStatus::ERROR;
+			db->update(submission);
+			t.commit();
+			throw;
 		}
 	}
 private:
@@ -272,6 +288,8 @@ private:
 		res.testCase = test;
 		if (result.count("stdout")) {
 			res.output.hash = result["stdout"];
+		} else {
+			res.status = ResultStatus::INTERNAL_ERROR;
 		}
 		if (result.count("stderr")) {
 			res.errOutput.hash = result["stderr"];
@@ -284,22 +302,51 @@ private:
 		return res;
 	}
 
-	void evaluateOutput(SubmissionPtr submission, Result result) {
-		DockerImage image = submission->task->evaluator.language->runner;
+	bool evaluateOutput(SubmissionPtr submission, Result result) {
+		TaskPtr task = submission->task;
+		DockerImage image = task->evaluator.language->runner;
 		StringMap inputs;
-		inputs["binary"] = submission->program.binary.hash;
+		inputs["binary"] = task->evaluator.binary.hash;
 		inputs["output"] = result.output.hash;
 		inputs["input"] = result.testCase->input.hash;
 		inputs["correct"] = result.testCase->output.hash;
 		StringMap resMap = connection->runOnJudge(image, inputs, 1.0, 100<<20);
+		cerr<<"result file "<<resMap.count("result")<<'\n';
 		string resStr = readFileByHash(resMap["result"]);
+		cerr<<"result string "<<resStr<<'\n';
+		bool ok = *stringToInteger<int>(resStr);
+		result.status = ok ? ResultStatus::CORRECT : ResultStatus::WRONG_ANSWER;
 
 		odb::transaction t(db->begin());
-		result.status = (ResultStatus)*stringToInteger<int>(resStr);
 		db->update(result);
 		t.commit();
+		return ok;
 	}
+
+	struct SubmissionUpdate {
+		SubmissionPtr submission;
+		int score;
+		~SubmissionUpdate() {
+			auto lock = getLock();
+			odb::transaction t(db->begin());
+			db->reload(submission);
+			--submission->missingResults;
+			submission->score += score;
+			if (submission->missingResults == 0 && submission->status == SubmissionStatus::JUDGING) {
+				submission->status = SubmissionStatus::READY;
+			}
+			db->update(submission);
+			t.commit();
+		}
+	};
+
+	static std::unique_lock<std::mutex> getLock() {
+		return std::unique_lock<std::mutex>(submissionMutex);
+	}
+	// TODO: make per-submission mutex
+	static std::mutex submissionMutex;
 };
+std::mutex RunTestGroup::submissionMutex;
 
 template<class Owner, class Program>
 void compileProgram(shared_ptr<Owner> owner, Program& program, JudgeConnection connection) {
@@ -381,8 +428,13 @@ private:
 
 	void startTestGroups(SubmissionPtr submission) {
 		TaskPtr task = submission->task;
-		odb::transaction t(db->begin());
-		db->load(*task, task->sec);
+		{
+			odb::transaction t(db->begin());
+			db->load(*task, task->sec);
+			submission->missingResults = task->testGroups.size();
+			db->update(submission);
+			t.commit();
+		}
 		for(auto group: task->testGroups) {
 			master->addTask(new RunTestGroup(submission, group));
 		}
