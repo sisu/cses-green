@@ -1,3 +1,4 @@
+#include "run_docker.hpp"
 #include "Judge.hpp"
 #include "file.hpp"
 
@@ -69,6 +70,22 @@ void Judge::getFile(
 	}
 }
 
-// Judge::run implemented in Judge_run.cpp.
+void Judge::run(
+	protocol::RunResult& _return,
+	const string& token,
+	const protocol::Sandbox& sandbox,
+	const vector<protocol::FileRef>& inputs,
+	const protocol::RunOptions& options
+) {
+	if(token != correctToken) {
+		throw withMsg<protocol::AuthError>("Invalid token.");
+	}
+	if (sandbox.__isset.docker) {
+		runDocker(_return, sandbox.docker.repository, sandbox.docker.id, inputs, options);
+	} else {
+		cerr << "Unknown sandbox type.\n";
+		throw protocol::InternalError();
+	}
+}
 
 }

@@ -20,6 +20,27 @@ enum RunResultType {
 struct RunResult {
 	1:RunResultType type,
 	2:list<FileRef> outputs,
+	3:double timeInSeconds,
+	4:i64 memoryInBytes,
+}
+
+struct DockerImage {
+	1:string repository,
+	2:string id,
+}
+enum SyscallPolicy {
+	NO_RESTRICT,
+	PTRACE,
+	SECCOMP,
+}
+struct PTraceConfig {
+	1:SyscallPolicy policy,
+	2:string allowedSyscalls,
+}
+struct Sandbox {
+	// Exactly one of these must be present
+	1:optional DockerImage docker,
+	2:optional PTraceConfig ptrace,
 }
 
 exception InternalError {
@@ -43,6 +64,6 @@ service Judge {
 	string getFile(1:string token, 2:string hash)
 		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DockerError d),
 	
-	RunResult run(1:string token, 2:string imageRepository, 3:string imageID, 4:list<FileRef> inputs, 5:RunOptions options)
+	RunResult run(1:string token, 2:Sandbox sandbox, 4:list<FileRef> inputs, 5:RunOptions options)
 		throws (1:InternalError a, 2:InvalidDataError b, 3:AuthError c, 4:DockerError d),
 }

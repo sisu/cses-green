@@ -60,8 +60,8 @@ DockerImage::DockerImage(const string& repository, const string& id)
 Language::Language(
 	const string& name,
 	const string& suffix,
-	const DockerImage& compiler,
-	const DockerImage& runner
+	const Sandbox& compiler,
+	const Sandbox& runner
 ) : compiler(compiler), runner(runner) {
 	setName(name);
 	setSuffix(suffix);

@@ -5,6 +5,7 @@
 #include <odb/core.hxx>
 #include <odb/lazy-ptr.hxx>
 #include <odb/section.hxx>
+#include <boost/optional.hpp>
 
 #pragma db namespace session pointer(std::shared_ptr)
 namespace cses {
@@ -76,6 +77,33 @@ private:
 	StrField id;
 	
 	friend class odb::access;
+	friend struct Sandbox;
+};
+
+#pragma db value
+struct PTraceConfig {
+	enum SyscallPolicy {
+		NO_RESTRICT,
+		PTRACE,
+		SECCOMP,
+	};
+	SyscallPolicy policy = SECCOMP;
+	StrField allowedSyscalls;
+};
+
+#pragma db value
+struct Sandbox {
+	enum Type { DOCKER, PTRACE };
+	Type type = DOCKER;
+	DockerImage docker;
+	PTraceConfig ptrace;
+
+	Sandbox(DockerImage docker): type(DOCKER), docker(docker) {}
+	Sandbox(PTraceConfig ptrace): type(PTRACE), ptrace(ptrace) {}
+
+private:
+	Sandbox() {}
+	friend class odb::access;
 	friend struct Language;
 };
 
@@ -86,12 +114,12 @@ public:
 	Language(
 		const string& name,
 		const string& suffix,
-		const DockerImage& compiler,
-		const DockerImage& runner
+		const Sandbox& compiler,
+		const Sandbox& runner
 	);
 	
-	DockerImage compiler;
-	DockerImage runner;
+	Sandbox compiler;
+	Sandbox runner;
 	
 	const string& getName() const {
 		return name;
@@ -127,8 +155,8 @@ public:
 	SubmissionLanguage(
 		const string& name,
 		const string& suffix,
-		const DockerImage& compiler,
-		const DockerImage& runner
+		const Sandbox& compiler,
+		const Sandbox& runner
 	) : Language(name, suffix, compiler, runner) { }
 	
 private:
@@ -144,8 +172,8 @@ public:
 	EvaluatorLanguage(
 		const string& name,
 		const string& suffix,
-		const DockerImage& compiler,
-		const DockerImage& runner
+		const Sandbox& compiler,
+		const Sandbox& runner
 	) : Language(name, suffix, compiler, runner) { }
 	
 private:

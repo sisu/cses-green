@@ -27,7 +27,7 @@ struct JudgeConnection {
 	JudgeConnection(JudgeHost host): host(host), client(new protocol::JudgeClient(makeProtocol(host.host, host.port))) {
 	}
 
-	StringMap runOnJudge(DockerImage image, const StringMap& inputs, double timeLimit, int memoryLimit) {
+	StringMap runOnJudge(Sandbox sandbox, const StringMap& inputs, double timeLimit, int memoryLimit) {
 		cerr<<"running on judge "<<host.name<<' '<<inputs.size()<<'\n';
 		vector<protocol::FileRef> fileRefs;
 		for(const auto& i: inputs) {
@@ -46,7 +46,7 @@ struct JudgeConnection {
 		options.memoryLimitBytes = memoryLimit;
 		protocol::RunResult result;
 		cerr<<"calling run\n";
-		client->run(result, token, image.getRepositoryName(), image.getImageID(), fileRefs, options);
+		client->run(result, token, makeSandbox(sandbox), fileRefs, options);
 		cerr<<"return from run\n";
 		StringMap map;
 		for(protocol::FileRef outFile: result.outputs) {
@@ -71,6 +71,29 @@ struct JudgeConnection {
 	}
 
 private:
+	static cses::protocol::Sandbox makeSandbox(Sandbox sandbox) {
+		cses::protocol::Sandbox res;
+		switch(sandbox.type) {
+			case Sandbox::DOCKER:
+				{
+					cses::protocol::DockerImage d;
+					d.repository = sandbox.docker.getRepositoryName();
+					d.id = sandbox.docker.getImageID();
+					res.__set_docker(d);
+				}
+				break;
+			case Sandbox::PTRACE:
+				{
+					cses::protocol::PTraceConfig p;
+					p.policy = cses::protocol::SyscallPolicy::SECCOMP;
+					p.allowedSyscalls = sandbox.ptrace.allowedSyscalls;
+					res.__set_ptrace(p);
+				}
+				break;
+		}
+		return res;
+	}
+
 	static boost::shared_ptr<apache::thrift::protocol::TProtocol> makeProtocol(string host, int port) {
 		using namespace apache::thrift;
 		using namespace apache::thrift::protocol;
@@ -304,13 +327,13 @@ private:
 
 	bool evaluateOutput(SubmissionPtr submission, Result result) {
 		TaskPtr task = submission->task;
-		DockerImage image = task->evaluator.language->runner;
+		Sandbox sandbox = task->evaluator.language->runner;
 		StringMap inputs;
 		inputs["binary"] = task->evaluator.binary.hash;
 		inputs["output"] = result.output.hash;
 		inputs["input"] = result.testCase->input.hash;
 		inputs["correct"] = result.testCase->output.hash;
-		StringMap resMap = connection->runOnJudge(image, inputs, 1.0, 100<<20);
+		StringMap resMap = connection->runOnJudge(sandbox, inputs, 1.0, 100<<20);
 		cerr<<"result file "<<resMap.count("result")<<'\n';
 		string resStr = readFileByHash(resMap["result"]);
 		cerr<<"result string "<<resStr<<'\n';

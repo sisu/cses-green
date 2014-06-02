@@ -19,8 +19,7 @@ public:
 	virtual void run(
 		protocol::RunResult& _return,
 		const string& token,
-		const string& imageRepository,
-		const string& imageID,
+		const protocol::Sandbox& sandbox,
 		const vector<protocol::FileRef>& inputs,
 		const protocol::RunOptions& options
 	) override;

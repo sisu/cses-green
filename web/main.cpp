@@ -608,10 +608,10 @@ struct Server: cppcms::application {
 		} else if(lang) {
 			c.form.name.value(lang->getName());
 			c.form.suffix.value(lang->getSuffix());
-			c.form.compilerRepository.value(lang->compiler.getRepositoryName());
-			c.form.compilerImageID.value(lang->compiler.getImageID());
-			c.form.runnerRepository.value(lang->runner.getRepositoryName());
-			c.form.runnerImageID.value(lang->runner.getImageID());
+			c.form.compilerRepository.value(lang->compiler.docker.getRepositoryName());
+			c.form.compilerImageID.value(lang->compiler.docker.getImageID());
+			c.form.runnerRepository.value(lang->runner.docker.getRepositoryName());
+			c.form.runnerImageID.value(lang->runner.docker.getImageID());
 		}
 		
 		render("adminEditLanguage", c);

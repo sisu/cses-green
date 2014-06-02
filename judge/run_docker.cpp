@@ -169,19 +169,14 @@ void checkRunParameters(
 
 } // end anonymous namespace
 
-void Judge::run(
+void runDocker(
 	protocol::RunResult& _return,
-	const string& token,
 	const string& imageRepository,
 	const string& imageID,
 	const vector<protocol::FileRef>& inputs,
 	const protocol::RunOptions& options
 ) {
 	try {
-		if(token != correctToken) {
-			throw withMsg<protocol::AuthError>("Invalid token.");
-		}
-		
 		checkRunParameters(imageRepository, imageID, inputs, options);
 		
 		ensureImagePulled(imageRepository, imageID);
@@ -284,7 +279,7 @@ void Judge::run(
 	} catch(::apache::thrift::TException& e) {
 		throw;
 	} catch(std::exception& e) {
-		cerr << "Judge::run exception: " << e.what() << "\n";
+		cerr << "runDocker exception: " << e.what() << "\n";
 		protocol::InternalError err;
 		err.msg = e.what();
 		throw err;
