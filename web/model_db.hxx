@@ -89,6 +89,7 @@ struct PTraceConfig {
 	};
 	SyscallPolicy policy = SECCOMP;
 	StrField allowedSyscalls;
+	File runner;
 };
 
 #pragma db value

@@ -21,7 +21,7 @@ LDFLAGS:=-lthrift -lcppcms -lcrypto -lpthread
 
 .PHONY: all clean
 
-all: $(ODIRS) judge
+all: $(ODIRS) judge syscalls/restrict_syscalls
 
 judge: $(OBJ) $(THRIFT_OBJ)
 	$(CXX) -o "$@" $^ $(CXXFLAGS) $(LDFLAGS)
@@ -36,6 +36,9 @@ $(THRIFT_SRC): $(ODIR)/gen-cpp/$(TFILE)_types.h
 
 $(ODIR)/gen-cpp/$(TFILE)_types.h: common/$(TFILE).thrift
 	thrift -o $(ODIR) --gen cpp $<
+
+syscalls/restrict_syscalls: syscalls/%: syscalls/%.cpp
+	$(CXX) "$<" -o "$@" -Wall -Wextra -std=c++0x
 
 clean:
 	rm -rf "$(ODIR)"

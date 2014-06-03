@@ -36,6 +36,7 @@ enum SyscallPolicy {
 struct PTraceConfig {
 	1:SyscallPolicy policy,
 	2:string allowedSyscalls,
+	3:string runnerHash,
 }
 struct Sandbox {
 	// Exactly one of these must be present

@@ -77,14 +77,21 @@ void Judge::run(
 	const vector<protocol::FileRef>& inputs,
 	const protocol::RunOptions& options
 ) {
-	if(token != correctToken) {
-		throw withMsg<protocol::AuthError>("Invalid token.");
-	}
-	if (sandbox.__isset.docker) {
-		runDocker(_return, sandbox.docker.repository, sandbox.docker.id, inputs, options);
-	} else {
-		cerr << "Unknown sandbox type.\n";
-		throw protocol::InternalError();
+	try {
+		if(token != correctToken) {
+			throw withMsg<protocol::AuthError>("Invalid token.");
+		}
+		if (sandbox.__isset.docker) {
+			runDocker(_return, sandbox.docker.repository, sandbox.docker.id, inputs, options);
+		} else {
+			cerr << "Unknown sandbox type.\n";
+			throw protocol::InternalError();
+		}
+	} catch(std::exception& e) {
+		cerr << "runDocker exception: " << e.what() << "\n";
+		protocol::InternalError err;
+		err.msg = "secret";
+		throw err;
 	}
 }
 

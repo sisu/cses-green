@@ -87,6 +87,7 @@ private:
 					cses::protocol::PTraceConfig p;
 					p.policy = cses::protocol::SyscallPolicy::SECCOMP;
 					p.allowedSyscalls = sandbox.ptrace.allowedSyscalls;
+					p.runnerHash = sandbox.ptrace.runner.hash;
 					res.__set_ptrace(p);
 				}
 				break;

@@ -176,114 +176,104 @@ void runDocker(
 	const vector<protocol::FileRef>& inputs,
 	const protocol::RunOptions& options
 ) {
-	try {
-		checkRunParameters(imageRepository, imageID, inputs, options);
-		
-		ensureImagePulled(imageRepository, imageID);
-		
-		// Create input and output directories.
-		mkdir("tmp", 0700);
-		
-		auto tmpdirFail = []() { throw Error("Could not create temporary directories."); };
-		
-		char tmpdirnameBuf[] = "tmp/XXXXXX";
-		if(mkdtemp(tmpdirnameBuf) == nullptr) tmpdirFail();
-		string tmpdirname = tmpdirnameBuf;
-		
-		string indirName = tmpdirname + "/in";
-		if(mkdir(indirName.c_str(), 0700) == -1) tmpdirFail();
-		
-		string outdirName = tmpdirname + "/out";
-		if(mkdir(outdirName.c_str(), 0700) == -1) tmpdirFail();
-		
-		// Hardlink input files.
-		for(const protocol::FileRef& input : inputs) {
-			string from = getFileStoragePath(input.hash);
-			string to = indirName + "/" + input.name;
-			if(link(from.c_str(), to.c_str()) == -1) {
-				throw Error("Could not hardlink input file.");
-			}
+	checkRunParameters(imageRepository, imageID, inputs, options);
+	
+	ensureImagePulled(imageRepository, imageID);
+	
+	// Create input and output directories.
+	mkdir("tmp", 0700);
+	
+	auto tmpdirFail = []() { throw Error("Could not create temporary directories."); };
+	
+	char tmpdirnameBuf[] = "tmp/XXXXXX";
+	if(mkdtemp(tmpdirnameBuf) == nullptr) tmpdirFail();
+	string tmpdirname = tmpdirnameBuf;
+	
+	string indirName = tmpdirname + "/in";
+	if(mkdir(indirName.c_str(), 0700) == -1) tmpdirFail();
+	
+	string outdirName = tmpdirname + "/out";
+	if(mkdir(outdirName.c_str(), 0700) == -1) tmpdirFail();
+	
+	// Hardlink input files.
+	for(const protocol::FileRef& input : inputs) {
+		string from = getFileStoragePath(input.hash);
+		string to = indirName + "/" + input.name;
+		if(link(from.c_str(), to.c_str()) == -1) {
+			throw Error("Could not hardlink input file.");
 		}
-		
-		runCommand("chmod -R 777 " + tmpdirname);
-		
-		// Start container. TODO: handle full paths containing spaces correctly.
-		stringstream containerCommand;
-		containerCommand << "sudo docker.io run ";
-		containerCommand << "--detach=true ";
-		containerCommand << "--networking=false ";
-		containerCommand << "--memory=" << options.memoryLimitBytes << "b ";
-		containerCommand << "--volume=" << getFullPath(indirName) << ":/cses_judge/input/:ro ";
-		containerCommand << "--volume=" << getFullPath(outdirName) << ":/cses_judge/output/ ";
-		containerCommand << imageID;
-		string containerID = runCommand(containerCommand.str());
-		
-		if(containerID.size() != 65 || containerID[64] != '\n') {
-			throw Error("Unexpected docker output format.");
-		}
-		containerID.resize(64);
-		if(!isValidContainerID(containerID)) {
-			throw Error("Unexpected docker output format.");
-		}
-		
-		// After time limit, check exit status and remove it.
-		uint64_t sleeptime = options.timeLimit * 1e9;
-		struct timespec sleeptimespec;
-		sleeptimespec.tv_sec = sleeptime / 1000000000;
-		sleeptimespec.tv_nsec = sleeptime % 1000000000;
-		nanosleep(&sleeptimespec, nullptr);
-		
-		string running = runCommand("sudo docker.io inspect --format={{.State.Running}} " + containerID);
-		if(running == "false\n") {
-			string exitCode = runCommand("sudo docker.io inspect --format={{.State.ExitCode}} " + containerID);
-			if(exitCode != "0\n") {
-				_return.type = protocol::RunResultType::NONZERO_EXIT_STATUS;
-			} else {
-				_return.type = protocol::RunResultType::SUCCESS;
-			}
-		} else {
-			_return.type = protocol::RunResultType::TIME_LIMIT_EXCEEDED;
-		}
-		
-		runCommand("sudo docker.io rm --force=true " + containerID);
-		
-		// Save output files.
-		DIR* outdir = opendir(outdirName.c_str());
-		if(outdir == nullptr) throw Error("Opening sandbox output directory failed.");
-		
-		struct dirent* ent;
-		while((ent = readdir(outdir)) != nullptr) {
-			if(ent->d_type != DT_REG) continue;
-			
-			string name = ent->d_name;
-			if(!isSafeIdentifier(name)) continue;
-			
-			string fullName = outdirName + "/" + name;
-			
-			runCommand("sudo chmod 666 " + fullName);
-			
-			FileSave save;
-			save.writeFileContents(fullName);
-			
-			cses::protocol::FileRef ref;
-			ref.name = name;
-			ref.hash = save.save();
-			
-			_return.outputs.push_back(ref);
-		}
-		
-		closedir(outdir);
-		
-		// TODO: remove temporary directory.
-		
-	} catch(::apache::thrift::TException& e) {
-		throw;
-	} catch(std::exception& e) {
-		cerr << "runDocker exception: " << e.what() << "\n";
-		protocol::InternalError err;
-		err.msg = e.what();
-		throw err;
 	}
+	
+	runCommand("chmod -R 777 " + tmpdirname);
+	
+	// Start container. TODO: handle full paths containing spaces correctly.
+	stringstream containerCommand;
+	containerCommand << "sudo docker.io run ";
+	containerCommand << "--detach=true ";
+	containerCommand << "--networking=false ";
+	containerCommand << "--memory=" << options.memoryLimitBytes << "b ";
+	containerCommand << "--volume=" << getFullPath(indirName) << ":/cses_judge/input/:ro ";
+	containerCommand << "--volume=" << getFullPath(outdirName) << ":/cses_judge/output/ ";
+	containerCommand << imageID;
+	string containerID = runCommand(containerCommand.str());
+	
+	if(containerID.size() != 65 || containerID[64] != '\n') {
+		throw Error("Unexpected docker output format.");
+	}
+	containerID.resize(64);
+	if(!isValidContainerID(containerID)) {
+		throw Error("Unexpected docker output format.");
+	}
+	
+	// After time limit, check exit status and remove it.
+	uint64_t sleeptime = options.timeLimit * 1e9;
+	struct timespec sleeptimespec;
+	sleeptimespec.tv_sec = sleeptime / 1000000000;
+	sleeptimespec.tv_nsec = sleeptime % 1000000000;
+	nanosleep(&sleeptimespec, nullptr);
+	
+	string running = runCommand("sudo docker.io inspect --format={{.State.Running}} " + containerID);
+	if(running == "false\n") {
+		string exitCode = runCommand("sudo docker.io inspect --format={{.State.ExitCode}} " + containerID);
+		if(exitCode != "0\n") {
+			_return.type = protocol::RunResultType::NONZERO_EXIT_STATUS;
+		} else {
+			_return.type = protocol::RunResultType::SUCCESS;
+		}
+	} else {
+		_return.type = protocol::RunResultType::TIME_LIMIT_EXCEEDED;
+	}
+	
+	runCommand("sudo docker.io rm --force=true " + containerID);
+	
+	// Save output files.
+	DIR* outdir = opendir(outdirName.c_str());
+	if(outdir == nullptr) throw Error("Opening sandbox output directory failed.");
+	
+	struct dirent* ent;
+	while((ent = readdir(outdir)) != nullptr) {
+		if(ent->d_type != DT_REG) continue;
+		
+		string name = ent->d_name;
+		if(!isSafeIdentifier(name)) continue;
+		
+		string fullName = outdirName + "/" + name;
+		
+		runCommand("sudo chmod 666 " + fullName);
+		
+		FileSave save;
+		save.writeFileContents(fullName);
+		
+		cses::protocol::FileRef ref;
+		ref.name = name;
+		ref.hash = save.save();
+		
+		_return.outputs.push_back(ref);
+	}
+	
+	closedir(outdir);
+	
+	// TODO: remove temporary directory.
 }
 
 }
