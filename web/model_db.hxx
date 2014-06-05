@@ -89,7 +89,15 @@ struct PTraceConfig {
 	};
 	SyscallPolicy policy = SECCOMP;
 	StrField allowedSyscalls;
-	File runner;
+	MaybeFile runner;
+
+	PTraceConfig(SyscallPolicy policy, StrField syscalls, MaybeFile runner):
+		policy(policy), allowedSyscalls(syscalls), runner(runner) {}
+
+private:
+	PTraceConfig() {}
+	friend class odb::access;
+	friend struct Sandbox;
 };
 
 #pragma db value
@@ -101,6 +109,7 @@ struct Sandbox {
 
 	Sandbox(DockerImage docker): type(DOCKER), docker(docker) {}
 	Sandbox(PTraceConfig ptrace): type(PTRACE), ptrace(ptrace) {}
+	Sandbox(Type type): type(type) {}
 
 private:
 	Sandbox() {}

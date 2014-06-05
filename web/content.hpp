@@ -148,29 +148,82 @@ struct AdminEditLanguagePage: Page {
 			return error("Invalid image ID. Image IDs consist of 64 digits 0-9 or letters a-f.");
 		}
 	};
+
+	struct DockerForm: cppcms::form {
+		SetCompilerRepositoryWidget repository;
+		SetCompilerImageIDWidget imageID;
+		DockerForm(const string& name) {
+			repository.message(name + " repository");
+			imageID.message(name + " image ID");
+			add(repository);
+			add(imageID);
+		}
+	};
+	struct PTraceForm: cppcms::form {
+		ws::radio policy;
+		ws::text allowedCalls;
+		ws::file runner;
+		PTraceForm(const string& name) {
+			using std::to_string;
+			policy.message(name + " syscall policy");
+			policy.add("no restrictions (unsafe)", to_string(PTraceConfig::NO_RESTRICT));
+			policy.add("ptrace (slow syscalls)", to_string(PTraceConfig::PTRACE));
+			policy.add("seccomp (required modern kernel)", to_string(PTraceConfig::SECCOMP));
+			policy.selected(2);
+			allowedCalls.message(name + " allowed system calls");
+			runner.message(name + " run script");
+			add(policy);
+			add(allowedCalls);
+			add(runner);
+		}
+	};
+	struct RunnerForm: cppcms::form {
+		ws::radio type;
+		DockerForm docker;
+		PTraceForm ptrace;
+		RunnerForm(const string& name): docker(name), ptrace(name) {
+			using std::to_string;
+			type.message(name + " type");
+			type.add("Docker", to_string(Sandbox::DOCKER));
+			type.add("PTrace", to_string(Sandbox::PTRACE));
+			type.selected(1);
+			add(type);
+			add(docker);
+			add(ptrace);
+		}
+		bool validate() override {
+			if (!type.validate()) return false;
+			switch(getType()) {
+				case Sandbox::DOCKER:
+					return docker.validate();
+					break;
+				case Sandbox::PTRACE:
+					return ptrace.validate();
+					break;
+				default:
+					type.error_message("Invalid type");
+					return false;
+			}
+		}
+		Sandbox::Type getType() {
+			return Sandbox::Type(atoi(type.selected_id().c_str()));
+		}
+	};
 	
 	struct Form: cppcms::form {
 		SetLanguageNameWidget name;
 		SetLanguageSuffixWidget suffix;
-		SetCompilerRepositoryWidget compilerRepository;
-		SetCompilerImageIDWidget compilerImageID;
-		SetCompilerRepositoryWidget runnerRepository;
-		SetCompilerImageIDWidget runnerImageID;
+		RunnerForm compilerForm;
+		RunnerForm runnerForm;
 		ws::submit submit;
-		Form() {
+		Form(): compilerForm("Compiler"), runnerForm("Runner") {
 			name.message("Name");
 			suffix.message("Suffix");
-			compilerRepository.message("Compiler repository");
-			compilerImageID.message("Compiler image ID");
-			runnerRepository.message("Runner repository");
-			runnerImageID.message("Runner image ID");
 			submit.value("Save");
 			add(name);
 			add(suffix);
-			add(compilerRepository);
-			add(compilerImageID);
-			add(runnerRepository);
-			add(runnerImageID);
+			add(compilerForm);
+			add(runnerForm);
 			add(submit);
 		}
 	};

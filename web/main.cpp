@@ -587,9 +587,9 @@ struct Server: cppcms::application {
 						LanguageT newLang(
 							c.form.name.value(),
 							c.form.suffix.value(),
-							DockerImage(c.form.compilerRepository.value(), c.form.compilerImageID.value()),
-							DockerImage(c.form.runnerRepository.value(), c.form.runnerImageID.value())
-						);
+							readRunnerForm(c.form.compilerForm, lang ? &lang->compiler : nullptr),
+							readRunnerForm(c.form.runnerForm, lang ? &lang->runner : nullptr));
+//						);
 						
 						if(langID) {
 							newLang.id = *langID;
@@ -608,15 +608,13 @@ struct Server: cppcms::application {
 		} else if(lang) {
 			c.form.name.value(lang->getName());
 			c.form.suffix.value(lang->getSuffix());
-			c.form.compilerRepository.value(lang->compiler.docker.getRepositoryName());
-			c.form.compilerImageID.value(lang->compiler.docker.getImageID());
-			c.form.runnerRepository.value(lang->runner.docker.getRepositoryName());
-			c.form.runnerImageID.value(lang->runner.docker.getImageID());
+			fillRunnerForm(c.form.compilerForm, lang->compiler);
+			fillRunnerForm(c.form.runnerForm, lang->runner);
 		}
 		
 		render("adminEditLanguage", c);
 	}
-	
+
 	void adminEditLanguage(string type, string langIDString) {
 		if(type == "submission") {
 			adminEditLanguage<SubmissionLanguage>(langIDString);
@@ -729,6 +727,36 @@ struct Server: cppcms::application {
 		response().set_redirect_header(url.str());
 	}
 
+	static Sandbox readRunnerForm(AdminEditLanguagePage::RunnerForm& form, const Sandbox* old) {
+		switch(form.getType()) {
+			case Sandbox::DOCKER:
+				return DockerImage(form.docker.repository.value(),
+						form.docker.imageID.value());
+			case Sandbox::PTRACE:
+				return PTraceConfig(
+						PTraceConfig::SyscallPolicy(atoi(form.ptrace.policy.selected_id().c_str())),
+						form.ptrace.allowedCalls.value(),
+						getMaybeFile(form.ptrace.runner, old ? &old->ptrace.runner : nullptr));
+			default:
+				throw Error("Unknown sandbox type.");
+		}
+	}
+
+	static MaybeFile getMaybeFile(ws::file& file, const MaybeFile* old) {
+		if (!file.set()) return old ? *old : MaybeFile();
+		MaybeFile res;
+		res.hash = saveStreamToFile(file.value()->data());
+		return res;
+	}
+
+	static void fillRunnerForm(AdminEditLanguagePage::RunnerForm& form, Sandbox sandbox) {
+		using std::to_string;
+		form.type.selected_id(to_string(sandbox.type));
+		form.docker.repository.value(sandbox.docker.getRepositoryName());
+		form.docker.imageID.value(sandbox.docker.getImageID());
+		form.ptrace.policy.selected_id(to_string(sandbox.ptrace.policy));
+		form.ptrace.allowedCalls.value(sandbox.ptrace.allowedSyscalls);
+	}
 };
 
 int main(int argc, char** argv) {
