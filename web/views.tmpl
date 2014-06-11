@@ -203,7 +203,7 @@ window.setInterval("update()", 1000);
 <h2>Edit language</h2>
 <% if nameInUse %><p>Edit failed: name already in use.</p><% end %>
 <% if success %><p>Language successfully edited.</p><% end %>
-<form method="post" action=""><%csrf%>
+<form method="post" action="" enctype="multipart/form-data"><%csrf%>
 <table>
 <% form as_table form %>
 </table>

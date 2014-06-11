@@ -85,6 +85,7 @@ private:
 				break;
 			case Sandbox::PTRACE:
 				{
+					if (!sandbox.ptrace.runner) throw Error("Missing runner.");
 					cses::protocol::PTraceConfig p;
 					p.policy = cses::protocol::SyscallPolicy::SECCOMP;
 					p.allowedSyscalls = sandbox.ptrace.allowedSyscalls;
@@ -156,6 +157,10 @@ public:
 		} catch(const ::apache::thrift::TException& e) {
 			namespace P = protocol;
 			printErrorForTypes<P::InternalError, P::InvalidDataError, P::AuthError, P::DockerError>(e);
+		} catch(const std::exception& e) {
+			cerr<<"Internal judging exception "<<e.what()<<'\n';
+		} catch(...) {
+			cerr<<"Unknown judging exception\n";
 		}
 	}
 

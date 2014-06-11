@@ -20,7 +20,7 @@ bool Judge::hasFile(const string& token, const string& hash) {
 			throw withMsg<protocol::AuthError>("Invalid token.");
 		}
 		if(!isValidFileHash(hash)) {
-			throw withMsg<protocol::InvalidDataError>("Malformed hash.");
+			throw withMsg<protocol::InvalidDataError>("Malformed hash " + hash);
 		}
 		
 		return fileHashExists(hash);
