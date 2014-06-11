@@ -1,3 +1,4 @@
+#include "run_ptrace.hpp"
 #include "run_docker.hpp"
 #include "Judge.hpp"
 #include "file.hpp"
@@ -83,6 +84,8 @@ void Judge::run(
 		}
 		if (sandbox.__isset.docker) {
 			runDocker(_return, sandbox.docker.repository, sandbox.docker.id, inputs, options);
+		} else if (sandbox.__isset.ptrace) {
+			runPTrace(_return, sandbox.ptrace, inputs, options);
 		} else {
 			cerr << "Unknown sandbox type.\n";
 			throw protocol::InternalError();

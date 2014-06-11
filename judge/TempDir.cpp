@@ -47,5 +47,14 @@ void TempDir::saveContents(const std::string& subdir, protocol::RunResult& res) 
 	
 	closedir(outdir);
 }
+void TempDir::hardlinkInputs(const vector<protocol::FileRef>& inputs) {
+	for(const protocol::FileRef& input : inputs) {
+		string from = getFileStoragePath(input.hash);
+		string to = name + "/" + input.name;
+		if(link(from.c_str(), to.c_str()) == -1) {
+			throw Error("Could not hardlink input file.");
+		}
+	}
+}
 
 }

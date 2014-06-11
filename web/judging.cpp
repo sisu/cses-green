@@ -71,8 +71,9 @@ struct JudgeConnection {
 	}
 
 private:
-	static cses::protocol::Sandbox makeSandbox(Sandbox sandbox) {
+	cses::protocol::Sandbox makeSandbox(Sandbox sandbox) {
 		cses::protocol::Sandbox res;
+		cerr<<"sandbox type "<<sandbox.type<<'\n';
 		switch(sandbox.type) {
 			case Sandbox::DOCKER:
 				{
@@ -89,6 +90,9 @@ private:
 					p.allowedSyscalls = sandbox.ptrace.allowedSyscalls;
 					p.runnerHash = sandbox.ptrace.runner.hash;
 					res.__set_ptrace(p);
+					if (!client->hasFile(token, p.runnerHash)) {
+						client->sendFile(token, readFileByHash(p.runnerHash));
+					}
 				}
 				break;
 		}
