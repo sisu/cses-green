@@ -426,7 +426,7 @@ struct Server: cppcms::application {
 
 	void registration() {
 		User newUser;
-		RegistrationPage page(newUser);
+		RegistrationPage page(getCurrentUser(), newUser);
 		page.showForm = 1;
 		if(isPost()) {
 			page.form.load(context());
@@ -451,7 +451,7 @@ struct Server: cppcms::application {
 	}
 
 	void login() {
-		LoginPage c;
+		LoginPage c(getCurrentUser());
 		if(isPost() && session().is_set("prelogin")) {
 			c.info.load(context());
 			if(c.info.validate()) {
@@ -484,7 +484,7 @@ struct Server: cppcms::application {
 			return;
 		}
 		
-		AdminPage c;
+		AdminPage c(getCurrentUser());
 		odb::transaction t(db::begin());		
 		odb::result<User> userRes = db::query<User>();
 		c.users.assign(userRes.begin(), userRes.end());
@@ -530,7 +530,7 @@ struct Server: cppcms::application {
 		
 		UserPtr user = getByStringOrFail<User>(userIDString);
 		
-		AdminEditUserPage page(*user);
+		AdminEditUserPage page(getCurrentUser(), *user);
 		if(isPost()) {
 			page.form.load(context());
 			if(page.form.validate()) {
@@ -579,7 +579,7 @@ struct Server: cppcms::application {
 			}
 		}
 		
-		AdminEditLanguagePage c;
+		AdminEditLanguagePage c(getCurrentUser());
 		if(isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
@@ -641,7 +641,7 @@ struct Server: cppcms::application {
 			return;
 		}
 
-		AdminImportPage c;
+		AdminImportPage c(getCurrentUser());
 		if (isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
