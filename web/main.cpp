@@ -19,7 +19,7 @@ using namespace cses;
 
 struct Server: cppcms::application {
 	Server(cppcms::service& srv): cppcms::application(srv) {
-		dispatcher().assign("/", &Server::contests, this);
+		dispatcher().assign("/", &Server::wrap<&Server::contests>, this);
 		mapper().assign("");
 		
 		dispatcher().assign("/contest/(\\d+)/", &Server::wrap<&Server::editContest>, this, 1);
@@ -551,27 +551,15 @@ struct Server: cppcms::application {
 	
 	template <typename LanguageT>
 	void editLanguage(string langIDString) {
-		if(!isCurrentUserAdmin()) {
-			sendRedirectHeader("/");
-			return;
-		}
+		UserPtr user = getRequiredAdminUser();
 		
 		optional<ID> langID;
 		shared_ptr<LanguageT> lang;
 		if(langIDString != "new") {
-			langID = stringToInteger<ID>(langIDString);
-			if(!langID) {
-				sendRedirectHeader("/languages");
-				return;
-			}
-			lang = getSharedPtr<LanguageT>(*langID);
-			if(!lang) {
-				sendRedirectHeader("/languages");
-				return;
-			}
+			lang = getByStringOrFail<LanguageT>(langIDString);
 		}
 		
-		EditLanguagePage c(getOptionalUser());
+		EditLanguagePage c(user);
 		if(isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
