@@ -29,7 +29,7 @@ using namespace std;
 #define SC_RETCODE (4 * EAX)
 #endif
 
-static void set_filters() {
+void set_filters() {
 	struct sock_filter filter[] = {
 		VALIDATE_ARCHITECTURE,
 		EXAMINE_SYSCALL,
@@ -69,16 +69,16 @@ static void set_filters() {
 	assert(!ret);
 }
 
-
-static void child(int _, char** argv)
+static void child(int, char** argv, string dir)
 {
+	chdir(dir.c_str());
 	/* Request tracing by parent: */
 	ptrace(PTRACE_TRACEME, 0, NULL, NULL);
 
 	/* Stop before doing anything, giving parent a chance to catch the exec: */
 	kill(getpid(), SIGSTOP);
 
-	set_filters();
+//	set_filters();
 
 	/* Now exec: */
 //	execl("/bin/echo", "echo", "lol", NULL);
@@ -179,6 +179,7 @@ static void parent(pid_t child_pid)
 int main(int argc, char** argv)
 {
 	assert(argc>1);
+	string dir = ".";
 	int i;
 	for(i=1; i+1<argc; ++i) {
 		string s = argv[i];
@@ -187,6 +188,8 @@ int main(int argc, char** argv)
 			string t = argv[++i];
 		} else if (s=="-allowed") {
 			string a = argv[++i];
+		} else if (s=="-dir") {
+			dir = argv[++i];
 		} else {
 			cerr<<"Unknown argument "<<s<<'\n';
 			return -1;
@@ -200,7 +203,7 @@ int main(int argc, char** argv)
 	pid_t pid = fork();
 
 	if (pid == 0)
-		child(argc, argv);
+		child(argc, argv, dir);
 	else
 		parent(pid);
 }
