@@ -162,7 +162,7 @@ window.setInterval("update()", 1000);
 <table>
 	<% item %>
 	<tr>
-		<td><%= language.getName() %></td>
+		<td><%= language.name %></td>
 		<td><a href="<% url "adminEditLanguage" using SUBMISSION_LANGUAGE, language.id %>">Edit</a></td>
 	</tr>
 	<% end %>
@@ -174,7 +174,7 @@ window.setInterval("update()", 1000);
 <table>
 	<% item %>
 	<tr>
-		<td><%= language.getName() %></td>
+		<td><%= language.name %></td>
 		<td><a href="<% url "adminEditLanguage" using EVALUATOR_LANGUAGE, language.id %>">Edit</a></td>
 	</tr>
 	<% end %>

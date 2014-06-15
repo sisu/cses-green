@@ -124,34 +124,9 @@ struct AdminEditUserPage: Page {
 };
 
 struct AdminEditLanguagePage: Page {
-	struct SetLanguageNameWidget: ValidatingWidget<ws::text> {
-		virtual CheckResult checkValue(const string& value) override {
-			if(Language::isValidName(value)) return ok();
-			return error("Invalid name. Name must consist of 1-255 characters.");
-		}
-	};
-	struct SetLanguageSuffixWidget: ValidatingWidget<ws::text> {
-		virtual CheckResult checkValue(const string& value) override {
-			if(Language::isValidSuffix(value)) return ok();
-			return error("Invalid suffix. Suffix must consist of 0-16 characters (0 if no suffix).");
-		}
-	};
-	struct SetCompilerRepositoryWidget: ValidatingWidget<ws::text> {
-		virtual CheckResult checkValue(const string& value) override {
-			if(DockerImage::isValidRepositoryName(value)) return ok();
-			return error("Unsupported repository name. Name must consist of 1-64 letters, numbers and underscores.");
-		}
-	};
-	struct SetCompilerImageIDWidget: ValidatingWidget<ws::text> {
-		virtual CheckResult checkValue(const string& value) override {
-			if(DockerImage::isValidImageID(value)) return ok();
-			return error("Invalid image ID. Image IDs consist of 64 digits 0-9 or letters a-f.");
-		}
-	};
-
 	struct DockerForm: cppcms::form {
-		SetCompilerRepositoryWidget repository;
-		SetCompilerImageIDWidget imageID;
+		ws::text repository;
+		ws::text imageID;
 		DockerForm(const string& name) {
 			repository.message(name + " repository");
 			imageID.message(name + " image ID");
@@ -211,8 +186,8 @@ struct AdminEditLanguagePage: Page {
 	};
 	
 	struct Form: cppcms::form {
-		SetLanguageNameWidget name;
-		SetLanguageSuffixWidget suffix;
+		ws::text name;
+		ws::text suffix;
 		RunnerForm compilerForm;
 		RunnerForm runnerForm;
 		ws::submit submit;
@@ -375,7 +350,7 @@ struct TaskPage: InContestPage {
 		auto& e = t.evaluator;
 		vector<pair<string,shared_ptr<EvaluatorLanguage>>> choises;
 		for(auto lang: languages) {
-			choises.emplace_back(lang->getName(), lang);
+			choises.emplace_back(lang->name, lang);
 		}
 		builder.add(t.name, "Name")
 			.add(t.timeInSeconds, "Time (s)")

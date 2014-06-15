@@ -58,8 +58,15 @@ private:
 };
 
 // Exception thrown on invalid user data, containing user-readable error message.
-struct ValidationFailure {
-	string message;
+// In case of internal failures, use Error.
+struct ValidationFailure : std::exception {
+	ValidationFailure(const string& msg) : msg(msg) { };
+	
+	virtual const char* what() const throw() override {
+		return msg.c_str();
+	}
+	
+	string msg;
 };
 
 class UnpromotableBoolean {

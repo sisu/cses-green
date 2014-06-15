@@ -1,5 +1,7 @@
 #pragma once
 #include "common.hpp"
+#include "file.hpp"
+#include "io_util.hpp"
 #include "judge_interface.hpp"
 
 #include <odb/core.hxx>
@@ -19,9 +21,13 @@ struct TestGroup;
 typedef unsigned ID;
 
 #pragma db object abstract
-struct HasID {
+struct DBObject {
 #pragma db id auto
 	ID id;
+	
+	// Default validate does nothing, override and throw ValidationFailure or
+	// Error on errors.
+	void validate() { }
 };
 
 #define CHAR_FIELD(n) "VARCHAR(" #n ")"
@@ -34,11 +40,23 @@ typedef string StrField;
 #pragma db value
 struct File {
 	string hash;
+	
+	
+	void validate() {
+		if(hash.empty()) return;
+		if(!isValidFileHash(hash)) {
+			throw Error("MaybeFile::validate: Invalid file hash.");
+		}
+		if(!fileHashExists(hash)) {
+			throw Error("MaybeFile::validate: File not saved.");
+		}
+	}
 };
 
 #pragma db value
 struct MaybeFile {
 	string hash;
+	
 	
 	operator UnpromotableBoolean::Type() {
 		if(hash.empty()) {
@@ -47,35 +65,37 @@ struct MaybeFile {
 			return UnpromotableBoolean::trueValue();
 		}
 	}
+	
+	void validate() {
+		if(hash.empty()) return;
+		if(!isValidFileHash(hash)) {
+			throw Error("MaybeFile::validate: Invalid file hash.");
+		}
+		if(!fileHashExists(hash)) {
+			throw Error("MaybeFile::validate: File not saved.");
+		}
+	}
 };
 
 #pragma db value
 struct DockerImage {
 public:
-	DockerImage(const string& repository, const string& id);
-	
-	static bool isValidRepositoryName(const string& value) {
-		return judge_interface::isSafeIdentifier(value);
-	}
-	static bool isValidImageID(const string& value) {
-		return judge_interface::isValidImageID(value);
-	}
-	
-	const string& getRepositoryName() const {
-		return repository;
-	}
-	const string& getImageID() const {
-		return id;
-	}
-	
-private:
-	DockerImage() { }
-	
 	StrField repository;
-	StrField id;
+	StrField imageID;
 	
-	friend class odb::access;
-	friend struct Sandbox;
+	
+	DockerImage() { }
+	DockerImage(const string& repository, const string& imageID)
+		: repository(repository), imageID(imageID) { }
+	
+	void validate() {
+		if(!judge_interface::isSafeIdentifier(repository)) {
+			throw ValidationFailure("Repository name is not a safe identifier (a-zA-Z letters, numbers and underscores, length 1-64).");
+		}
+		if(!judge_interface::isValidImageID(imageID)) {
+			throw ValidationFailure("Invalid image ID (image IDs consist of 64 characters 0-9a-f).");
+		}
+	}
 };
 
 #pragma db value
@@ -88,14 +108,16 @@ struct PTraceConfig {
 	SyscallPolicy policy = SECCOMP;
 	StrField allowedSyscalls;
 	MaybeFile runner;
-
-	PTraceConfig(SyscallPolicy policy, StrField syscalls, MaybeFile runner):
-		policy(policy), allowedSyscalls(syscalls), runner(runner) {}
-
-private:
-	PTraceConfig() {}
-	friend class odb::access;
-	friend struct Sandbox;
+	
+	
+	PTraceConfig() { }
+	PTraceConfig(SyscallPolicy policy, StrField syscalls, MaybeFile runner)
+		: policy(policy), allowedSyscalls(syscalls), runner(runner) { }
+	
+	void validate() {
+		// TODO: check policy and allowedSyscalls.
+		runner.validate();
+	}
 };
 
 #pragma db value
@@ -104,61 +126,63 @@ struct Sandbox {
 	Type type = DOCKER;
 	DockerImage docker;
 	PTraceConfig ptrace;
-
-	Sandbox(DockerImage docker): type(DOCKER), docker(docker) {}
-	Sandbox(PTraceConfig ptrace): type(PTRACE), ptrace(ptrace) {}
-	Sandbox(Type type): type(type) {}
-
-private:
-	Sandbox() {}
-	friend class odb::access;
-	friend struct Language;
+	
+	
+	Sandbox(DockerImage docker): type(DOCKER), docker(docker) { }
+	Sandbox(PTraceConfig ptrace): type(PTRACE), ptrace(ptrace) { }
+	Sandbox(Type type): type(type) { }
+	Sandbox() { }
+	
+	void validate() {
+		if(type == DOCKER) {
+			docker.validate();
+		} else if(type == PTRACE) {
+			ptrace.validate();
+		} else {
+			throw Error("Sandbox::validate: type not set to any valid enum value.");
+		}
+	}
 };
 
 
 #pragma db object abstract
-struct Language: HasID {
+struct Language: DBObject {
 public:
+	StrField name;
+	
+#pragma db type(CHAR_FIELD(16))
+	string suffix;
+	
+	Sandbox compiler;
+	Sandbox runner;
+	
+	
 	Language(
 		const string& name,
 		const string& suffix,
 		const Sandbox& compiler,
 		const Sandbox& runner
-	);
-	
-	Sandbox compiler;
-	Sandbox runner;
-	
-	const string& getName() const {
-		return name;
-	}
-	void setName(const string& value);
-	
-	// Language names must be strings of length 1-255.
-	static bool isValidName(const string& value);
-	
-	const string& getSuffix() const {
-		return suffix;
-	}
-	void setSuffix(const string& value);
-	
-	// Language suffixes must be strings of length 0-16.
-	// Empty suffix denotes no suffix.
-	static bool isValidSuffix(const string& value);
-protected:
+	) : name(name), suffix(suffix), compiler(compiler), runner(runner) { }
 	Language() { }
 	
-private:
-	StrField name;
-#pragma db type(CHAR_FIELD(16))
-	string suffix;
-	
-	friend class odb::access;
+	void validate() {
+		size_t nameLength = countCodePoints(name);
+		if(nameLength == 0 || nameLength > 255) {
+			throw ValidationFailure("Language name must consist of 1-255 characters.");
+		}
+		
+		size_t suffixLength = countCodePoints(suffix);
+		if(suffixLength == 0 || suffixLength > 16) {
+			throw ValidationFailure("Language suffix must be empty or consist of 1-16 characters.");
+		}
+		
+		compiler.validate();
+		runner.validate();
+	}
 };
 
 #pragma db object
 struct SubmissionLanguage: Language {
-public:
 #pragma db index unique member(name)
 	SubmissionLanguage(
 		const string& name,
@@ -166,16 +190,13 @@ public:
 		const Sandbox& compiler,
 		const Sandbox& runner
 	) : Language(name, suffix, compiler, runner) { }
-	
-private:
 	SubmissionLanguage() { }
 	
-	friend class odb::access;
+	// All validation done in Language::validate.
 };
 
 #pragma db object
 struct EvaluatorLanguage: Language {
-public:
 #pragma db index unique member(name)
 	EvaluatorLanguage(
 		const string& name,
@@ -183,10 +204,9 @@ public:
 		const Sandbox& compiler,
 		const Sandbox& runner
 	) : Language(name, suffix, compiler, runner) { }
-	
-private:
 	EvaluatorLanguage() { }
-	friend class odb::access;
+	
+	// All validation done in Language::validate.
 };
 
 #pragma db value
@@ -195,6 +215,12 @@ struct SubmissionProgram {
 	MaybeFile source;
 	MaybeFile binary;
 	string compileMessage;
+	
+	
+	void validate() {
+		source.validate();
+		binary.validate();
+	}
 };
 
 #pragma db value
@@ -203,10 +229,16 @@ struct EvaluatorProgram {
 	MaybeFile source;
 	MaybeFile binary;
 	string compileMessage;
+	
+	
+	void validate() {
+		source.validate();
+		binary.validate();
+	}
 };
 
 #pragma db object
-struct User: HasID {
+struct User: DBObject {
 public:
 	User(string name, string password, bool admin = false, bool active = true);
 	
@@ -263,7 +295,7 @@ typedef shared_ptr<User> UserPtr;
 
 #if 0
 #pragma db object
-struct Group: HasID {
+struct Group: DBObject {
 	StrField name;
 #pragma db unordered
 	vector<UserPtr> users;
@@ -277,7 +309,7 @@ private:
 typedef shared_ptr<Contest> ContestPtr;
 
 #pragma db object
-struct Task: HasID {
+struct Task: DBObject {
 	StrField name;
 	weak_ptr<Contest> contest;
 
@@ -301,7 +333,7 @@ typedef shared_ptr<Task> TaskPtr;
 #pragma db value(TaskPtr) not_null
 
 #pragma db object
-struct TestGroup: HasID {
+struct TestGroup: DBObject {
 	weak_ptr<Task> task;
 #pragma db value_not_null inverse(group)
 	vector<shared_ptr<TestCase>> tests;
@@ -309,7 +341,7 @@ struct TestGroup: HasID {
 };
 
 #pragma db object
-struct TestCase: HasID {
+struct TestCase: DBObject {
 	weak_ptr<TestGroup> group;
 	File input;
 	File output;
@@ -321,7 +353,7 @@ private:
 };
 
 #pragma db object
-struct Contest: HasID {
+struct Contest: DBObject {
 #pragma db unique
 	StrField name;
 #pragma db value_not_null inverse(contest) section(sec)	
@@ -353,7 +385,7 @@ enum class SubmissionStatus {
 };
 
 #pragma db object
-struct Submission: HasID {
+struct Submission: DBObject {
 	UserPtr user;
 	TaskPtr task;
 	SubmissionProgram program;
@@ -374,7 +406,7 @@ enum class ResultStatus {
 };
 
 #pragma db object
-struct Result: HasID {
+struct Result: DBObject {
 	SubmissionPtr submission;
 	shared_ptr<TestCase> testCase;
 	MaybeFile output;
@@ -385,7 +417,7 @@ struct Result: HasID {
 };
 
 #pragma db object
-struct JudgeHost: HasID {
+struct JudgeHost: DBObject {
 	StrField name;
 	StrField host;
 	int port;

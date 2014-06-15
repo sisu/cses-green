@@ -51,36 +51,31 @@ void reload(shared_ptr<T> obj) {
 	detail::database->reload<T>(obj);
 }
 
-// Validation trait run before persist/update. Throw ValidationFailure if the
-// object contents are invalid to prevent persisting. By default validates nothing.
-template <typename T>
-struct Validator {
-	static void validate(const T& obj) {
-		(void)obj;
-	}
-};
+// Functions persist and update run the validate-function of T before persisting
+// the object, so throw exceptions if the objects contents are invalid to
+// prevent persisting.
 
 template <typename T>
 ID persist(T& obj) {
-	Validator<T>::validate(obj);
+	obj.validate();
 	return detail::database->persist<T>(obj);
 }
 
 template <typename T>
 ID persist(shared_ptr<T> obj) {
-	Validator<T>::validate(*obj);
+	obj->validate();
 	return detail::database->persist<T>(obj);
 }
 
 template <typename T>
 void update(T& obj) {
-	Validator<T>::validate(obj);
+	obj.validate();
 	return detail::database->update<T>(obj);
 }
 
 template <typename T>
 void update(shared_ptr<T> obj) {
-	Validator<T>::validate(*obj);
+	obj->validate();
 	return detail::database->update<T>(obj);
 }
 

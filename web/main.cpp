@@ -388,7 +388,7 @@ struct Server: cppcms::application {
   		
 			odb::result<SubmissionLanguage> languageRes = db::query<SubmissionLanguage>();
 			for(const auto& x : languageRes) {
-				c.form.language.add(x.getName(), std::to_string(x.id));
+				c.form.language.add(x.name, std::to_string(x.id));
 			}
 		}
 		
@@ -606,8 +606,8 @@ struct Server: cppcms::application {
 				}
 			}
 		} else if(lang) {
-			c.form.name.value(lang->getName());
-			c.form.suffix.value(lang->getSuffix());
+			c.form.name.value(lang->name);
+			c.form.suffix.value(lang->suffix);
 			fillRunnerForm(c.form.compilerForm, lang->compiler);
 			fillRunnerForm(c.form.runnerForm, lang->runner);
 		}
@@ -752,8 +752,8 @@ struct Server: cppcms::application {
 	static void fillRunnerForm(AdminEditLanguagePage::RunnerForm& form, Sandbox sandbox) {
 		using std::to_string;
 		form.type.selected_id(to_string(sandbox.type));
-		form.docker.repository.value(sandbox.docker.getRepositoryName());
-		form.docker.imageID.value(sandbox.docker.getImageID());
+		form.docker.repository.value(sandbox.docker.repository);
+		form.docker.imageID.value(sandbox.docker.imageID);
 		form.ptrace.policy.selected_id(to_string(sandbox.ptrace.policy));
 		form.ptrace.allowedCalls.value(sandbox.ptrace.allowedSyscalls);
 	}
