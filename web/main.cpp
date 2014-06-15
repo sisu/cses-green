@@ -427,6 +427,7 @@ struct Server: cppcms::application {
 	void registration() {
 		User newUser;
 		RegistrationPage page(newUser);
+		page.showForm = 1;
 		if(isPost()) {
 			page.form.load(context());
 			if (page.form.validate()) {
@@ -438,6 +439,7 @@ struct Server: cppcms::application {
 					BOOSTER_INFO("cses_register")
 						<< "Registered user " << newUser.id << ": \"" << newUser.name << "\".";
 					page.msg = "Registration was successful.";
+					page.showForm = 0;
 				} catch(odb::object_already_persistent) {
 					page.msg = "Username already in use.";
 				} catch(const ValidationFailure& e) {

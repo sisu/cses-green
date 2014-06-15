@@ -113,6 +113,7 @@ window.setInterval("update()", 500);
 <% template body() %>
 <html>
 <body>
+<% if logged %>
 <h1>Contests</h1>
 <% foreach c in contests %>
 <ul>
@@ -121,12 +122,17 @@ window.setInterval("update()", 500);
 <% end %>
 </ul>
 <% end %>
+<% else %>
+<p>lol</p>
+<% end %>
+<% if admin %>
 <h1>Administration</h1>
 <ul>
 <li><a href="<% url "adminImport" %>">Import contest</a>
 </ul>
 </body>
 </html>
+<% end %>
 <% end template %>
 <% end view %>
 
@@ -134,11 +140,13 @@ window.setInterval("update()", 500);
 <% template body() %>
 <h1>Register user</h1>
 <p><%= msg %></p>
+<% if showForm %>
 <form method="post" action=""><%csrf%>
 <table>
 <% form as_table form %>
 </table>
 </form>
+<% end %>
 <% end template %>
 <% end view %>
 

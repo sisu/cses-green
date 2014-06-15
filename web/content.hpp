@@ -69,6 +69,7 @@ struct RegistrationPage: Page {
 	};
 	
 	string msg;
+	bool showForm;
 	cppcms::form form;
 	FormBuilder builder;
 };
