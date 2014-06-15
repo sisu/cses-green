@@ -326,7 +326,9 @@ window.setInterval("update()", 1000);
 
 <h2>Contest settings</h2>
 <form method="post" action=""><%csrf%>
+<table>
 <% form as_table form %>
+</table>
 </form>
 <h3>Tasks</h3>
 <% foreach task in tasks %>
