@@ -13,6 +13,6 @@ int main(int argc, char* argv[]) {
 	while(output>>o, correct>>c) {
 		if (c!=o) end(0);
 	}
-	if (output) end(0);
+	if (output || correct) end(0);
 	end(1);
 }
