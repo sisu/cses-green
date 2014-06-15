@@ -39,9 +39,19 @@ void init(bool reset) {
 		shared_ptr<User> testUser(new User("a", "a", true));
 		db::persist(*testUser);
 		
+#if 0
 		DockerImage cppCompiler("uolevin_repo", "64c4e93d9516515427c596281a87b04c4897d0300d350d15568e18cf6b8289f4");
 		DockerImage binaryRunner("uolevin_repo", "0d410d21d84053a2d15d2509528e34100c6be9fdfd57683a142132e4b66f6301");
 		DockerImage binaryEvaluator("uolevin_repo", "4e3652eaf1d4f603ad3cd43f1b4636468ea5e8818c85e753b9a3768122c178f5");
+#else
+		using std::ifstream;
+		ifstream compilerScript("evaluators/compile_cpp.sh");
+		ifstream runnerScript("evaluators/run_binary.sh");
+		ifstream evaluatorScript("evaluators/run_evaluator.sh");
+		PTraceConfig cppCompiler(PTraceConfig::NO_RESTRICT, "", {saveStreamToFile(compilerScript)});
+		PTraceConfig binaryRunner(PTraceConfig::PTRACE, "0,1,2,3,4,5,9,10,11,12,21,59,158,231,", {saveStreamToFile(runnerScript)});
+		PTraceConfig binaryEvaluator(PTraceConfig::NO_RESTRICT, "", {saveStreamToFile(evaluatorScript)});
+#endif
 		
 		shared_ptr<SubmissionLanguage> cppSubmissionLanguage(
 			new SubmissionLanguage("C++", "cpp", cppCompiler, binaryRunner)
