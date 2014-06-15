@@ -5,6 +5,7 @@
 #include "gen-cpp/Judge.h"
 #include <cmath>
 #include <unistd.h>
+#include <sys/time.h>
 
 namespace {
 using namespace std;
@@ -28,6 +29,12 @@ void pathPermissions(string path, string per) {
 		if (idx == string::npos) break;
 		path = path.substr(0, idx);
 	}
+}
+
+double getTime() {
+	struct timeval t;
+	gettimeofday(&t, nullptr);
+	return t.tv_sec + t.tv_usec / 1e6;
 }
 
 }
@@ -78,7 +85,9 @@ void runPTrace(
 	pathPermissions(outputDir.getName(), "777");
 	system(("chmod -R 777 " + outputDir.getName()).c_str());
 	cerr<<"Running: "<<buf<<'\n';
+	double startT = getTime();
 	int res = system(buf);
+	_return.timeInSeconds = getTime() - startT;
 	if(res == -1) {
 		throw Error("runCommand: Calling system failed.");
 	}

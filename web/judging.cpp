@@ -19,6 +19,14 @@ using namespace cses;
 
 typedef std::unordered_map<string,string> StringMap;
 
+StringMap asMap(const protocol::RunResult& result) {
+	StringMap map;
+	for(protocol::FileRef outFile: result.outputs) {
+		map[outFile.name] = outFile.hash;
+	}
+	return map;
+}
+
 struct JudgeConnection {
 	JudgeHost host;
 	const shared_ptr<protocol::JudgeClient> client;
@@ -27,7 +35,7 @@ struct JudgeConnection {
 	JudgeConnection(JudgeHost host): host(host), client(new protocol::JudgeClient(makeProtocol(host.host, host.port))) {
 	}
 
-	StringMap runOnJudge(Sandbox sandbox, const StringMap& inputs, double timeLimit, int memoryLimit) {
+	protocol::RunResult runOnJudge(Sandbox sandbox, const StringMap& inputs, double timeLimit, int memoryLimit) {
 		cerr<<"running on judge "<<host.name<<' '<<inputs.size()<<'\n';
 		vector<protocol::FileRef> fileRefs;
 		for(const auto& i: inputs) {
@@ -48,7 +56,6 @@ struct JudgeConnection {
 		cerr<<"calling run\n";
 		client->run(result, token, makeSandbox(sandbox), fileRefs, options);
 		cerr<<"return from run\n";
-		StringMap map;
 		for(protocol::FileRef outFile: result.outputs) {
 			if (!fileHashExists(outFile.hash)) {
 				string data;
@@ -57,11 +64,10 @@ struct JudgeConnection {
 				save.write(&data[0], data.size());
 				save.save();
 			}
-			map[outFile.name] = outFile.hash;
 			cerr<<' '<<outFile.name;
 		}
 		cerr<<'\n';
-		return map;
+		return result;
 	}
 
 	bool operator<(const JudgeConnection& c) const {
@@ -315,17 +321,20 @@ private:
 		StringMap inputs;
 		inputs["binary"] = submission->program.binary.hash;
 		inputs["input"] = test->input.hash;
-		StringMap result = connection->runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
+		auto result = connection->runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
+		StringMap resMap = asMap(result);
 		Result res;
 		res.submission = submission;
 		res.testCase = test;
-		if (result.count("stdout")) {
-			res.output.hash = result["stdout"];
+		res.timeInSeconds = result.timeInSeconds;
+		res.memoryInBytes = result.memoryInBytes;
+		if (resMap.count("stdout")) {
+			res.output.hash = resMap["stdout"];
 		} else {
 			res.status = ResultStatus::INTERNAL_ERROR;
 		}
-		if (result.count("stderr")) {
-			res.errOutput.hash = result["stderr"];
+		if (resMap.count("stderr")) {
+			res.errOutput.hash = resMap["stderr"];
 		}
 		{
 			odb::transaction t(db::begin());
@@ -343,7 +352,7 @@ private:
 		inputs["output"] = result.output.hash;
 		inputs["input"] = result.testCase->input.hash;
 		inputs["correct"] = result.testCase->output.hash;
-		StringMap resMap = connection->runOnJudge(sandbox, inputs, 1.0, 100<<20);
+		StringMap resMap = asMap(connection->runOnJudge(sandbox, inputs, 1.0, 100<<20));
 		cerr<<"result file "<<resMap.count("stdout")<<'\n';
 		bool ok = 0;
 		if (!resMap.count("stdout")) {
@@ -396,7 +405,7 @@ void compileProgram(shared_ptr<Owner> owner, Program& program, JudgeConnection c
 	StringMap inputs;
 	inputs["source"] = program.source.hash;
 	cerr<<"compiling with lang "<<lang->name<<" program "<<program.source.hash<<'\n';
-	StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 150<<20);
+	StringMap result = asMap(connection.runOnJudge(lang->compiler, inputs, 10.0, 150<<20));
 	bool changed = 0;
 	if (result.count("stderr") || result.count("stderr")) {
 		program.compileMessage = result["stdout"] + result["stderr"];
