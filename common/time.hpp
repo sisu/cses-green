@@ -4,8 +4,8 @@
 
 namespace cses {
 
-long long current_time();
+long long currentTime();
 
-string format_time(long long t);
+string formatTime(long long t);
 
 }

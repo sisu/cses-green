@@ -242,11 +242,11 @@ struct InContestPage: Page {
 	InContestPage(UserPtr user, const Contest& cnt): Page(user),
 		name(cnt.name),
 		id(cnt.id),
-		formatTime1(format_time(cnt.beginTime)),
-		formatTime2(format_time(cnt.endTime)),
+		formatTime1(formatTime(cnt.beginTime)),
+		formatTime2(formatTime(cnt.endTime)),
 		beginTime(cnt.beginTime),
 		endTime(cnt.endTime),
-		curTime(current_time())
+		curTime(currentTime())
 	{}
 };
 

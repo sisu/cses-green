@@ -2,6 +2,7 @@
 #include "common.hpp"
 #include "file.hpp"
 #include "io_util.hpp"
+#include "time.hpp"
 #include "judge_interface.hpp"
 
 #include <odb/core.hxx>
@@ -370,7 +371,22 @@ struct Contest: DBObject {
 	long long beginTime;
 	long long endTime;
 	bool active;
-
+	
+	bool isRunning() {
+		long long now = currentTime();
+		return active && now >= beginTime && now < endTime;
+	}
+	
+	bool isOver() {
+		long long now = currentTime();
+		return active && now >= endTime;
+	}
+	
+	bool isStarted() {
+		long long now = currentTime();
+		return active && now >= beginTime;
+	}
+	
 #if 0
 #pragma db unordered
 	vector<UserPtr> users;

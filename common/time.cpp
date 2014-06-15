@@ -2,11 +2,11 @@
 
 namespace cses {
 
-long long current_time() {
+long long currentTime() {
 	return (long long)std::time(NULL);
 }
 
-string format_time(long long t) {
+string formatTime(long long t) {
 	time_t x = (time_t)t;
 	char buffer[100];
 	strftime(buffer, 50, "%F %T", std::localtime(&x));

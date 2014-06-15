@@ -75,7 +75,7 @@ void init(bool reset) {
 		
 		shared_ptr<Contest> cnt(new Contest());
 		cnt->name = "testikisa";
-		cnt->beginTime = current_time();
+		cnt->beginTime = currentTime();
 		cnt->endTime = cnt->beginTime+2*3600;
 		cnt->active = 1;
 		shared_ptr<Task> lastTask;
@@ -123,7 +123,7 @@ void init(bool reset) {
 		s->user = testUser;
 		s->task = lastTask;
 		s->program.language = cppSubmissionLanguage;
-		s->time = current_time();
+		s->time = currentTime();
 		db::persist(s);
 		for (int j = 0; j < 20; j++) {
 			Result r;

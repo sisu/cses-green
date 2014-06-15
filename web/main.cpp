@@ -22,63 +22,91 @@ struct Server: cppcms::application {
 		dispatcher().assign("/", &Server::contests, this);
 		mapper().assign("");
 		
-		dispatcher().assign("/contest/(\\d+)/", &Server::editContest, this, 1);
+		dispatcher().assign("/contest/(\\d+)/", &Server::wrap<&Server::editContest>, this, 1);
 		mapper().assign("contest", "contest/{1}/");
 
-		dispatcher().assign("/task/(\\d+)/", &Server::editTask, this, 1);
+		dispatcher().assign("/task/(\\d+)/", &Server::wrap<&Server::editTask>, this, 1);
 		mapper().assign("task", "task/{1}/");
 
-		dispatcher().assign("/submit/(\\d+)/", &Server::submit, this, 1);
+		dispatcher().assign("/submit/(\\d+)/", &Server::wrap<&Server::submit>, this, 1);
 		mapper().assign("submit", "submit/{1}/");
 
-		dispatcher().assign("/list/(\\d+)/", &Server::listSubmissions, this, 1);
+		dispatcher().assign("/list/(\\d+)/", &Server::wrap<&Server::listSubmissions>, this, 1);
 		mapper().assign("list", "list/{1}/");
 
-		dispatcher().assign("/scores/(\\d+)/", &Server::scoreBoard, this, 1);
+		dispatcher().assign("/scores/(\\d+)/", &Server::wrap<&Server::scoreBoard>, this, 1);
 		mapper().assign("scores", "scores/{1}/");		
 		
-		dispatcher().assign("/view/(\\d+)/", &Server::viewSubmission, this, 1);
+		dispatcher().assign("/view/(\\d+)/", &Server::wrap<&Server::viewSubmission>, this, 1);
 		mapper().assign("view", "view/{1}/");
 
-		dispatcher().assign("/code/(\\d+)/", &Server::viewCode, this, 1);
+		dispatcher().assign("/code/(\\d+)/", &Server::wrap<&Server::viewCode>, this, 1);
 		mapper().assign("code", "code/{1}/");		
 		
-		dispatcher().assign("/register/", &Server::registration, this);
+		dispatcher().assign("/register/", &Server::wrap<&Server::registration>, this);
 		mapper().assign("register", "register/");
 		
-		dispatcher().assign("/login/", &Server::login, this);
+		dispatcher().assign("/login/", &Server::wrap<&Server::login>, this);
 		mapper().assign("login", "login/");
 
-		dispatcher().assign("/logout/", &Server::logout, this);
+		dispatcher().assign("/logout/", &Server::wrap<&Server::logout>, this);
 		mapper().assign("logout", "logout/");
 
-		dispatcher().assign("/languages/", &Server::languages, this);
+		dispatcher().assign("/languages/", &Server::wrap<&Server::languages>, this);
 		mapper().assign("languages", "languages/");
 		
-		dispatcher().assign("/users/", &Server::users, this);
+		dispatcher().assign("/users/", &Server::wrap<&Server::users>, this);
 		mapper().assign("users", "users/");
 		
-		dispatcher().assign("/user/(\\d+)/", &Server::editUser, this, 1);
+		dispatcher().assign("/user/(\\d+)/", &Server::wrap<&Server::editUser>, this, 1);
 		mapper().assign("editUser", "user/{1}/");
 		
-		dispatcher().assign("/language/(submission|evaluator)/(\\d+|new)/", &Server::editLanguage, this, 1, 2);
+		dispatcher().assign("/language/(submission|evaluator)/(\\d+|new)/", &Server::wrap<&Server::editLanguage>, this, 1, 2);
 		mapper().assign("editLanguage", "language/{1}/{2}/");
 		
-		dispatcher().assign("/import/", &Server::import, this);
+		dispatcher().assign("/import/", &Server::wrap<&Server::import>, this);
 		mapper().assign("import", "import/");
 
-		dispatcher().assign("/static/([a-z_0-9\\.]+)", &Server::staticServe, this, 1);
+		dispatcher().assign("/static/([a-z_0-9\\.]+)", &Server::wrap<&Server::staticServe>, this, 1);
 		mapper().assign("static", "static/{1}");
 		
 		mapper().root("/");
 	}
 	
-	void contests() {
-		UserPtr user = getCurrentUser();
-		if(!user) {
-			sendRedirectHeader("/login");
-			return;
+	struct Redirect {
+		Redirect(const string& destination) : destination(destination) { }
+		string destination;
+	};
+	
+	// Wrapping member function makes it possible to redirect using Redirect
+	// exceptions.
+	template <void (Server::*Func)()>
+	void wrap() {
+		try {
+			(*this.*Func)();
+		} catch(const Redirect& e) {
+			sendRedirectHeader(e.destination.c_str());
 		}
+	}
+	template <void (Server::*Func)(string)>
+	void wrap(string a) {
+		try {
+			(*this.*Func)(a);
+		} catch(const Redirect& e) {
+			sendRedirectHeader(e.destination.c_str());
+		}
+	}
+	template <void (Server::*Func)(string, string)>
+	void wrap(string a, string b) {
+		try {
+			(*this.*Func)(a, b);
+		} catch(const Redirect& e) {
+			sendRedirectHeader(e.destination.c_str());
+		}
+	}
+	
+	void contests() {
+		UserPtr user = getRequiredUser();
 		
 		ContestsPage c(user);
 		
@@ -93,11 +121,7 @@ struct Server: cppcms::application {
 	}
 
 	void editContest(string id) {
-		UserPtr user = getCurrentAdminUser();
-		if(!user) {
-			sendRedirectHeader("/login");
-			return;
-		}
+		UserPtr user = getRequiredAdminUser();
 		
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		EditContestPage c(user, *cnt);
@@ -122,11 +146,7 @@ struct Server: cppcms::application {
 	}
 
 	void editTask(string id) {
-		UserPtr user = getCurrentAdminUser();
-		if(!user) {
-			sendRedirectHeader("/login");
-			return;
-		}
+		UserPtr user = getRequiredAdminUser();
 		
 		odb::session ss;
 		auto task = getByStringOrFail<Task>(id);
@@ -151,10 +171,11 @@ struct Server: cppcms::application {
 	}
 
 	void listSubmissions(string id) {
+		UserPtr user = getRequiredUser();
+		
 		odb::session s2;
 
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		auto user = getRequiredUser();
 		ID userID = user->id;
 		ListPage p(user, *cnt);
 
@@ -189,7 +210,7 @@ struct Server: cppcms::application {
 		p.items.resize(data.size());
 		for (size_t i = 0; i < data.size(); i++) {
 			p.items[i].id = std::to_string(std::get<1>(data[i]));
-			p.items[i].time = format_time(-std::get<0>(data[i]));
+			p.items[i].time = formatTime(-std::get<0>(data[i]));
 			p.items[i].task = std::get<2>(data[i]);
 			p.items[i].status = std::get<3>(data[i]);
 		}
@@ -198,7 +219,8 @@ struct Server: cppcms::application {
 	}
 
 	void scoreBoard(string id) {
-		auto user = getCurrentUser();
+		UserPtr user = getRequiredUser();
+		
 		odb::session s2;
 		
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
@@ -249,9 +271,10 @@ struct Server: cppcms::application {
 	}
 	
 	void viewCode(string id) {
+		UserPtr user = getRequiredUser();
+		
 		odb::session s2;
 		
-		auto user = getCurrentUser();
 		shared_ptr<Submission> s = getByStringOrFail<Submission>(id);
 		shared_ptr<Task> task = s->task;
 		CodePage c(user, *task->contest.lock());
@@ -264,7 +287,7 @@ struct Server: cppcms::application {
 	void viewSubmission(string id) {
 		odb::session s2;
 
-		auto user = getCurrentUser();
+		auto user = getOptionalUser();
 		shared_ptr<Submission> s = getByStringOrFail<Submission>(id);
 		shared_ptr<Task> task = s->task;
 		ViewPage c(user, *task->contest.lock());
@@ -396,7 +419,7 @@ struct Server: cppcms::application {
 				shared_ptr<Submission> submission(new Submission);
 				submission->user = user;
 				submission->task = task;
-				submission->time = current_time();
+				submission->time = currentTime();
 				submission->program.language = language;
 				submission->status = SubmissionStatus::PENDING;
 				odb::transaction t(db::begin());
@@ -415,7 +438,7 @@ struct Server: cppcms::application {
 
 	void registration() {
 		User newUser;
-		RegistrationPage page(getCurrentUser(), newUser);
+		RegistrationPage page(getOptionalUser(), newUser);
 		page.showForm = 1;
 		if(isPost()) {
 			page.form.load(context());
@@ -440,7 +463,7 @@ struct Server: cppcms::application {
 	}
 
 	void login() {
-		LoginPage c(getCurrentUser());
+		LoginPage c(getOptionalUser());
 		if(isPost() && session().is_set("prelogin")) {
 			c.info.load(context());
 			if(c.info.validate()) {
@@ -473,7 +496,7 @@ struct Server: cppcms::application {
 			return;
 		}
 		
-		LanguagesPage c(getCurrentUser());
+		LanguagesPage c(getOptionalUser());
 		odb::transaction t(db::begin());		
 		
 		odb::result<SubmissionLanguage> submissionLanguageRes = db::query<SubmissionLanguage>();
@@ -491,7 +514,7 @@ struct Server: cppcms::application {
 			return;
 		}
 		
-		UsersPage c(getCurrentUser());
+		UsersPage c(getOptionalUser());
 		odb::transaction t(db::begin());
 		
 		odb::result<User> userRes = db::query<User>();
@@ -532,7 +555,7 @@ struct Server: cppcms::application {
 		
 		UserPtr user = getByStringOrFail<User>(userIDString);
 		
-		EditUserPage page(getCurrentUser(), *user);
+		EditUserPage page(getOptionalUser(), *user);
 		if(isPost()) {
 			page.form.load(context());
 			if(page.form.validate()) {
@@ -581,7 +604,7 @@ struct Server: cppcms::application {
 			}
 		}
 		
-		EditLanguagePage c(getCurrentUser());
+		EditLanguagePage c(getOptionalUser());
 		if(isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
@@ -643,7 +666,7 @@ struct Server: cppcms::application {
 			return;
 		}
 
-		ImportPage c(getCurrentUser());
+		ImportPage c(getOptionalUser());
 		if (isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
@@ -654,7 +677,7 @@ struct Server: cppcms::application {
 				odb::transaction t(db::begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
-				newContest->beginTime = current_time()+3600;
+				newContest->beginTime = currentTime()+3600;
 				newContest->endTime = newContest->beginTime+2*3600;
 				newContest->active = 0;
 				db::persist(newContest);
@@ -753,14 +776,8 @@ struct Server: cppcms::application {
 	bool isPost() const {
 		return const_cast<Server*>(this)->request().request_method() == "POST";
 	}
-
-	UserPtr getRequiredUser() {
-		auto res = getCurrentUser();
-		if (!res) throw std::logic_error("Login required.");
-		return res;
-	}
 	
-	UserPtr getCurrentUser() {
+	UserPtr getOptionalUser() {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
 			UserPtr user = getSharedPtr<User>(userID);
@@ -772,14 +789,20 @@ struct Server: cppcms::application {
 		}
 		return nullptr;
 	}
-	UserPtr getCurrentAdminUser() {
-		UserPtr user = getCurrentUser();
-		if(!user->admin) return nullptr;
+	UserPtr getRequiredUser() {
+		UserPtr res = getOptionalUser();
+		if(!res) throw Redirect("/login");
+		return res;
+	}
+	
+	UserPtr getRequiredAdminUser() {
+		UserPtr user = getRequiredUser();
+		if(!user->admin) throw Redirect("/login");
 		return user;
 	}
 	
 	bool isCurrentUserAdmin() {
-		UserPtr user = getCurrentUser();
+		UserPtr user = getOptionalUser();
 		if(!user) return false;
 		return user->admin;
 	}
