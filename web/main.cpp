@@ -93,13 +93,14 @@ struct Server: cppcms::application {
 	}
 
 	void editContest(string id) {
-		auto user = getRequiredUser();
-		if (!user->admin) {
-			response().status(404);
+		UserPtr user = getCurrentAdminUser();
+		if(!user) {
+			sendRedirectHeader("/login");
 			return;
 		}
+		
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
-		ContestPage c(user, *cnt);
+		EditContestPage c(user, *cnt);
 		if (isPost()) {
 			c.form.load(context());
 			if (c.form.validate()) {
@@ -117,12 +118,17 @@ struct Server: cppcms::application {
 				c.tasks.push_back({t->name, t->id});
 			}
 		}
-		render("contest", c);
+		render("editContest", c);
 	}
 
 	void editTask(string id) {
+		UserPtr user = getCurrentAdminUser();
+		if(!user) {
+			sendRedirectHeader("/login");
+			return;
+		}
+		
 		odb::session ss;
-		auto user = getRequiredUser();
 		auto task = getByStringOrFail<Task>(id);
 		auto languages = loadAllObjects<EvaluatorLanguage>();
 		TaskPage t(user, *task->contest.lock(), *task, languages);
@@ -722,6 +728,11 @@ struct Server: cppcms::application {
 			session().erase("id");
 		}
 		return nullptr;
+	}
+	UserPtr getCurrentAdminUser() {
+		UserPtr user = getCurrentUser();
+		if(!user->admin) return nullptr;
+		return user;
 	}
 	
 	bool isCurrentUserAdmin() {

@@ -163,6 +163,7 @@ window.setInterval("update()", 500);
 <% form as_table info %>
 </table>
 </form>
+<p><a href="<% url "register" %>">Register a new user</a></p>
 <% end template %>
 <% end view %>
 
@@ -346,7 +347,7 @@ window.setInterval("update()", 500);
 <% end template %>
 <% end view %>
 
-<% view contest uses ContestPage extends in_contest %>
+<% view editContest uses EditContestPage extends in_contest %>
 <% template body2() %>
 
 <h2>Contest settings</h2>
