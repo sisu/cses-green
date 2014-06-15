@@ -7,8 +7,12 @@ mem=$2
 space=$3
 prog=$4
 
+echo dirs: $IN $OUT
+cd "$OUT"
 ulimit -t $t
 if [ $mem != 0 ]; then ulimit -u 10 -v $mem; else ulimit -u 1000; fi
 ulimit -f $space
 ulimit -s unlimited
-timeout $1 ${@:4}
+echo timeout $t ${@:4}
+timeout $t ${@:4}
+echo ok

@@ -78,8 +78,8 @@ private:
 			case Sandbox::DOCKER:
 				{
 					cses::protocol::DockerImage d;
-					d.repository = sandbox.docker.getRepositoryName();
-					d.id = sandbox.docker.getImageID();
+					d.repository = sandbox.docker.repository;
+					d.id = sandbox.docker.imageID;
 					res.__set_docker(d);
 				}
 				break;
@@ -386,8 +386,8 @@ void compileProgram(shared_ptr<Owner> owner, Program& program, JudgeConnection c
 	shared_ptr<Language> lang = program.language;
 	StringMap inputs;
 	inputs["source"] = program.source.hash;
-	cerr<<"compiling with lang "<<lang->getName()<<" program "<<program.source.hash<<'\n';
-	StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 50<<20);
+	cerr<<"compiling with lang "<<lang->name<<" program "<<program.source.hash<<'\n';
+	StringMap result = connection.runOnJudge(lang->compiler, inputs, 10.0, 150<<20);
 	bool changed = 0;
 	if (result.count("stderr") || result.count("stderr")) {
 		program.compileMessage = result["stdout"] + result["stderr"];
@@ -397,7 +397,7 @@ void compileProgram(shared_ptr<Owner> owner, Program& program, JudgeConnection c
 		program.binary.hash = result["binary"];
 		changed = 1;
 	}
-	cerr<<"changed: "<<changed<<'\n';
+	cerr<<"changed: "<<changed<<' '<<program.binary.hash<<' '<<program.compileMessage<<'\n';
 	if (changed) {
 		odb::transaction t(db::begin());
 		db::update(owner);

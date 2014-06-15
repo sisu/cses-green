@@ -165,50 +165,6 @@ string genSalt() {
 } // end anonymous namespace
 
 
-DockerImage::DockerImage(const string& repository, const string& id)
-	: repository(repository),
-	  id(id)
-{
-	if(!isValidRepositoryName(repository)) {
-		throw Error("DockerImage::DockerImage: Invalid repository name.");
-	}
-	if(!isValidImageID(id)) {
-		throw Error("DockerImage::DockerImage: Invalid image ID.");
-	}
-}
-
-
-Language::Language(
-	const string& name,
-	const string& suffix,
-	const Sandbox& compiler,
-	const Sandbox& runner
-) : compiler(compiler), runner(runner) {
-	setName(name);
-	setSuffix(suffix);
-}
-
-void Language::setName(const string& value) {
-	if(!isValidName(value)) throw Error("Language::setName: Invalid value.");
-	name = value;
-}
-
-bool Language::isValidName(const string& value) {
-	size_t codepointCount = countCodePoints(value);
-	return codepointCount != 0 && codepointCount <= 255;
-}
-
-void Language::setSuffix(const string& value) {
-	if(!isValidSuffix(value)) throw Error("Language::setSuffix: Invalid value.");
-	suffix = value;
-}
-
-bool Language::isValidSuffix(const string& value) {
-	size_t codepointCount = countCodePoints(value);
-	return codepointCount <= 16;
-}
-
-
 User::User(string name, string password, bool admin, bool active) {
 	setName(name);
 	setPassword(password);

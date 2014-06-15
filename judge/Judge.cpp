@@ -91,7 +91,7 @@ void Judge::run(
 			throw protocol::InternalError();
 		}
 	} catch(std::exception& e) {
-		cerr << "runDocker exception: " << e.what() << "\n";
+		cerr << "Judge::run exception: " << e.what() << "\n";
 		protocol::InternalError err;
 		err.msg = "secret";
 		throw err;
