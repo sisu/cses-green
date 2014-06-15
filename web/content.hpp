@@ -102,30 +102,20 @@ struct AdminPage: Page {
 };
 
 struct AdminEditUserPage: Page {
-	struct Form: cppcms::form {
-/*		SetUsernameWidget name;
-		SetOptionalPasswordWidget password;
-		ws::checkbox admin;
-		ws::checkbox active;
-		ws::submit submit;
-		
-		Form() {
-			name.message("Username");
-			password.message("New password (empty to keep old)");
-			admin.message("Admin");
-			active.message("Active");
-			submit.value("Save");
-			add(name);
-			add(password);
-			add(admin);
-			add(active);
-			add(submit);
-		}
-*/	};
+	AdminEditUserPage(User& user) : builder(form) {
+		builder
+			.add(user.name, "Name")
+			.addProvider<ChangePasswordWidgetProvider, Password>(
+				user.password, "Change password"
+			)
+			.addProvider<CheckboxProvider, bool>(user.admin, "Admin")
+			.addProvider<CheckboxProvider, bool>(user.active, "Active")
+			.addSubmit();
+	};
 	
-	Form form;
-	bool success = false;
-	bool nameInUse = false;
+	string msg;
+	cppcms::form form;
+	FormBuilder builder;
 };
 
 struct AdminEditLanguagePage: Page {

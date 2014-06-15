@@ -62,12 +62,8 @@ struct User: DBObject {
 	StrField name;
 	
 	Password password;
-	bool admin;
-	bool active;
-	
-	User(string name, string password, bool admin = false, bool active = true)
-		: name(name), password(password), admin(admin), active(active) { }
-	User() { }
+	bool admin = false;
+	bool active = true;
 	
 	void validate() {
 		size_t nameLength = countCodePoints(name);

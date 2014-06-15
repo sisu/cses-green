@@ -36,7 +36,10 @@ void init(bool reset) {
 #endif
 	try {
 		transaction t(db::begin());
-		shared_ptr<User> testUser(new User("a", "a", true));
+		shared_ptr<User> testUser(new User);
+		testUser->name = "a";
+		testUser->password = Password("a");
+		testUser->admin = true;
 		db::persist(*testUser);
 		
 #if 0

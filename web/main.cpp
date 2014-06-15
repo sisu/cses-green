@@ -430,7 +430,7 @@ struct Server: cppcms::application {
 		page.showForm = 1;
 		if(isPost()) {
 			page.form.load(context());
-			if (page.form.validate()) {
+			if(page.form.validate()) {
 				page.builder.readForm();
 				try {
 					odb::transaction t(db::begin());
@@ -497,68 +497,65 @@ struct Server: cppcms::application {
 		
 		render("admin", c);
 	}
-
+/*
+ * 
+		User newUser;
+		RegistrationPage page(newUser);
+		if(isPost()) {
+			page.form.load(context());
+			if(page.form.validate()) {
+				page.builder.readForm();
+				try {
+					odb::transaction t(db::begin());
+					db::persist(newUser);
+					t.commit();
+					BOOSTER_INFO("cses_register")
+						<< "Registered user " << newUser.id << ": \"" << newUser.name << "\".";
+					page.msg = "Registration was successful.";
+				} catch(odb::object_already_persistent) {
+					page.msg = "Username already in use.";
+				} catch(const ValidationFailure& e) {
+					page.msg = e.msg;
+				}
+			}
+		}
+		render("registration", page);
+ * 
+ * */
 	void adminEditUser(string userIDString) {
-/*		if(!isCurrentUserAdmin()) {
+		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
 			return;
 		}
 		
-		optional<ID> userID = stringToInteger<ID>(userIDString);
-		if(!userID) {
-			sendRedirectHeader("/admin");
-			return;
-		}
+		UserPtr user = getByStringOrFail<User>(userIDString);
 		
-		UserPtr user = getSharedPtr<User>(*userID);
-		if(!user) {
-			sendRedirectHeader("/admin");
-			return;
-		}
-		
-		AdminEditUserPage c;
+		AdminEditUserPage page(*user);
 		if(isPost()) {
-			c.form.load(context());
-			if(c.form.validate()) {
-				user->setName(c.form.name.value());
-				if(!c.form.password.value().empty()) {
-					user->setPassword(c.form.password.value());
-				}
-				user->setAdmin(c.form.admin.value());
-				user->setActive(c.form.active.value());
+			page.form.load(context());
+			if(page.form.validate()) {
+				page.builder.readForm();
 				try {
 					odb::transaction t(db::begin());
 					
-					// FIXME: find better way to detect username in use.
-					// can't reliably detect UNIQUE constraint failure,
-					// current workaround throws if someone creates user with
-					// colliding name during the transaction.
-					odb::result<User> res = db::query<User>(
-						odb::query<User>::name == user->getName()
-					);
-					c.nameInUse = false;
-					for(const User& other : res) {
-						if(other.id != user->id) c.nameInUse = true;
-					}
-					
-					if(!c.nameInUse) {
+					if(db::query<User>(
+						odb::query<User>::name == user->name &&
+						odb::query<User>::id != user->id
+					).empty()) {
 						db::update(user);
 						t.commit();
-						c.success = true;
+					} else {
+						page.msg = "Username already in use.";
 					}
 				} catch(odb::object_not_persistent& e) {
 					sendRedirectHeader("/admin");
 					return;
 				}
 			}
-		} else {
-			c.form.name.value(user->getName());
-			c.form.admin.value(user->isAdmin());
-			c.form.active.value(user->isActive());
 		}
 		
-		render("adminEditUser", c);
-*/	}
+		render("adminEditUser", page);
+	}
 	
 	template <typename LanguageT>
 	void adminEditLanguage(string langIDString) {

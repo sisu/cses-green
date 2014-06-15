@@ -75,6 +75,23 @@ struct SelectProvider: WidgetProvider {
 	vector<pair<string, shared_ptr<T>>> choises;
 };
 
+struct CheckboxProvider: WidgetProvider {
+	ws::base_widget& getWidget() override {
+		widget.value(ref);
+		return widget;
+	}
+	void readWidget() override {
+		ref = widget.value();
+	}
+	
+	CheckboxProvider(bool& v, const string& name) : ref(v) {
+		widget.message(name);
+	}
+	
+	ws::checkbox widget;
+	bool& ref;
+};
+
 template<class T, class...A>
 unique_ptr<T> makeUnique(A&&...args) {
 	return unique_ptr<T>(new T(std::forward<A>(args)...));

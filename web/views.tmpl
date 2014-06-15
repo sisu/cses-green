@@ -139,7 +139,7 @@ window.setInterval("update()", 500);
 <% view registration uses RegistrationPage extends page %>
 <% template body() %>
 <h1>Register user</h1>
-<p><%= msg %></p>
+<% if not empty msg %><p><%= msg %></p><% end %>
 <% if showForm %>
 <form method="post" action=""><%csrf%>
 <table>
@@ -209,8 +209,7 @@ window.setInterval("update()", 500);
 <% template body() %>
 <h1>Admin panel</h1>
 <h2>Edit user</h2>
-<% if nameInUse %><p>Edit failed: Username already in use.</p><% end %>
-<% if success %><p>User successfully edited.</p><% end %>
+<% if not empty msg %><p><%= msg %></p><% end %>
 <form method="post" action=""><%csrf%>
 <table>
 <% form as_table form %>
