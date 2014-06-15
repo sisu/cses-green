@@ -491,12 +491,9 @@ struct Server: cppcms::application {
 	}
 	
 	void languages() {
-		if(!isCurrentUserAdmin()) {
-			sendRedirectHeader("/");
-			return;
-		}
+		UserPtr user = getRequiredAdminUser();
 		
-		LanguagesPage c(getOptionalUser());
+		LanguagesPage c(user);
 		odb::transaction t(db::begin());		
 		
 		odb::result<SubmissionLanguage> submissionLanguageRes = db::query<SubmissionLanguage>();
@@ -509,44 +506,17 @@ struct Server: cppcms::application {
 	}
 	
 	void users() {
-		if(!isCurrentUserAdmin()) {
-			sendRedirectHeader("/");
-			return;
-		}
+		UserPtr user = getRequiredAdminUser();
 		
-		UsersPage c(getOptionalUser());
-		odb::transaction t(db::begin());
+		LanguagesPage c(user);
+		odb::transaction t(db::begin());		
 		
 		odb::result<User> userRes = db::query<User>();
 		c.users.assign(userRes.begin(), userRes.end());
 		
 		render("users", c);
 	}
-/*
- * 
-		User newUser;
-		RegistrationPage page(newUser);
-		if(isPost()) {
-			page.form.load(context());
-			if(page.form.validate()) {
-				page.builder.readForm();
-				try {
-					odb::transaction t(db::begin());
-					db::persist(newUser);
-					t.commit();
-					BOOSTER_INFO("cses_register")
-						<< "Registered user " << newUser.id << ": \"" << newUser.name << "\".";
-					page.msg = "Registration was successful.";
-				} catch(odb::object_already_persistent) {
-					page.msg = "Username already in use.";
-				} catch(const ValidationFailure& e) {
-					page.msg = e.msg;
-				}
-			}
-		}
-		render("registration", page);
- * 
- * */
+	
 	void editUser(string userIDString) {
 		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
