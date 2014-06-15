@@ -93,15 +93,20 @@ struct LoginPage: Page {
 	Info info;
 };
 
-struct AdminPage: Page {
-	AdminPage(UserPtr u) : Page(u) { }
+struct LanguagesPage: Page {
+	LanguagesPage(UserPtr u) : Page(u) { }
 	
-	vector<User> users;
 	vector<SubmissionLanguage> submissionLanguages;
 	vector<EvaluatorLanguage> evaluatorLanguages;
 	const string NEW_LANGUAGE = "new";
 	const string SUBMISSION_LANGUAGE = "submission";
 	const string EVALUATOR_LANGUAGE = "evaluator";
+};
+
+struct UsersPage: Page {
+	UsersPage(UserPtr u) : Page(u) { }
+	
+	vector<User> users;
 };
 
 struct AdminEditUserPage: Page {
