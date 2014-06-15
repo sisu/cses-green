@@ -329,6 +329,64 @@ window.setInterval("update()", 1000);
 <table>
 <% form as_table form %>
 </table>
+<script>
+function cuteHandler(name) {
+    var oldBox = document.getElementsByName(name)[0];
+    var newDate = new Date();
+    newDate.setFullYear(document.getElementById(name+"_y").value);
+    newDate.setMonth(document.getElementById(name+"_m").value-1);
+    newDate.setDate(document.getElementById(name+"_d").value);
+    newDate.setHours(document.getElementById(name+"_h").value);
+    newDate.setMinutes(document.getElementById(name+"_p").value);
+    newDate.setSeconds(0);
+    oldBox.value = parseInt(newDate.getTime()/1000);
+}
+
+function createList(name, id, first, last, len) {
+    var newList = document.createElement("select");
+    newList.id = name + id;
+    newList.onchange = function(){cuteHandler(name)};
+    for (var i = first; i <= last; i++) {
+        var option = document.createElement("option");
+        option.text = i;
+        while (option.text.length < len) option.text = "0"+option.text;
+        option.value = i;
+        newList.add(option);
+    }
+    return newList;
+}
+
+function cuteTimeSelect(name) {
+    var oldBox = document.getElementsByName(name)[0];
+    var parent = oldBox.parentNode;
+    oldBox.style.visibility = "hidden";
+    oldBox.style.width = "0";
+    var currentYear = (new Date()).getFullYear();
+    var yearSelect = createList(name, "_y", 2014, currentYear, 4);
+    parent.appendChild(yearSelect);
+    parent.appendChild(document.createTextNode("-"));
+    var monthSelect = createList(name, "_m", 1, 12, 2);
+    parent.appendChild(monthSelect);    
+    parent.appendChild(document.createTextNode("-"));
+    var daySelect = createList(name, "_d", 1, 31, 2);
+    parent.appendChild(daySelect);    
+    parent.appendChild(document.createTextNode(" "));
+    var hourSelect = createList(name, "_h", 0, 23, 2);
+    parent.appendChild(hourSelect);
+    parent.appendChild(document.createTextNode(":"));
+    var minuteSelect = createList(name, "_p", 0, 59, 2);
+    parent.appendChild(minuteSelect);
+    var oldDate = new Date(oldBox.value*1000);
+    yearSelect.selectedIndex = oldDate.getFullYear()-2014;
+    monthSelect.selectedIndex = oldDate.getMonth();
+    daySelect.selectedIndex = oldDate.getDate()-1;
+    hourSelect.selectedIndex = oldDate.getHours();
+    minuteSelect.selectedIndex = oldDate.getMinutes();
+}
+
+cuteTimeSelect("_2");
+cuteTimeSelect("_3");
+</script>
 </form>
 <h3>Tasks</h3>
 <% foreach task in tasks %>
