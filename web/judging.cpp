@@ -294,11 +294,14 @@ protected:
 			bool allOK = 1;
 			for(shared_ptr<TestCase> test: group->tests) {
 				Result result = runForInput(submission, test);
-				if (result.output) {
-					allOK &= evaluateOutput(submission, move(result));
+				if (result.output && result.status == ResultStatus::CORRECT) {
+					allOK &= evaluateOutput(submission, result);
 				} else {
 					allOK = 0;
 				}
+				odb::transaction t(db::begin());
+				db::persist(result);
+				t.commit();
 				if (!allOK) break;
 			}
 			update.score = allOK ? group->points : 0;
@@ -324,6 +327,7 @@ private:
 		auto result = connection->runOnJudge(lang->runner, inputs, task->timeInSeconds, task->memoryInBytes);
 		StringMap resMap = asMap(result);
 		Result res;
+		res.status = ResultStatus::CORRECT;
 		res.submission = submission;
 		res.testCase = test;
 		res.timeInSeconds = result.timeInSeconds;
@@ -336,15 +340,14 @@ private:
 		if (resMap.count("stderr")) {
 			res.errOutput.hash = resMap["stderr"];
 		}
-		{
-			odb::transaction t(db::begin());
-			db::persist(res);
-			t.commit();
+		if (res.timeInSeconds > task->timeInSeconds) {
+			res.status = ResultStatus::TIME_LIMIT;
 		}
 		return res;
 	}
 
-	bool evaluateOutput(SubmissionPtr submission, Result result) {
+	bool evaluateOutput(SubmissionPtr submission, Result& result) {
+		result.status = ResultStatus::INTERNAL_ERROR;
 		TaskPtr task = submission->task;
 		Sandbox sandbox = task->evaluator.language->runner;
 		StringMap inputs;
@@ -368,9 +371,6 @@ private:
 				result.status = ok ? ResultStatus::CORRECT : ResultStatus::WRONG_ANSWER;
 			}
 		}
-		odb::transaction t(db::begin());
-		db::update(result);
-		t.commit();
 		return ok;
 	}
 
