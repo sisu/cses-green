@@ -92,6 +92,7 @@ struct Server: cppcms::application {
 		odb::transaction t(db::begin());		
 		odb::result<Contest> contestRes = db::query<Contest>();
 		for (auto x : contestRes) {
+			if (!x.active && (!user || !user->admin)) continue;
 			c.contests.push_back(make_pair(x.id, x.name));
 		}
 		
@@ -652,8 +653,9 @@ struct Server: cppcms::application {
 				odb::transaction t(db::begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
-				newContest->beginTime = current_time();
+				newContest->beginTime = current_time()+3600;
 				newContest->endTime = newContest->beginTime+2*3600;
+				newContest->active = 0;
 				db::persist(newContest);
 				
 				auto tasks = import.tasks;

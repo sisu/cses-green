@@ -340,6 +340,7 @@ struct ContestPage: InContestPage {
 		builder.add(c.name, "Name")
 			.add(c.beginTime, "Begin time")
 			.add(c.endTime, "End time")
+			.addProvider<CheckboxProvider, bool>(c.active, "Active")
 			.addSubmit();
 	}
 	cppcms::form form;

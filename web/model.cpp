@@ -77,6 +77,7 @@ void init(bool reset) {
 		cnt->name = "testikisa";
 		cnt->beginTime = current_time();
 		cnt->endTime = cnt->beginTime+2*3600;
+		cnt->active = 1;
 		shared_ptr<Task> lastTask;
 		shared_ptr<TestCase> cases[20];
 		db::persist(cnt);

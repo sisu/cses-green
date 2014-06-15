@@ -369,6 +369,7 @@ struct Contest: DBObject {
 	vector<TaskPtr> tasks;
 	long long beginTime;
 	long long endTime;
+	bool active;
 
 #if 0
 #pragma db unordered
