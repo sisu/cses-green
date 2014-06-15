@@ -52,6 +52,7 @@ struct Password {
 	
 	void validate() {
 		if(salt.empty()) throw Error("Password::validate: Field not set.");
+		if(matches("")) throw ValidationFailure("Empty password is not allowed.");
 	}
 };
 
