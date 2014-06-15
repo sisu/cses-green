@@ -128,8 +128,9 @@ window.setInterval("update()", 500);
 <% if admin %>
 <h1>Administration</h1>
 <ul>
-<li><a href="<% url "admin" %>">Admin panel</a>
 <li><a href="<% url "adminImport" %>">Import contest</a>
+<li><a href="<% url "languages" %>">Languages</a>
+<li><a href="<% url "users" %>">Users</a>
 </ul>
 </body>
 </html>
@@ -165,20 +166,9 @@ window.setInterval("update()", 500);
 <% end template %>
 <% end view %>
 
-<% view admin uses AdminPage extends page %>
+<% view languages uses LanguagesPage extends page %>
 <% template body() %>
-<h1>Admin panel</h1>
-<h2>Users</h2>
-<% foreach user in users %>
-<table>
-	<% item %>
-	<tr>
-		<td><%= user.name %></td>
-		<td><a href="<% url "adminEditUser" using user.id %>">Edit</a></td>
-	</tr>
-	<% end %>
-</table>
-<% end %>
+<h1>Languages</h1>
 <h2>Submission languages</h2>
 <a href="<% url "adminEditLanguage" using SUBMISSION_LANGUAGE, NEW_LANGUAGE %>">New</a>
 <% foreach language in submissionLanguages %>
@@ -206,10 +196,25 @@ window.setInterval("update()", 500);
 <% end template %>
 <% end view %>
 
+<% view users uses UsersPage extends page %>
+<% template body() %>
+<h1>Users</h1>
+<% foreach user in users %>
+<table>
+	<% item %>
+	<tr>
+		<td><%= user.name %></td>
+		<td><a href="<% url "adminEditUser" using user.id %>">Edit</a></td>
+	</tr>
+	<% end %>
+</table>
+<% end %>
+<% end template %>
+<% end view %>
+
 <% view adminEditUser uses AdminEditUserPage extends page %>
 <% template body() %>
-<h1>Admin panel</h1>
-<h2>Edit user</h2>
+<h1>Edit user</h1>
 <% if not empty msg %><p><%= msg %></p><% end %>
 <form method="post" action=""><%csrf%>
 <table>
@@ -221,8 +226,7 @@ window.setInterval("update()", 500);
 
 <% view adminEditLanguage uses AdminEditLanguagePage extends page %>
 <% template body() %>
-<h1>Admin panel</h1>
-<h2>Edit language</h2>
+<h1>Edit language</h1>
 <% if nameInUse %><p>Edit failed: name already in use.</p><% end %>
 <% if success %><p>Language successfully edited.</p><% end %>
 <form method="post" action="" enctype="multipart/form-data"><%csrf%>
@@ -235,8 +239,7 @@ window.setInterval("update()", 500);
 
 <% view adminImport uses AdminImportPage extends page %>
 <% template body() %>
-<h1>Admin panel</h1>
-<h2>Import contest</h2>
+<h1>Import contest</h1>
 <form method="post" action="" enctype="multipart/form-data"><%csrf%>
 <table>
 <% form as_table form %>

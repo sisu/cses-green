@@ -52,8 +52,11 @@ struct Server: cppcms::application {
 		dispatcher().assign("/logout/", &Server::logout, this);
 		mapper().assign("logout", "logout/");
 
-		dispatcher().assign("/admin/", &Server::admin, this);
-		mapper().assign("admin", "admin/");
+		dispatcher().assign("/languages/", &Server::languages, this);
+		mapper().assign("languages", "languages/");
+		
+		dispatcher().assign("/users/", &Server::users, this);
+		mapper().assign("users", "users/");
 		
 		dispatcher().assign("/admin/user/(\\d+)/", &Server::adminEditUser, this, 1);
 		mapper().assign("adminEditUser", "admin/user/{1}/");
@@ -479,16 +482,14 @@ struct Server: cppcms::application {
 		sendRedirectHeader("/");
 	}
 	
-	void admin() {
+	void languages() {
 		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
 			return;
 		}
 		
-		AdminPage c(getCurrentUser());
+		LanguagesPage c(getCurrentUser());
 		odb::transaction t(db::begin());		
-		odb::result<User> userRes = db::query<User>();
-		c.users.assign(userRes.begin(), userRes.end());
 		
 		odb::result<SubmissionLanguage> submissionLanguageRes = db::query<SubmissionLanguage>();
 		c.submissionLanguages.assign(submissionLanguageRes.begin(), submissionLanguageRes.end());
@@ -496,7 +497,22 @@ struct Server: cppcms::application {
 		odb::result<EvaluatorLanguage> evaluatorLanguageRes = db::query<EvaluatorLanguage>();
 		c.evaluatorLanguages.assign(evaluatorLanguageRes.begin(), evaluatorLanguageRes.end());
 		
-		render("admin", c);
+		render("languages", c);
+	}
+	
+	void users() {
+		if(!isCurrentUserAdmin()) {
+			sendRedirectHeader("/");
+			return;
+		}
+		
+		UsersPage c(getCurrentUser());
+		odb::transaction t(db::begin());
+		
+		odb::result<User> userRes = db::query<User>();
+		c.users.assign(userRes.begin(), userRes.end());
+		
+		render("users", c);
 	}
 /*
  * 
