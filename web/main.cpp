@@ -48,7 +48,10 @@ struct Server: cppcms::application {
 		
 		dispatcher().assign("/login/", &Server::login, this);
 		mapper().assign("login", "login/");
-		
+
+		dispatcher().assign("/logout/", &Server::logout, this);
+		mapper().assign("logout", "logout/");
+
 		dispatcher().assign("/admin/", &Server::admin, this);
 		mapper().assign("admin", "admin/");
 		
@@ -84,7 +87,7 @@ struct Server: cppcms::application {
 		}
 //		response().out() << "<html><body>lololol</body></html>\n";
 #if 1
-		ContestsPage c;
+		ContestsPage c(user);
 		
 		odb::transaction t(db::begin());		
 		odb::result<Contest> contestRes = db::query<Contest>();
@@ -455,7 +458,8 @@ struct Server: cppcms::application {
 					session().reset_session();
 					session().erase("prelogin");
 					session().set("id", *userID);
-					response().set_redirect_header("/");
+					//response().set_redirect_header("/");
+					sendRedirectHeader("/");
 					return;
 				} else {
 					BOOSTER_INFO("cses_login") << "Login failed with username \"" << c.info.name.value() << "\".\n";
@@ -465,6 +469,11 @@ struct Server: cppcms::application {
 		}
 		session().set("prelogin", "");
 		render("login", c);
+	}
+	
+	void logout() {
+		session().erase("id");
+		sendRedirectHeader("/");
 	}
 	
 	void admin() {

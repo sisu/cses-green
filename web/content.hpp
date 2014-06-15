@@ -34,13 +34,16 @@ struct ChangePasswordWidgetProvider : PasswordWidgetProvider {
 
 struct Page: cppcms::base_content {
 	string user;
+	bool logged=0;
 	bool admin=0;
 	void set(UserPtr u) {
 		if (u) {
 			user = u->name;
+			logged = 1;
 			admin = u->admin;
 		} else {
 			user.clear();
+			logged = 0;
 			admin = 0;
 		}
 	}
@@ -52,6 +55,9 @@ struct Page: cppcms::base_content {
 
 struct ContestsPage: Page {
 	vector<pair<unsigned,string>> contests;
+	
+	ContestsPage(UserPtr user): Page(user)
+	{}
 };
 
 struct RegistrationPage: Page {
