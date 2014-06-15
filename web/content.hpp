@@ -334,13 +334,13 @@ struct ScoresPage: InContestPage {
 	ScoresPage(UserPtr user, const Contest& cnt): InContestPage(user, cnt) {}
 };
 
-struct ContestPage: InContestPage {
+struct EditContestPage: InContestPage {
 	struct Task {
 		string name;
 		ID id;
 	};
 
-	ContestPage(UserPtr user, Contest& c): InContestPage(user, c), builder(form) {
+	EditContestPage(UserPtr user, Contest& c): InContestPage(user, c), builder(form) {
 		builder.add(c.name, "Name")
 			.add(c.beginTime, "Begin time")
 			.add(c.endTime, "End time")
