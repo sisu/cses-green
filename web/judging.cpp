@@ -340,6 +340,14 @@ private:
 		if (resMap.count("stderr")) {
 			res.errOutput.hash = resMap["stderr"];
 		}
+		if (resMap.count("status")) {
+			auto in = openFileByHash(resMap["status"]);
+			int status=666;
+			*in >> status;
+			if (status != 1) {
+				res.status = ResultStatus::RUNTIME_ERROR;
+			}
+		}
 		if (res.timeInSeconds > task->timeInSeconds) {
 			res.status = ResultStatus::TIME_LIMIT;
 		}
