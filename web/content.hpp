@@ -47,7 +47,6 @@ struct Page: cppcms::base_content {
 			admin = 0;
 		}
 	}
-	Page() {}
 	Page(UserPtr u) {
 		set(u);
 	}
@@ -61,10 +60,10 @@ struct ContestsPage: Page {
 };
 
 struct RegistrationPage: Page {
-	RegistrationPage(User& user) : builder(form) {
+	RegistrationPage(UserPtr u, User& newUser) : Page(u), builder(form) {
 		builder
-			.add(user.name, "Name")
-			.addProvider<PasswordWidgetProvider, Password>(user.password, "Password")
+			.add(newUser.name, "Name")
+			.addProvider<PasswordWidgetProvider, Password>(newUser.password, "Password")
 			.addSubmit();
 	};
 	
@@ -75,6 +74,8 @@ struct RegistrationPage: Page {
 };
 
 struct LoginPage: Page {
+	LoginPage(UserPtr u) : Page(u) { }
+	
 	struct Info: cppcms::form {
 		ws::text name;
 		ws::password password;
@@ -93,6 +94,8 @@ struct LoginPage: Page {
 };
 
 struct AdminPage: Page {
+	AdminPage(UserPtr u) : Page(u) { }
+	
 	vector<User> users;
 	vector<SubmissionLanguage> submissionLanguages;
 	vector<EvaluatorLanguage> evaluatorLanguages;
@@ -102,14 +105,14 @@ struct AdminPage: Page {
 };
 
 struct AdminEditUserPage: Page {
-	AdminEditUserPage(User& user) : builder(form) {
+	AdminEditUserPage(UserPtr u, User& editUser) : Page(u), builder(form) {
 		builder
-			.add(user.name, "Name")
+			.add(editUser.name, "Name")
 			.addProvider<ChangePasswordWidgetProvider, Password>(
-				user.password, "Change password"
+				editUser.password, "Change password"
 			)
-			.addProvider<CheckboxProvider, bool>(user.admin, "Admin")
-			.addProvider<CheckboxProvider, bool>(user.active, "Active")
+			.addProvider<CheckboxProvider, bool>(editUser.admin, "Admin")
+			.addProvider<CheckboxProvider, bool>(editUser.active, "Active")
 			.addSubmit();
 	};
 	
@@ -119,6 +122,8 @@ struct AdminEditUserPage: Page {
 };
 
 struct AdminEditLanguagePage: Page {
+	AdminEditLanguagePage(UserPtr u) : Page(u) { }
+	
 	struct DockerForm: cppcms::form {
 		ws::text repository;
 		ws::text imageID;
@@ -203,6 +208,8 @@ struct AdminEditLanguagePage: Page {
 };
 
 struct AdminImportPage: Page {
+	AdminImportPage(UserPtr u) : Page(u) { }
+	
 	struct Form: cppcms::form {
 		ws::text name;
 		ws::file package;
