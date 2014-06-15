@@ -164,37 +164,14 @@ string genSalt() {
 
 } // end anonymous namespace
 
-
-User::User(string name, string password, bool admin, bool active) {
-	setName(name);
-	setPassword(password);
-	setAdmin(admin);
-	setActive(active);
-}
-
-void User::setName(const string& newName) {
-	if(!isValidName(newName)) throw Error("User::setName: Invalid name.");
-	name = newName;
-}
-
-bool User::isPasswordMatch(const string& cmpPassword) const {
-	string cmpHash = computeHash(salt + cmpPassword);
-	return cmpHash == hash;
-}
-
-void User::setPassword(const string& newPassword) {
-	if(!isValidPassword(newPassword)) throw Error("User::setPassword: Invalid password.");
+Password::Password(string newPassword) {
 	salt = genSalt();
 	hash = computeHash(salt + newPassword);
 }
 
-bool User::isValidName(const string& name) {
-	size_t codepointCount = countCodePoints(name);
-	return codepointCount != 0 && codepointCount <= 255;
-}
-bool User::isValidPassword(const string& password) {
-	size_t codepointCount = countCodePoints(password);
-	return codepointCount != 0 && codepointCount <= 255;
+bool Password::matches(string cmpPassword) {
+	string cmpHash = computeHash(salt + cmpPassword);
+	return hash == cmpHash;
 }
 
 optional<ID> testLogin(string user, string pass) {
@@ -202,7 +179,7 @@ optional<ID> testLogin(string user, string pass) {
 	result<User> res = db::query<User>(query<User>::name == user);
 	if(res.empty()) return optional<ID>();
 	User u = *res.begin();
-	if(u.isActive() && u.isPasswordMatch(pass)) {
+	if(u.active && u.password.matches(pass)) {
 		return u.id;
 	} else {
 		return optional<ID>();

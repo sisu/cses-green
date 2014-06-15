@@ -7,27 +7,29 @@
 
 namespace cses {
 
-typedef optional<string> OptString;
-
-struct SetUsernameWidget: ValidatingWidget<ws::text> {
-	virtual CheckResult checkValue(const string& name) override {
-		if(User::isValidName(name)) return ok();
-		return error("Invalid username. Username must consist of 1-255 characters.");
+struct PasswordWidgetProvider: WidgetProvider {
+	ws::base_widget& getWidget() override {
+		return widget;
 	}
+	void readWidget() override {
+		ref = Password(widget.value());
+	}
+
+	PasswordWidgetProvider(Password& v, const string& name): ref(v) {
+		widget.message(name);
+	}
+	ws::password widget;
+	Password& ref;
 };
-
-struct SetPasswordWidget: ValidatingWidget<ws::password> {
-	virtual CheckResult checkValue(const string& password) override {
-		if(User::isValidPassword(password)) return ok();
-		return error("Invalid password. Password must consist of 1-255 characters.");
+struct ChangePasswordWidgetProvider : PasswordWidgetProvider {
+	void readWidget() override {
+		if(!widget.value().empty()) {
+			ref = Password(widget.value());
+		}
 	}
-};
-
-struct SetOptionalPasswordWidget: ValidatingWidget<ws::password> {
-	virtual CheckResult checkValue(const string& password) override {
-		if(password.empty() || User::isValidPassword(password)) return ok();
-		return error("Invalid password. Password must consist of 1-255 characters.");
-	}
+	
+	ChangePasswordWidgetProvider(Password& v, const string& name)
+		: PasswordWidgetProvider(v, name) { }
 };
 
 struct Page: cppcms::base_content {
@@ -35,8 +37,8 @@ struct Page: cppcms::base_content {
 	bool admin=0;
 	void set(UserPtr u) {
 		if (u) {
-			user = u->getName();
-			admin = u->isAdmin();
+			user = u->name;
+			admin = u->admin;
 		} else {
 			user.clear();
 			admin = 0;
@@ -53,20 +55,16 @@ struct ContestsPage: Page {
 };
 
 struct RegistrationPage: Page {
-	struct Info: cppcms::form {
-		SetUsernameWidget name;
-		SetPasswordWidget password;
-		ws::submit submit;
-		Info() {
-			name.message("Name");
-			password.message("Password");
-			submit.value("Register");
-			add(name);
-			add(password);
-			add(submit);
-		}
+	RegistrationPage(User& user) : builder(form) {
+		builder
+			.add(user.name, "Name")
+			.addProvider<PasswordWidgetProvider, Password>(user.password, "Password")
+			.addSubmit();
 	};
-	Info info;
+	
+	string msg;
+	cppcms::form form;
+	FormBuilder builder;
 };
 
 struct LoginPage: Page {
@@ -98,7 +96,7 @@ struct AdminPage: Page {
 
 struct AdminEditUserPage: Page {
 	struct Form: cppcms::form {
-		SetUsernameWidget name;
+/*		SetUsernameWidget name;
 		SetOptionalPasswordWidget password;
 		ws::checkbox admin;
 		ws::checkbox active;
@@ -116,7 +114,7 @@ struct AdminEditUserPage: Page {
 			add(active);
 			add(submit);
 		}
-	};
+*/	};
 	
 	Form form;
 	bool success = false;

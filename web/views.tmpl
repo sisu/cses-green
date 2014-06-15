@@ -120,9 +120,10 @@ window.setInterval("update()", 1000);
 <% view registration uses RegistrationPage extends page %>
 <% template body() %>
 <h1>Register user</h1>
+<p><%= msg %></p>
 <form method="post" action=""><%csrf%>
 <table>
-<% form as_table info %>
+<% form as_table form %>
 </table>
 </form>
 <% end template %>
@@ -150,7 +151,7 @@ window.setInterval("update()", 1000);
 <table>
 	<% item %>
 	<tr>
-		<td><%= user.getName() %></td>
+		<td><%= user.name %></td>
 		<td><a href="<% url "adminEditUser" using user.id %>">Edit</a></td>
 	</tr>
 	<% end %>

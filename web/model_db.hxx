@@ -37,6 +37,49 @@ struct DBObject {
 typedef string StrField;
 #pragma db value(StrField) type(STR_FIELD)
 
+
+#pragma db value
+struct Password {
+	StrField hash;
+#pragma db type(CHAR_FIELD(16))
+	string salt;
+	
+	
+	Password(string newPassword); 
+	Password() { }
+	
+	bool matches(string cmpPassword);
+	
+	void validate() {
+		if(salt.empty()) throw Error("Password::validate: Field not set.");
+	}
+};
+
+#pragma db object
+struct User: DBObject {
+#pragma db unique
+	StrField name;
+	
+	Password password;
+	bool admin;
+	bool active;
+	
+	User(string name, string password, bool admin = false, bool active = true)
+		: name(name), password(password), admin(admin), active(active) { }
+	User() { }
+	
+	void validate() {
+		size_t nameLength = countCodePoints(name);
+		if(nameLength == 0 || nameLength > 255) {
+			throw ValidationFailure("Username must consist of 1-255 characters.");
+		}
+		
+		password.validate();
+	}
+};
+typedef shared_ptr<User> UserPtr;
+#pragma db value(UserPtr) not_null
+
 #pragma db value
 struct File {
 	string hash;
@@ -236,62 +279,6 @@ struct EvaluatorProgram {
 		binary.validate();
 	}
 };
-
-#pragma db object
-struct User: DBObject {
-public:
-	User(string name, string password, bool admin = false, bool active = true);
-	
-	const string& getName() const {
-		return name;
-	}
-	void setName(const string& newName);
-	
-	bool isPasswordMatch(const string& cmpPassword) const;
-	void setPassword(const string& newPassword);
-	
-	bool isAdmin() const {
-		return admin;
-	}
-	void setAdmin(bool newAdmin) {
-		admin = newAdmin;
-	}
-	
-	bool isActive() const {
-		return active;
-	}
-	void setActive(bool newActive) {
-		active = newActive;
-	}
-	
-	// Usernames must consist of 1-255 code points.
-	static bool isValidName(const string& name);
-	
-	// Passwords must consist of 1-255 code points.
-	static bool isValidPassword(const string& password);
-	
-private:
-	User() { }
-	
-#pragma db unique
-	StrField name;
-	StrField hash;
-#pragma db type(CHAR_FIELD(16))
-	string salt;
-	bool admin;
-	bool active;
-	
-#if 0
-#pragma db value_not_null inverse(users) section(sec)
-	vector<Group*> groups;
-#pragma db load(lazy)
-	odb::section sec;
-#endif
-	
-	friend class odb::access;
-};
-typedef shared_ptr<User> UserPtr;
-#pragma db value(UserPtr) not_null
 
 #if 0
 #pragma db object

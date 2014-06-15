@@ -78,7 +78,7 @@ struct Server: cppcms::application {
 	void contests() {
 		UserPtr user = getCurrentUser();
 		if(user) {
-			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->getName() << "\" visited the page.";
+			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->name << "\" visited the page.";
 		} else {
 			BOOSTER_DEBUG("cses_contests") << "Outsider visited the page.";
 		}
@@ -103,7 +103,7 @@ struct Server: cppcms::application {
 
 	void editContest(string id) {
 		auto user = getRequiredUser();
-		if (!user->isAdmin()) {
+		if (!user->admin) {
 			response().status(404);
 			return;
 		}
@@ -228,7 +228,7 @@ struct Server: cppcms::application {
 
 		for(auto& user: users) {
 			ScoresPage::Row row;
-			row.user = user.getName();
+			row.user = user.name;
 			int total = 0;
 			auto& uscores = scores[user.id];
 			for(auto task: cnt->tasks) {
@@ -422,24 +422,27 @@ struct Server: cppcms::application {
 	}
 
 	void registration() {
-		RegistrationPage c;
+		User newUser;
+		RegistrationPage page(newUser);
 		if(isPost()) {
-			c.info.load(context());
-			if(c.info.validate()) {
+			page.form.load(context());
+			if (page.form.validate()) {
+				page.builder.readForm();
 				try {
 					odb::transaction t(db::begin());
-					User newUser(c.info.name.value(), c.info.password.value());
 					db::persist(newUser);
 					t.commit();
 					BOOSTER_INFO("cses_register")
-						<< "Registered user " << newUser.id << ": \"" << newUser.getName() << "\".";
+						<< "Registered user " << newUser.id << ": \"" << newUser.name << "\".";
+					page.msg = "Registration was successful.";
 				} catch(odb::object_already_persistent) {
-					c.info.name.valid(false);
-					c.info.name.error_message("Username already in use.");
+					page.msg = "Username already in use.";
+				} catch(const ValidationFailure& e) {
+					page.msg = e.msg;
 				}
 			}
 		}
-		render("registration", c);
+		render("registration", page);
 	}
 
 	void login() {
@@ -485,7 +488,7 @@ struct Server: cppcms::application {
 	}
 
 	void adminEditUser(string userIDString) {
-		if(!isCurrentUserAdmin()) {
+/*		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
 			return;
 		}
@@ -544,7 +547,7 @@ struct Server: cppcms::application {
 		}
 		
 		render("adminEditUser", c);
-	}
+*/	}
 	
 	template <typename LanguageT>
 	void adminEditLanguage(string langIDString) {
@@ -705,7 +708,7 @@ struct Server: cppcms::application {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
 			UserPtr user = getSharedPtr<User>(userID);
-			if(user && user->isActive()) {
+			if(user && user->active) {
 				return user;
 			}
 			session().reset_session();
@@ -717,7 +720,7 @@ struct Server: cppcms::application {
 	bool isCurrentUserAdmin() {
 		UserPtr user = getCurrentUser();
 		if(!user) return false;
-		return user->isAdmin();
+		return user->admin;
 	}
 	
 	template <typename... Params>
