@@ -508,7 +508,7 @@ struct Server: cppcms::application {
 	void users() {
 		UserPtr user = getRequiredAdminUser();
 		
-		LanguagesPage c(user);
+		UsersPage c(user);
 		odb::transaction t(db::begin());		
 		
 		odb::result<User> userRes = db::query<User>();
@@ -516,16 +516,13 @@ struct Server: cppcms::application {
 		
 		render("users", c);
 	}
-	
+
 	void editUser(string userIDString) {
-		if(!isCurrentUserAdmin()) {
-			sendRedirectHeader("/");
-			return;
-		}
+		UserPtr user = getRequiredAdminUser();
 		
-		UserPtr user = getByStringOrFail<User>(userIDString);
+		UserPtr targetUser = getByStringOrFail<User>(userIDString);
 		
-		EditUserPage page(getOptionalUser(), *user);
+		EditUserPage page(user, *targetUser);
 		if(isPost()) {
 			page.form.load(context());
 			if(page.form.validate()) {
@@ -534,10 +531,10 @@ struct Server: cppcms::application {
 					odb::transaction t(db::begin());
 					
 					if(db::query<User>(
-						odb::query<User>::name == user->name &&
-						odb::query<User>::id != user->id
+						odb::query<User>::name == targetUser->name &&
+						odb::query<User>::id != targetUser->id
 					).empty()) {
-						db::update(user);
+						db::update(targetUser);
 						t.commit();
 					} else {
 						page.msg = "Username already in use.";
