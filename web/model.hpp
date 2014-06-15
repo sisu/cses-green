@@ -124,6 +124,8 @@ inline vector<shared_ptr<T>> loadAllObjects() {
 	return objects;
 }
 
+EvaluatorProgram getDefaultEvaluator();
+
 //File makeFile();
 
 }

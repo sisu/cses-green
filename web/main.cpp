@@ -665,6 +665,7 @@ struct Server: cppcms::application {
 					group->points = 100;
 					newTask->testGroups.push_back(group);
 					newTask->contest = newContest;
+					newTask->evaluator = getDefaultEvaluator();
 					db::persist(newTask);
 					db::persist(group);
 
@@ -683,6 +684,7 @@ struct Server: cppcms::application {
  						group->tests.push_back(newCase);
 					}
 					newContest->tasks.push_back(newTask);
+					compileEvaluator(newTask);
 				}
 				t.commit();
 				sendRedirectHeader("/contest", newContest->id);
