@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include "seccomp-bpf.h"
 using namespace std;
 
@@ -69,9 +70,8 @@ void set_filters() {
 	assert(!ret);
 }
 
-static void child(int, char** argv, string dir)
+static void child(int, char** argv)
 {
-	chdir(dir.c_str());
 	/* Request tracing by parent: */
 	ptrace(PTRACE_TRACEME, 0, NULL, NULL);
 
@@ -82,7 +82,7 @@ static void child(int, char** argv, string dir)
 
 	/* Now exec: */
 //	execl("/bin/echo", "echo", "lol", NULL);
-	execvp(argv[1], argv+1);
+	execvp(*argv, argv);
 }
 
 #if 0
@@ -100,8 +100,9 @@ const int allowed_syscalls[] = {
 	// java
 	202,56,
 };
-bool is_allowed_syscall[1024];
 #endif
+bool isAllowedSyscall[1024];
+bool listCalls = 0;
 
 static void parent(pid_t child_pid)
 {
@@ -143,11 +144,14 @@ static void parent(pid_t child_pid)
 					exec_done = 1;
 				}
 			} else {
-#if 0
-				sc_number = ptrace(PTRACE_PEEKUSER, child_pid, SC_NUMBER, NULL);
+#if 1
+				long sc_number = ptrace(PTRACE_PEEKUSER, child_pid, SC_NUMBER, NULL);
 //				sc_retcode = ptrace(PTRACE_PEEKUSER, child_pid, SC_RETCODE, NULL);
 //				printf("SIGTRAP: syscall %ld, rc = %ld\n", sc_number, sc_retcode);
-				if (sc_number<0 || sc_number>512 || !is_allowed_syscall[sc_number]) {
+				if (listCalls) {
+					assert(sc_number>=0 && sc_number<=512);
+					isAllowedSyscall[sc_number] = 1;
+				} else if (sc_number<0 || sc_number>512 || !isAllowedSyscall[sc_number]) {
 					fprintf(stderr, "BLOCKED SYSCALL %ld\n", sc_number);
 					kill(child_pid, SIGKILL);
 					abort();
@@ -171,15 +175,31 @@ static void parent(pid_t child_pid)
 		/* Resume child, requesting that it stops again on syscall enter/exit
 		 * (in addition to any other reason why it might stop):
 		 */
-//		ptrace(PTRACE_SYSCALL, child_pid, NULL, NULL);
-		ptrace(PTRACE_CONT, child_pid, NULL, NULL);
+		ptrace(PTRACE_SYSCALL, child_pid, NULL, NULL);
+//		ptrace(PTRACE_CONT, child_pid, NULL, NULL);
+	}
+}
+
+void printCalls() {
+	for(int i=0; i<1024; ++i) if (isAllowedSyscall[i]) {
+		cout<<i<<',';
+	}
+	cout<<'\n';
+}
+void readCalls(string a) {
+	for(char& c: a) if (c==',') c=' ';
+	istringstream iss(a);
+	int x;
+	while(iss>>x) {
+		isAllowedSyscall[x]=1;
 	}
 }
 
 int main(int argc, char** argv)
 {
 	assert(argc>1);
-	string dir = ".";
+	char* cenv = getenv("ALLOWED_SYSCALLS");
+	if (cenv) readCalls(cenv);
 	int i;
 	for(i=1; i+1<argc; ++i) {
 		string s = argv[i];
@@ -187,9 +207,10 @@ int main(int argc, char** argv)
 		if (s=="-type") {
 			string t = argv[++i];
 		} else if (s=="-allowed") {
-			string a = argv[++i];
-		} else if (s=="-dir") {
-			dir = argv[++i];
+			readCalls(argv[++i]);
+		} else if (s=="-list") {
+			listCalls = 1;
+			atexit(printCalls);
 		} else {
 			cerr<<"Unknown argument "<<s<<'\n';
 			return -1;
@@ -203,7 +224,7 @@ int main(int argc, char** argv)
 	pid_t pid = fork();
 
 	if (pid == 0)
-		child(argc, argv, dir);
+		child(argc, argv+i);
 	else
 		parent(pid);
 }

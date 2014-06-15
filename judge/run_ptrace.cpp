@@ -19,7 +19,7 @@ T withMsg(const std::string& msg) {
 const string RESTRICT_SYSCALLS = "restrict_syscalls";
 const string RUN_BOXED = "run_boxed.sh";
 // TODO: work correctly when running from different directory
-string programPath = "syscalls";
+string programPath = string(getcwd(0,0)) + "/syscalls";
 
 void pathPermissions(string path, string per) {
 	while(path.size()>1) {

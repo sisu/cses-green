@@ -344,12 +344,21 @@ private:
 		inputs["input"] = result.testCase->input.hash;
 		inputs["correct"] = result.testCase->output.hash;
 		StringMap resMap = connection->runOnJudge(sandbox, inputs, 1.0, 100<<20);
-		cerr<<"result file "<<resMap.count("result")<<'\n';
-		string resStr = readFileByHash(resMap["result"]);
-		cerr<<"result string "<<resStr<<'\n';
-		bool ok = *stringToInteger<int>(resStr);
-		result.status = ok ? ResultStatus::CORRECT : ResultStatus::WRONG_ANSWER;
-
+		cerr<<"result file "<<resMap.count("stdout")<<'\n';
+		bool ok = 0;
+		if (!resMap.count("stdout")) {
+			result.status = ResultStatus::INTERNAL_ERROR;
+		} else {
+			string resStr = readFileByHash(resMap["stdout"]);
+			cerr<<"result string "<<resStr<<'\n';
+			optional<int> ores = stringToInteger<int>(resStr);
+			if (!ores) {
+				result.status = ResultStatus::INTERNAL_ERROR;
+			} else {
+				ok = *ores;
+				result.status = ok ? ResultStatus::CORRECT : ResultStatus::WRONG_ANSWER;
+			}
+		}
 		odb::transaction t(db::begin());
 		db::update(result);
 		t.commit();
