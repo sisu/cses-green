@@ -2,7 +2,7 @@
 #include "judging.hpp"
 #include "common/file.hpp"
 #include "common/io_util.hpp"
-#include "model_db-odb.hxx"
+#include "model.hpp"
 #include <thread>
 #include <condition_variable>
 #include <mutex>
@@ -200,8 +200,8 @@ public:
 	void updateJudgeHosts() {
 		std::vector<JudgeHost> hosts;
 		{
-			odb::transaction t(db->begin());
-			odb::result<JudgeHost> result = db->query<JudgeHost>();
+			odb::transaction t(db::begin());
+			odb::result<JudgeHost> result = db::query<JudgeHost>();
 			hosts.assign(result.begin(), result.end());
 		}
 		allJudgeHosts.clear();
@@ -279,9 +279,9 @@ protected:
 		shared_ptr<TestGroup> group;
 		shared_ptr<Submission> submission;
 		{
-			odb::transaction t(db->begin());
-			group = db->load<TestGroup>(testGroupID);
-			submission = db->load<Submission>(submissionID);
+			odb::transaction t(db::begin());
+			group = db::load<TestGroup>(testGroupID);
+			submission = db::load<Submission>(submissionID);
 		}
 		try {
 			SubmissionUpdate update{submission, 0};
@@ -298,9 +298,9 @@ protected:
 			update.score = allOK ? group->points : 0;
 		} catch(const ::apache::thrift::TException&) {
 			auto lock = getLock();
-			odb::transaction t(db->begin());
+			odb::transaction t(db::begin());
 			submission->status = SubmissionStatus::ERROR;
-			db->update(submission);
+			db::update(submission);
 			t.commit();
 			throw;
 		}
@@ -328,8 +328,8 @@ private:
 			res.errOutput.hash = result["stderr"];
 		}
 		{
-			odb::transaction t(db->begin());
-			db->persist(res);
+			odb::transaction t(db::begin());
+			db::persist(res);
 			t.commit();
 		}
 		return res;
@@ -350,8 +350,8 @@ private:
 		bool ok = *stringToInteger<int>(resStr);
 		result.status = ok ? ResultStatus::CORRECT : ResultStatus::WRONG_ANSWER;
 
-		odb::transaction t(db->begin());
-		db->update(result);
+		odb::transaction t(db::begin());
+		db::update(result);
 		t.commit();
 		return ok;
 	}
@@ -361,14 +361,14 @@ private:
 		int score;
 		~SubmissionUpdate() {
 			auto lock = getLock();
-			odb::transaction t(db->begin());
-			db->reload(submission);
+			odb::transaction t(db::begin());
+			db::reload(submission);
 			--submission->missingResults;
 			submission->score += score;
 			if (submission->missingResults == 0 && submission->status == SubmissionStatus::JUDGING) {
 				submission->status = SubmissionStatus::READY;
 			}
-			db->update(submission);
+			db::update(submission);
 			t.commit();
 		}
 	};
@@ -399,8 +399,8 @@ void compileProgram(shared_ptr<Owner> owner, Program& program, JudgeConnection c
 	}
 	cerr<<"changed: "<<changed<<'\n';
 	if (changed) {
-		odb::transaction t(db->begin());
-		db->update(owner);
+		odb::transaction t(db::begin());
+		db::update(owner);
 		t.commit();
 	}
 }
@@ -412,8 +412,8 @@ public:
 		odb::session session;
 		shared_ptr<Task> task;
 		{
-			odb::transaction t(db->begin());
-			task = db->load<Task>(id);
+			odb::transaction t(db::begin());
+			task = db::load<Task>(id);
 		}
 		compileProgram(task, task->evaluator, *connection);
 	}
@@ -431,27 +431,27 @@ protected:
 		odb::session session;
 		SubmissionPtr submission;
 		{
-			odb::transaction t(db->begin());
-			submission = db->load<Submission>(submissionID);
+			odb::transaction t(db::begin());
+			submission = db::load<Submission>(submissionID);
 			submission->status = SubmissionStatus::JUDGING;
-			db->update(submission);
+			db::update(submission);
 			t.commit();
 		}
 		try {
 			compileProgram(submission, submission->program, *connection);
 		} catch(const ::apache::thrift::TException&) {
-			odb::transaction t(db->begin());
+			odb::transaction t(db::begin());
 			submission->status = SubmissionStatus::ERROR;
-			db->update(submission);
+			db::update(submission);
 			t.commit();
 			throw;
 		}
 		if (submission->program.binary) {
 			startTestGroups(submission);
 		} else {
-			odb::transaction t(db->begin());
+			odb::transaction t(db::begin());
 			submission->status = SubmissionStatus::COMPILE_ERROR;
-			db->update(submission);
+			db::update(submission);
 			t.commit();
 		}
 	}
@@ -462,10 +462,10 @@ private:
 	void startTestGroups(SubmissionPtr submission) {
 		TaskPtr task = submission->task;
 		{
-			odb::transaction t(db->begin());
-			db->load(*task, task->sec);
+			odb::transaction t(db::begin());
+			db::load(*task, task->sec);
 			submission->missingResults = task->testGroups.size();
-			db->update(submission);
+			db::update(submission);
 			t.commit();
 		}
 		for(auto group: task->testGroups) {

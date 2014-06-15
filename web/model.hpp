@@ -7,15 +7,92 @@
 
 namespace cses {
 
-void makeDB(bool reset);
+// Database access functions. Call init before other functions.
+namespace db {
+
+namespace detail {
+	// Do not use directly.
+	extern unique_ptr<odb::database> database;
+}
+
+void init(bool reset);
+
+// odb::transaction has no move semantics, so we return odb::transaction_impl*
+// to be passed to the constructor of odb::transaction (as in odb).
+odb::transaction_impl* begin();
+
+template <typename T>
+odb::result<T> query() {
+	return detail::database->query<T>();
+}
+
+template <typename T>
+odb::result<T> query(const odb::query<T>& q) {
+	return detail::database->query<T>(q);
+}
+
+template <typename T>
+shared_ptr<T> load(ID id) {
+	return detail::database->load<T>(id);
+}
+
+template <typename T>
+void load(T& obj, odb::section& sec) {
+	detail::database->load<T>(obj, sec);
+}
+
+template <typename T>
+void reload(T& obj) {
+	detail::database->reload<T>(obj);
+}
+
+template <typename T>
+void reload(shared_ptr<T> obj) {
+	detail::database->reload<T>(obj);
+}
+
+// Validation trait run before persist/update. Throw ValidationFailure if the
+// object contents are invalid to prevent persisting. By default validates nothing.
+template <typename T>
+struct Validator {
+	static void validate(const T& obj) {
+		(void)obj;
+	}
+};
+
+template <typename T>
+ID persist(T& obj) {
+	Validator<T>::validate(obj);
+	return detail::database->persist<T>(obj);
+}
+
+template <typename T>
+ID persist(shared_ptr<T> obj) {
+	Validator<T>::validate(*obj);
+	return detail::database->persist<T>(obj);
+}
+
+template <typename T>
+void update(T& obj) {
+	Validator<T>::validate(obj);
+	return detail::database->update<T>(obj);
+}
+
+template <typename T>
+void update(shared_ptr<T> obj) {
+	Validator<T>::validate(*obj);
+	return detail::database->update<T>(obj);
+}
+
+}
 
 // Return ID of active user with given username and password, if exists.
 optional<ID> testLogin(string user, string pass);
 
 template <typename T>
 shared_ptr<T> getSharedPtr(const typename odb::object_traits<T>::id_type& id) {
-	odb::transaction t(db->begin());
-	odb::result<T> res = db->query<T>(odb::query<T>::id == id);
+	odb::transaction t(db::begin());
+	odb::result<T> res = db::query<T>(odb::query<T>::id == id);
 	if (res.empty()) return nullptr;
 	return res.begin().load();
 }
@@ -24,8 +101,8 @@ template <typename T>
 shared_ptr<T> getByStringId(string idString) {
 	optional<ID> id = stringToInteger<typename odb::object_traits<T>::id_type>(idString);
 	if (!id) return nullptr;
-	odb::transaction t(db->begin());
-	odb::result<T> res = db->query<T>(odb::query<T>::id == *id);
+	odb::transaction t(db::begin());
+	odb::result<T> res = db::query<T>(odb::query<T>::id == *id);
 	if (res.empty()) return nullptr;
 	return res.begin().load();
 }
@@ -43,8 +120,8 @@ shared_ptr<T> getByStringOrFail(string id) {
 
 template<class T>
 inline vector<shared_ptr<T>> loadAllObjects() {
-	odb::transaction t(db->begin());
-	odb::result<T> res = db->query<T>();
+	odb::transaction t(db::begin());
+	odb::result<T> res = db::query<T>();
 	vector<shared_ptr<T>> objects;
 	for(auto i=res.begin(); i!=res.end(); ++i) {
 		objects.push_back(i.load());

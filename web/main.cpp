@@ -86,8 +86,8 @@ struct Server: cppcms::application {
 #if 1
 		ContestsPage c;
 		
-		odb::transaction t(db->begin());		
-		odb::result<Contest> contestRes = db->query<Contest>();
+		odb::transaction t(db::begin());		
+		odb::result<Contest> contestRes = db::query<Contest>();
 		for (auto x : contestRes) {
 			c.contests.push_back(make_pair(x.id, x.name));
 		}
@@ -113,15 +113,15 @@ struct Server: cppcms::application {
 			c.form.load(context());
 			if (c.form.validate()) {
 				c.builder.readForm();
-				odb::transaction t(db->begin());
-				db->update(cnt);
+				odb::transaction t(db::begin());
+				db::update(cnt);
 				t.commit();
 			}
 		}
 		{
 			odb::session s;
-			odb::transaction t(db->begin());
-			db->load(*cnt, cnt->sec);
+			odb::transaction t(db::begin());
+			db::load(*cnt, cnt->sec);
 			for(auto t: cnt->tasks) {
 				c.tasks.push_back({t->name, t->id});
 			}
@@ -140,8 +140,8 @@ struct Server: cppcms::application {
 			t.form.load(context());
 			if (t.form.validate()) {
 				t.builder.readForm();
-				odb::transaction tr(db->begin());
-				db->update(task);
+				odb::transaction tr(db::begin());
+				db::update(task);
 				tr.commit();
 				BOOSTER_INFO("edit task")<<"got evaluator: "<<task->evaluator.source.hash<<'\n';
 				if (!eval.source.hash.empty()) {
@@ -161,9 +161,9 @@ struct Server: cppcms::application {
 		ID userID = user->id;
 		ListPage p(user, *cnt);
 
-		odb::transaction t(db->begin());
+		odb::transaction t(db::begin());
 		
-		db->load(*cnt, cnt->sec);
+		db::load(*cnt, cnt->sec);
 		
 		vector<tuple<long long, int, string, string>> data;
 		
@@ -172,7 +172,7 @@ struct Server: cppcms::application {
 			
 			odb::query<Submission> q (odb::query<Submission>::task == taskID &&
 			                          odb::query<Submission>::user == userID);
-			odb::result<Submission> sRes = db->query<Submission>(q);
+			odb::result<Submission> sRes = db::query<Submission>(q);
 			
 			for (auto s : sRes) {
 				long long time = s.time;
@@ -207,10 +207,10 @@ struct Server: cppcms::application {
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		ScoresPage p(user, *cnt);
 #if 1
-		odb::transaction t(db->begin());
-		odb::result<User> users = db->query<User>();
+		odb::transaction t(db::begin());
+		odb::result<User> users = db::query<User>();
 
-		db->load(*cnt, cnt->sec);
+		db::load(*cnt, cnt->sec);
 		vector<int> taskIds;
 		for(auto task: cnt->tasks) {
 			taskIds.push_back(task->id);
@@ -218,7 +218,7 @@ struct Server: cppcms::application {
 		}
 
 		typedef odb::query<Submission> query;
-		odb::result<Submission> submissions = db->query<Submission>(query::task.in_range(taskIds.begin(), taskIds.end()) + "ORDER BY" + query::time);
+		odb::result<Submission> submissions = db::query<Submission>(query::task.in_range(taskIds.begin(), taskIds.end()) + "ORDER BY" + query::time);
 
 		map<int, map<int, int>> scores;
 
@@ -278,11 +278,11 @@ struct Server: cppcms::application {
 		ViewPage c(user, *task->contest.lock());
 
 		{
-			odb::transaction t(db->begin());
-			db->load(*task, task->sec);
+			odb::transaction t(db::begin());
+			db::load(*task, task->sec);
 		}
 
-		odb::transaction t(db->begin());
+		odb::transaction t(db::begin());
 		
 		int cnt = 0, ind = 0;
 		
@@ -323,7 +323,7 @@ struct Server: cppcms::application {
  		if (s->status == SubmissionStatus::ERROR) c.status = "ERROR";
 		
 		odb::query<Result> q (odb::query<Result>::submission == s->id);
-		odb::result<Result> sRes = db->query<Result>(q);
+		odb::result<Result> sRes = db::query<Result>(q);
  		for (auto x : sRes) {
  			int testId = x.testCase->id;
 			time[testId] = x.timeInSeconds;
@@ -379,14 +379,14 @@ struct Server: cppcms::application {
 		SubmitPage c(user, *cnt);
 
 		{
-			odb::transaction t(db->begin());
-			db->load(*cnt, cnt->sec);
+			odb::transaction t(db::begin());
+			db::load(*cnt, cnt->sec);
 			
 			for(const auto& x : cnt->tasks) {
 				c.form.task.add(x->name, std::to_string(x->id));
 			}  		
   		
-			odb::result<SubmissionLanguage> languageRes = db->query<SubmissionLanguage>();
+			odb::result<SubmissionLanguage> languageRes = db::query<SubmissionLanguage>();
 			for(const auto& x : languageRes) {
 				c.form.language.add(x.getName(), std::to_string(x.id));
 			}
@@ -407,9 +407,9 @@ struct Server: cppcms::application {
 				submission->time = current_time();
 				submission->program.language = language;
 				submission->status = SubmissionStatus::PENDING;
-				odb::transaction t(db->begin());
+				odb::transaction t(db::begin());
 				submission->program.source = codeFile;
-				db->persist(submission);
+				db::persist(submission);
 				t.commit();
 				addForJudging(submission);
 			}
@@ -427,9 +427,9 @@ struct Server: cppcms::application {
 			c.info.load(context());
 			if(c.info.validate()) {
 				try {
-					odb::transaction t(db->begin());
+					odb::transaction t(db::begin());
 					User newUser(c.info.name.value(), c.info.password.value());
-					db->persist(newUser);
+					db::persist(newUser);
 					t.commit();
 					BOOSTER_INFO("cses_register")
 						<< "Registered user " << newUser.id << ": \"" << newUser.getName() << "\".";
@@ -471,14 +471,14 @@ struct Server: cppcms::application {
 		}
 		
 		AdminPage c;
-		odb::transaction t(db->begin());		
-		odb::result<User> userRes = db->query<User>();
+		odb::transaction t(db::begin());		
+		odb::result<User> userRes = db::query<User>();
 		c.users.assign(userRes.begin(), userRes.end());
 		
-		odb::result<SubmissionLanguage> submissionLanguageRes = db->query<SubmissionLanguage>();
+		odb::result<SubmissionLanguage> submissionLanguageRes = db::query<SubmissionLanguage>();
 		c.submissionLanguages.assign(submissionLanguageRes.begin(), submissionLanguageRes.end());
 		
-		odb::result<EvaluatorLanguage> evaluatorLanguageRes = db->query<EvaluatorLanguage>();
+		odb::result<EvaluatorLanguage> evaluatorLanguageRes = db::query<EvaluatorLanguage>();
 		c.evaluatorLanguages.assign(evaluatorLanguageRes.begin(), evaluatorLanguageRes.end());
 		
 		render("admin", c);
@@ -513,13 +513,13 @@ struct Server: cppcms::application {
 				user->setAdmin(c.form.admin.value());
 				user->setActive(c.form.active.value());
 				try {
-					odb::transaction t(db->begin());
+					odb::transaction t(db::begin());
 					
 					// FIXME: find better way to detect username in use.
 					// can't reliably detect UNIQUE constraint failure,
 					// current workaround throws if someone creates user with
 					// colliding name during the transaction.
-					odb::result<User> res = db->query<User>(
+					odb::result<User> res = db::query<User>(
 						odb::query<User>::name == user->getName()
 					);
 					c.nameInUse = false;
@@ -528,7 +528,7 @@ struct Server: cppcms::application {
 					}
 					
 					if(!c.nameInUse) {
-						db->update(user);
+						db::update(user);
 						t.commit();
 						c.success = true;
 					}
@@ -573,10 +573,10 @@ struct Server: cppcms::application {
 			c.form.load(context());
 			if(c.form.validate()) {
 				try {
-					odb::transaction t(db->begin());
+					odb::transaction t(db::begin());
 					
 					// FIXME: find better way to detect name in use.
-					odb::result<LanguageT> res = db->query<LanguageT>(
+					odb::result<LanguageT> res = db::query<LanguageT>(
 						odb::query<LanguageT>::name == c.form.name.value()
 					);
 					for(const LanguageT& other : res) {
@@ -593,9 +593,9 @@ struct Server: cppcms::application {
 						
 						if(langID) {
 							newLang.id = *langID;
-							db->update(newLang);
+							db::update(newLang);
 						} else {
-							db->persist(newLang);
+							db::persist(newLang);
 						};
 						t.commit();
 						c.success = true;
@@ -638,12 +638,12 @@ struct Server: cppcms::application {
 				Import import;
 				import.process(c.form.package.value()->data());
 				
-				odb::transaction t(db->begin());
+				odb::transaction t(db::begin());
 				shared_ptr<Contest> newContest(new Contest());
 				newContest->name = contestName;
 				newContest->beginTime = current_time();
 				newContest->endTime = newContest->beginTime+2*3600;
-				db->persist(newContest);
+				db::persist(newContest);
 				
 				auto tasks = import.tasks;
 				for (auto task : tasks) {
@@ -654,8 +654,8 @@ struct Server: cppcms::application {
 					group->points = 100;
 					newTask->testGroups.push_back(group);
 					newTask->contest = newContest;
-					db->persist(newTask);
-					db->persist(group);
+					db::persist(newTask);
+					db::persist(group);
 
  					vector<pair<string,string>> inputs = import.inputs[task];
  					vector<pair<string,string>> outputs = import.outputs[task];
@@ -668,7 +668,7 @@ struct Server: cppcms::application {
 						newCase->inputName = inputs[i].second;
 						newCase->outputName = outputs[i].second;
 						newCase->group = group;
- 						db->persist(newCase);
+ 						db::persist(newCase);
  						group->tests.push_back(newCase);
 					}
 					newContest->tasks.push_back(newTask);
@@ -768,7 +768,7 @@ int main(int argc, char** argv) {
 		else if (s=="-c") connectToJudge = 1;
 		else cerr << "Unknown argument " << s << '\n';
 	}
-	makeDB(resetDB);
+	db::init(resetDB);
 	std::ifstream configFile("config.js");
 	cppcms::json::value config;
 	int line=0;

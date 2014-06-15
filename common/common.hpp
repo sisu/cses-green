@@ -30,6 +30,7 @@ using std::shared_ptr;
 using std::weak_ptr;
 using std::size_t;
 using std::move;
+using std::forward;
 using std::swap;
 using std::set;
 using std::map;
@@ -54,6 +55,11 @@ public:
 	
 private:
 	string msg;
+};
+
+// Exception thrown on invalid user data, containing user-readable error message.
+struct ValidationFailure {
+	string message;
 };
 
 class UnpromotableBoolean {

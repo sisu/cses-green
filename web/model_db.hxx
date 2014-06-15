@@ -10,8 +10,6 @@
 #pragma db namespace session pointer(std::shared_ptr)
 namespace cses {
 
-extern unique_ptr<odb::database> db;
-
 struct Contest;
 struct TestCase;
 struct Submission;
@@ -158,7 +156,7 @@ private:
 	friend class odb::access;
 };
 
-#pragma db object pointer(shared_ptr)
+#pragma db object
 struct SubmissionLanguage: Language {
 public:
 #pragma db index unique member(name)
@@ -175,7 +173,7 @@ private:
 	friend class odb::access;
 };
 
-#pragma db object pointer(shared_ptr)
+#pragma db object
 struct EvaluatorLanguage: Language {
 public:
 #pragma db index unique member(name)
@@ -207,7 +205,7 @@ struct EvaluatorProgram {
 	string compileMessage;
 };
 
-#pragma db object pointer(shared_ptr)
+#pragma db object
 struct User: HasID {
 public:
 	User(string name, string password, bool admin = false, bool active = true);
@@ -278,7 +276,7 @@ private:
 
 typedef shared_ptr<Contest> ContestPtr;
 
-#pragma db object pointer(shared_ptr)
+#pragma db object
 struct Task: HasID {
 	StrField name;
 	weak_ptr<Contest> contest;
@@ -302,7 +300,7 @@ private:
 typedef shared_ptr<Task> TaskPtr;
 #pragma db value(TaskPtr) not_null
 
-#pragma db object pointer(shared_ptr)
+#pragma db object
 struct TestGroup: HasID {
 	weak_ptr<Task> task;
 #pragma db value_not_null inverse(group)
