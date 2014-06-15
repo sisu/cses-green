@@ -32,6 +32,7 @@ void Import::process(std::istream &zipData) {
 			string fileName = d2->d_name;
 			if (fileName == ".") continue;
 			if (fileName == "..") continue;
+			if (fileName == "task.nfo") continue;
 			if (fileName.find(".in") != string::npos) inputData.push_back(fileName);
 			if (fileName.find(".IN") != string::npos) inputData.push_back(fileName);
 			if (fileName.find(".out") != string::npos) outputData.push_back(fileName);
@@ -59,7 +60,27 @@ void Import::process(std::istream &zipData) {
 			inputs[taskName].push_back(make_pair(inputHash, newInputName));
 			outputs[taskName].push_back(make_pair(outputHash, newOutputName));
 		}
+		std::ifstream info;
+		info.open(dirName + "/" + x.first + "/task.nfo");
+		if (info.is_open()) {
+			while (true) {
+				string header;
+				info >> header;
+				if (!info.good() || header != "group") break;
+				int points;
+				info >> points;
+				vector<string> list;
+				while (true) {
+					string prefix;
+					info >> prefix;
+					if (prefix == "end") break;
+					list.push_back(prefix);
+				}
+				groups[taskName].push_back(make_pair(points, list));
+			}
+		}
 	}
+	
 	
 	command = "rm -rf " + dirName;
 	system(command.c_str());	

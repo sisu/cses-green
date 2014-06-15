@@ -657,14 +657,43 @@ struct Server: cppcms::application {
 				for (auto task : tasks) {
 					shared_ptr<Task> newTask(new Task());
 					newTask->name = task;
-					shared_ptr<TestGroup> group(new TestGroup());
-					group->task = newTask;
-					group->points = 100;
-					newTask->testGroups.push_back(group);
+					
+					vector<shared_ptr<TestGroup>> groups;
+					bool oneGroup;
+					map<string,int> groupOfCase;
+					if (import.groups[task].size() == 0) {
+						oneGroup = true;
+						shared_ptr<TestGroup> newGroup(new TestGroup());
+						groups.push_back(newGroup);
+						groups[0]->task = newTask;
+						groups[0]->points = 100;
+					} else {
+						oneGroup = false;
+						int c = 0;
+						for (auto group : import.groups[task]) {
+							shared_ptr<TestGroup> newGroup(new TestGroup());
+							groups.push_back(newGroup);
+							groups[c]->task = newTask;
+							groups[c]->points = group.first;
+							for (auto newCase : group.second) {
+								groupOfCase[newCase] = c;
+							}
+							c++;
+						}
+					}
+					
+// 					shared_ptr<TestGroup> group(new TestGroup());
+// 					group->task = newTask;
+// 					group->points = 100;
+					for (auto group : groups) {
+						newTask->testGroups.push_back(group);
+					}
 					newTask->contest = newContest;
 					newTask->evaluator = getDefaultEvaluator();
 					db::persist(newTask);
-					db::persist(group);
+					for (auto group : groups) {
+						db::persist(group);
+					}
 
  					vector<pair<string,string>> inputs = import.inputs[task];
  					vector<pair<string,string>> outputs = import.outputs[task];
@@ -676,9 +705,23 @@ struct Server: cppcms::application {
 						newCase->output = {outputs[i].first};
 						newCase->inputName = inputs[i].second;
 						newCase->outputName = outputs[i].second;
-						newCase->group = group;
- 						db::persist(newCase);
- 						group->tests.push_back(newCase);
+						if (oneGroup) {
+							newCase->group = groups[0];
+							db::persist(newCase);
+							groups[0]->tests.push_back(newCase);
+						} else {
+							string iname = inputs[i].second;
+							string suffix = "";
+							for (int i = iname.size()-1; i >= 0; i--) {
+								suffix = iname[i] + suffix;
+								if (iname[i] == '.') break;
+							}
+							int id = groupOfCase[suffix];
+							BOOSTER_INFO("lol") << suffix << " " << id << "\n";
+							newCase->group = groups[id];
+							db::persist(newCase);						
+							groups[id]->tests.push_back(newCase);
+						}
 					}
 					newContest->tasks.push_back(newTask);
 					compileEvaluator(newTask);
