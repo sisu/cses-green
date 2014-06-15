@@ -53,10 +53,9 @@ struct Page: cppcms::base_content {
 };
 
 struct ContestsPage: Page {
-	vector<pair<unsigned,string>> contests;
+	vector<Contest> contests;
 	
-	ContestsPage(UserPtr user): Page(user)
-	{}
+	ContestsPage(UserPtr user): Page(user) { }
 };
 
 struct RegistrationPage: Page {
@@ -109,8 +108,8 @@ struct UsersPage: Page {
 	vector<User> users;
 };
 
-struct AdminEditUserPage: Page {
-	AdminEditUserPage(UserPtr u, User& editUser) : Page(u), builder(form) {
+struct EditUserPage: Page {
+	EditUserPage(UserPtr u, User& editUser) : Page(u), builder(form) {
 		builder
 			.add(editUser.name, "Name")
 			.addProvider<ChangePasswordWidgetProvider, Password>(
@@ -126,8 +125,8 @@ struct AdminEditUserPage: Page {
 	FormBuilder builder;
 };
 
-struct AdminEditLanguagePage: Page {
-	AdminEditLanguagePage(UserPtr u) : Page(u) { }
+struct EditLanguagePage: Page {
+	EditLanguagePage(UserPtr u) : Page(u) { }
 	
 	struct DockerForm: cppcms::form {
 		ws::text repository;
@@ -212,8 +211,8 @@ struct AdminEditLanguagePage: Page {
 	bool nameInUse = false;
 };
 
-struct AdminImportPage: Page {
-	AdminImportPage(UserPtr u) : Page(u) { }
+struct ImportPage: Page {
+	ImportPage(UserPtr u) : Page(u) { }
 	
 	struct Form: cppcms::form {
 		ws::text name;

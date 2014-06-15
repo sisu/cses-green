@@ -118,7 +118,7 @@ window.setInterval("update()", 500);
 <% foreach c in contests %>
 <ul>
 <% item %>
-	<li><a href="<% url "submit" using c.first %>"><%= c.second %></a></li>
+	<li><a href="<% url "submit" using c.id %>"><%= c.name %></a></li>
 <% end %>
 </ul>
 <% end %>
@@ -128,7 +128,7 @@ window.setInterval("update()", 500);
 <% if admin %>
 <h1>Administration</h1>
 <ul>
-<li><a href="<% url "adminImport" %>">Import contest</a>
+<li><a href="<% url "import" %>">Import contest</a>
 <li><a href="<% url "languages" %>">Languages</a>
 <li><a href="<% url "users" %>">Users</a>
 </ul>
@@ -170,25 +170,25 @@ window.setInterval("update()", 500);
 <% template body() %>
 <h1>Languages</h1>
 <h2>Submission languages</h2>
-<a href="<% url "adminEditLanguage" using SUBMISSION_LANGUAGE, NEW_LANGUAGE %>">New</a>
+<a href="<% url "editLanguage" using SUBMISSION_LANGUAGE, NEW_LANGUAGE %>">New</a>
 <% foreach language in submissionLanguages %>
 <table>
 	<% item %>
 	<tr>
 		<td><%= language.name %></td>
-		<td><a href="<% url "adminEditLanguage" using SUBMISSION_LANGUAGE, language.id %>">Edit</a></td>
+		<td><a href="<% url "editLanguage" using SUBMISSION_LANGUAGE, language.id %>">Edit</a></td>
 	</tr>
 	<% end %>
 </table>
 <% end %>
 <h2>Evaluator languages</h2>
-<a href="<% url "adminEditLanguage" using EVALUATOR_LANGUAGE, NEW_LANGUAGE %>">New</a>
+<a href="<% url "editLanguage" using EVALUATOR_LANGUAGE, NEW_LANGUAGE %>">New</a>
 <% foreach language in evaluatorLanguages %>
 <table>
 	<% item %>
 	<tr>
 		<td><%= language.name %></td>
-		<td><a href="<% url "adminEditLanguage" using EVALUATOR_LANGUAGE, language.id %>">Edit</a></td>
+		<td><a href="<% url "editLanguage" using EVALUATOR_LANGUAGE, language.id %>">Edit</a></td>
 	</tr>
 	<% end %>
 </table>
@@ -204,7 +204,7 @@ window.setInterval("update()", 500);
 	<% item %>
 	<tr>
 		<td><%= user.name %></td>
-		<td><a href="<% url "adminEditUser" using user.id %>">Edit</a></td>
+		<td><a href="<% url "editUser" using user.id %>">Edit</a></td>
 	</tr>
 	<% end %>
 </table>
@@ -212,7 +212,7 @@ window.setInterval("update()", 500);
 <% end template %>
 <% end view %>
 
-<% view adminEditUser uses AdminEditUserPage extends page %>
+<% view editUser uses EditUserPage extends page %>
 <% template body() %>
 <h1>Edit user</h1>
 <% if not empty msg %><p><%= msg %></p><% end %>
@@ -224,7 +224,7 @@ window.setInterval("update()", 500);
 <% end template %>
 <% end view %>
 
-<% view adminEditLanguage uses AdminEditLanguagePage extends page %>
+<% view editLanguage uses EditLanguagePage extends page %>
 <% template body() %>
 <h1>Edit language</h1>
 <% if nameInUse %><p>Edit failed: name already in use.</p><% end %>
@@ -237,7 +237,7 @@ window.setInterval("update()", 500);
 <% end template %>
 <% end view %>
 
-<% view adminImport uses AdminImportPage extends page %>
+<% view import uses ImportPage extends page %>
 <% template body() %>
 <h1>Import contest</h1>
 <form method="post" action="" enctype="multipart/form-data"><%csrf%>

@@ -58,54 +58,38 @@ struct Server: cppcms::application {
 		dispatcher().assign("/users/", &Server::users, this);
 		mapper().assign("users", "users/");
 		
-		dispatcher().assign("/admin/user/(\\d+)/", &Server::adminEditUser, this, 1);
-		mapper().assign("adminEditUser", "admin/user/{1}/");
+		dispatcher().assign("/user/(\\d+)/", &Server::editUser, this, 1);
+		mapper().assign("editUser", "user/{1}/");
 		
-		dispatcher().assign("/admin/language/(submission|evaluator)/(\\d+|new)/", &Server::adminEditLanguage, this, 1, 2);
-		mapper().assign("adminEditLanguage", "admin/language/{1}/{2}/");
+		dispatcher().assign("/language/(submission|evaluator)/(\\d+|new)/", &Server::editLanguage, this, 1, 2);
+		mapper().assign("editLanguage", "language/{1}/{2}/");
 		
-		dispatcher().assign("/import/", &Server::adminImport, this);
-		mapper().assign("adminImport", "import/");
+		dispatcher().assign("/import/", &Server::import, this);
+		mapper().assign("import", "import/");
 
 		dispatcher().assign("/static/([a-z_0-9\\.]+)", &Server::staticServe, this, 1);
 		mapper().assign("static", "static/{1}");
 		
 		mapper().root("/");
 	}
-
-#if 0
-	void main(string url) override {
-//		response().out() << "<html><body>lololol</body></html>\n";
-		content::message c;
-		c.text = "asd";
-		render("message", c);
-	}
-#endif
+	
 	void contests() {
 		UserPtr user = getCurrentUser();
-		if(user) {
-			BOOSTER_DEBUG("cses_contests") << "User " << user->id << ": \"" << user->name << "\" visited the page.";
-		} else {
-			BOOSTER_DEBUG("cses_contests") << "Outsider visited the page.";
+		if(!user) {
+			sendRedirectHeader("/login");
+			return;
 		}
-//		response().out() << "<html><body>lololol</body></html>\n";
-#if 1
+		
 		ContestsPage c(user);
 		
-		odb::transaction t(db::begin());		
+		odb::transaction t(db::begin());
 		odb::result<Contest> contestRes = db::query<Contest>();
-		for (auto x : contestRes) {
-			if (!x.active && (!user || !user->admin)) continue;
-			c.contests.push_back(make_pair(x.id, x.name));
+		for(const Contest& x : contestRes) {
+			if (!x.active && !user->admin) continue;
+			c.contests.push_back(x);
 		}
 		
-		//c.contests = {"a", "b"};
 		render("contests", c);
-#else
-		content::message c;
-		c.text = "asd";
-		render("message", c);
-#endif
 	}
 
 	void editContest(string id) {
@@ -210,10 +194,10 @@ struct Server: cppcms::application {
 	void scoreBoard(string id) {
 		auto user = getCurrentUser();
 		odb::session s2;
-
+		
 		shared_ptr<Contest> cnt = getByStringOrFail<Contest>(id);
 		ScoresPage p(user, *cnt);
-#if 1
+		
 		odb::transaction t(db::begin());
 		odb::result<User> users = db::query<User>();
 
@@ -253,12 +237,7 @@ struct Server: cppcms::application {
 			p.rows.push_back(row);
 		}
 		sort(p.rows.begin(), p.rows.end());
-#else
-		p.tasks.push_back("a");
-		p.tasks.push_back("b");
-		p.rows.push_back({"x", {{0,0}, {1,100}}});
-		p.rows.push_back({"y", {{1,50}, {1,30}}});
-#endif
+		
 		p.id = cnt->id;
 		render("scores", p);
 	}
@@ -539,7 +518,7 @@ struct Server: cppcms::application {
 		render("registration", page);
  * 
  * */
-	void adminEditUser(string userIDString) {
+	void editUser(string userIDString) {
 		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
 			return;
@@ -547,7 +526,7 @@ struct Server: cppcms::application {
 		
 		UserPtr user = getByStringOrFail<User>(userIDString);
 		
-		AdminEditUserPage page(getCurrentUser(), *user);
+		EditUserPage page(getCurrentUser(), *user);
 		if(isPost()) {
 			page.form.load(context());
 			if(page.form.validate()) {
@@ -565,17 +544,17 @@ struct Server: cppcms::application {
 						page.msg = "Username already in use.";
 					}
 				} catch(odb::object_not_persistent& e) {
-					sendRedirectHeader("/admin");
+					sendRedirectHeader("/users");
 					return;
 				}
 			}
 		}
 		
-		render("adminEditUser", page);
+		render("editUser", page);
 	}
 	
 	template <typename LanguageT>
-	void adminEditLanguage(string langIDString) {
+	void editLanguage(string langIDString) {
 		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
 			return;
@@ -586,17 +565,17 @@ struct Server: cppcms::application {
 		if(langIDString != "new") {
 			langID = stringToInteger<ID>(langIDString);
 			if(!langID) {
-				sendRedirectHeader("/admin");
+				sendRedirectHeader("/languages");
 				return;
 			}
 			lang = getSharedPtr<LanguageT>(*langID);
 			if(!lang) {
-				sendRedirectHeader("/admin");
+				sendRedirectHeader("/languages");
 				return;
 			}
 		}
 		
-		AdminEditLanguagePage c(getCurrentUser());
+		EditLanguagePage c(getCurrentUser());
 		if(isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
@@ -629,7 +608,7 @@ struct Server: cppcms::application {
 						c.success = true;
 					}
 				} catch(odb::object_not_persistent& e) {
-					sendRedirectHeader("/admin");
+					sendRedirectHeader("/languages");
 					return;
 				}
 			}
@@ -640,25 +619,25 @@ struct Server: cppcms::application {
 			fillRunnerForm(c.form.runnerForm, lang->runner);
 		}
 		
-		render("adminEditLanguage", c);
+		render("editLanguage", c);
 	}
 
-	void adminEditLanguage(string type, string langIDString) {
+	void editLanguage(string type, string langIDString) {
 		if(type == "submission") {
-			adminEditLanguage<SubmissionLanguage>(langIDString);
+			editLanguage<SubmissionLanguage>(langIDString);
 		}
 		if(type == "evaluator") {
-			adminEditLanguage<EvaluatorLanguage>(langIDString);
+			editLanguage<EvaluatorLanguage>(langIDString);
 		}
 	}
 	
-	void adminImport() {
+	void import() {
 		if(!isCurrentUserAdmin()) {
 			sendRedirectHeader("/");
 			return;
 		}
 
-		AdminImportPage c(getCurrentUser());
+		ImportPage c(getCurrentUser());
 		if (isPost()) {
 			c.form.load(context());
 			if(c.form.validate()) {
@@ -709,7 +688,7 @@ struct Server: cppcms::application {
 				return;
 			}
 		}
-		render("adminImport", c);
+		render("import", c);
 	}
 
 	void staticServe(string file) {
@@ -731,7 +710,7 @@ struct Server: cppcms::application {
 		if (!res) throw std::logic_error("Login required.");
 		return res;
 	}
-
+	
 	UserPtr getCurrentUser() {
 		if(session().is_set("id")) {
 			ID userID = session().get<ID>("id");
@@ -758,7 +737,7 @@ struct Server: cppcms::application {
 		response().set_redirect_header(url.str());
 	}
 
-	static Sandbox readRunnerForm(AdminEditLanguagePage::RunnerForm& form, const Sandbox* old) {
+	static Sandbox readRunnerForm(EditLanguagePage::RunnerForm& form, const Sandbox* old) {
 		switch(form.getType()) {
 			case Sandbox::DOCKER:
 				return DockerImage(form.docker.repository.value(),
@@ -780,7 +759,7 @@ struct Server: cppcms::application {
 		return res;
 	}
 
-	static void fillRunnerForm(AdminEditLanguagePage::RunnerForm& form, Sandbox sandbox) {
+	static void fillRunnerForm(EditLanguagePage::RunnerForm& form, Sandbox sandbox) {
 		using std::to_string;
 		form.type.selected_id(to_string(sandbox.type));
 		form.docker.repository.value(sandbox.docker.repository);
