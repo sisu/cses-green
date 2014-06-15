@@ -312,22 +312,36 @@ typedef shared_ptr<Contest> ContestPtr;
 struct Task: DBObject {
 	StrField name;
 	weak_ptr<Contest> contest;
-
+	
 	EvaluatorProgram evaluator;
-
+	
 #pragma db value_not_null inverse(task) section(sec)
 	vector<shared_ptr<TestGroup>> testGroups;
 //#pragma db value_not_null inverse(task) section(sec)
 //	vector<shared_ptr<Submission>> submissions;
 	double timeInSeconds = 1.0;
-	int memoryInBytes = 64 * 1024 * 1024;
-
+	int64_t memoryInBytes = 64 * 1024 * 1024;
+	
 #pragma db load(lazy) update(manual)
 	odb::section sec;
-
-	Task() {}
-private:
-	friend class odb::access;
+	
+	
+	void validate() {
+		size_t nameLength = countCodePoints(name);
+		if(nameLength == 0 || nameLength > 255) {
+			throw ValidationFailure("Task name must consist of 1-255 characters.");
+		}
+		
+		evaluator.validate();
+		
+		if(!std::isfinite(timeInSeconds) || timeInSeconds <= 0) {
+			throw ValidationFailure("Time limit must be positive.");
+		}
+		
+		if(memoryInBytes <= 0) {
+			throw ValidationFailure("Memory limit must be positive.");
+		}
+	}
 };
 typedef shared_ptr<Task> TaskPtr;
 #pragma db value(TaskPtr) not_null
@@ -338,6 +352,13 @@ struct TestGroup: DBObject {
 #pragma db value_not_null inverse(group)
 	vector<shared_ptr<TestCase>> tests;
 	int points = 1;
+	
+	
+	void validate() {
+		if(points <= 0) {
+			throw ValidationFailure("Points for test group must be positive.");
+		}
+	}
 };
 
 #pragma db object
@@ -348,8 +369,12 @@ struct TestCase: DBObject {
 	string inputName;
 	string outputName;
 
-private:
-	friend class odb::access;
+	
+	void validate() {
+		input.validate();
+		output.validate();
+		// TODO: validate inputName and outputName.
+	}
 };
 
 #pragma db object

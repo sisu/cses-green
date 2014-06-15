@@ -96,6 +96,8 @@ struct DefaultWidgetProvider<int> {typedef NumWidgetProvider<int> type;};
 template<>
 struct DefaultWidgetProvider<long long> {typedef NumWidgetProvider<long long> type;};
 template<>
+struct DefaultWidgetProvider<int64_t> {typedef NumWidgetProvider<int64_t> type;};
+template<>
 struct DefaultWidgetProvider<double> {typedef NumWidgetProvider<double> type;};
 
 struct FormBuilder {
