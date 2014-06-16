@@ -204,6 +204,7 @@ public:
 	}
 
 	void updateJudgeHosts() {
+		auto lock = getLock();
 		std::vector<JudgeHost> hosts;
 		{
 			odb::transaction t(db::begin());
@@ -214,6 +215,7 @@ public:
 		for(JudgeHost host: hosts) {
 			std::thread(&JudgeMaster::connectToJudgeHostLoop, this, host).detach();
 		}
+		condition.notify_one();
 	}
 
 	void addConnectedJudgeHost(JudgeConnection conn) {
@@ -223,7 +225,9 @@ public:
 	}
 
 	void returnConnection(JudgeConnection conn) {
+		auto lock = getLock();
 		usedJudgeHosts.erase(conn);
+		condition.notify_one();
 	}
 
 private:
