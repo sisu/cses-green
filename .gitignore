@@ -21,3 +21,4 @@ judge/judge
 judge/obj/*
 judge/files/*
 judge/tmp/*
+judge/syscalls/restrict_syscalls
