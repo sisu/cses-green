@@ -246,6 +246,7 @@ private:
 			freeHosts.pop_back();
 			cerr<<"starting on host "<<host.host.name<<'\n';
 			std::thread(&UnitTask::execute, task, host, std::ref(*this)).detach();
+			usedJudgeHosts.insert(host);
 		}
 	}
 
