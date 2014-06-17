@@ -252,6 +252,7 @@ struct EvaluatorLanguage: Language {
 
 #pragma db value
 struct SubmissionProgram {
+#pragma db not_null
 	shared_ptr<SubmissionLanguage> language;
 	MaybeFile source;
 	MaybeFile binary;
@@ -266,6 +267,7 @@ struct SubmissionProgram {
 
 #pragma db value
 struct EvaluatorProgram {
+#pragma db not_null
 	shared_ptr<EvaluatorLanguage> language;
 	MaybeFile source;
 	MaybeFile binary;

@@ -412,6 +412,7 @@ std::mutex RunTestGroup::submissionMutex;
 template<class Owner, class Program>
 void compileProgram(shared_ptr<Owner> owner, Program& program, JudgeConnection connection) {
 	shared_ptr<Language> lang = program.language;
+	if (!lang) throw Error("Compiled program is missing language.");
 	StringMap inputs;
 	inputs["source"] = program.source.hash;
 	cerr<<"compiling with lang "<<lang->name<<" program "<<program.source.hash<<'\n';
