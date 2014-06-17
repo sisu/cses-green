@@ -181,18 +181,14 @@ class JudgeMaster {
 public:
 	static JudgeMaster& instance() {
 		static JudgeMaster master;
-		static bool initDone;
-		if (!initDone) {
-			initDone=1;
-		}
 		return master;
 	}
 
 	void judgeLoop() {
 		while(1) {
 			auto lock = getLock();
-			cerr<<"checking for tasks and judges.\n";
 			condition.wait(lock);
+			cerr<<"checking for tasks and judges.\n";
 			startJudgings();
 		}
 	}
@@ -242,6 +238,7 @@ private:
 	void startJudgings() {
 		std::vector<JudgeConnection> freeHosts;
 		std::set_difference(allJudgeHosts.begin(), allJudgeHosts.end(), usedJudgeHosts.begin(), usedJudgeHosts.end(), std::back_inserter(freeHosts));
+		cerr<<"counts: "<<freeHosts.size()<<' '<<pendingTasks.size()<<" ; "<<allJudgeHosts.size()<<' '<<usedJudgeHosts.size()<<'\n';
 		while(!freeHosts.empty() && !pendingTasks.empty()) {
 			cerr<<"Starting tasks\n";
 			UnitTask* task = pendingTasks.front();
