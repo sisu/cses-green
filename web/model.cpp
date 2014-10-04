@@ -12,10 +12,6 @@ namespace cses {
 
 using namespace odb::core;
 
-namespace {
-	shared_ptr<EvaluatorLanguage> cppEvaluatorLanguage;
-}
-
 namespace db {
 
 namespace detail {
@@ -65,7 +61,7 @@ void init(bool reset) {
 		);
 		db::persist(cppSubmissionLanguage);
 		
-		cppEvaluatorLanguage.reset(new EvaluatorLanguage("C++", "cpp", cppCompiler, binaryEvaluator));
+		shared_ptr<EvaluatorLanguage> cppEvaluatorLanguage(new EvaluatorLanguage("C++", "cpp", cppCompiler, binaryEvaluator));
 		db::persist(cppEvaluatorLanguage);
 
 		JudgeHost host;
@@ -155,7 +151,10 @@ EvaluatorProgram getDefaultEvaluator() {
 	EvaluatorProgram e;
 	std::ifstream in("evaluators/compare_ignore_ws.cpp");
 	e.source = {saveStreamToFile(in)};
-	e.language = cppEvaluatorLanguage;
+
+	odb::result<EvaluatorLanguage> lang = db::query<EvaluatorLanguage>(odb::query<EvaluatorLanguage>::name == "C++");
+	if (lang.empty()) throw Error("Default evaluator requires C++ evaluator language.");
+	e.language = lang.begin().load();
 	return e;
 }
 
