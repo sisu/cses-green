@@ -314,15 +314,18 @@ window.setInterval("update()", 500);
 <% template body2() %>
 <h2>Scoreboard</h2>
 
-<table border="1">
+<table border="1" class="list">
+<thead>
 <tr>
-<td>User</td>
-<td>Total</td>
+<th width="100">Contestant</th>
+<th width="50">Score</th>
 <% foreach t in tasks %>
 	<% item %>
-		<th> <%= t %> </th>
+		<th width="50"> <%= t %> </th>
 	<% end %>
 <% end %>
+</tr>
+</thead>
 <% foreach row in rows %>
 <% item %>
 	<tr>
@@ -330,7 +333,7 @@ window.setInterval("update()", 500);
 	<td> <%= row.score %> </td>
 	<% foreach cell in row.cells %>
 	<% item %>
-		<td>
+		<td width="40" height="40" class="<%= cell.color %>">
 		<% if cell.has %>
 			<%= cell.score %>
 		<% end %>

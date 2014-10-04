@@ -255,6 +255,8 @@ struct Server: cppcms::application {
 				if (uscores.count(task->id)) {
 					cell.has = 1;
 					cell.score = uscores[task->id];
+					// TODO: proper color, check judge status etc
+					cell.color = cell.score == 0 ? "sol_incorrect" : "sol_correct";
 					total += cell.score;
 				} else {
 					cell.has = 0;
@@ -723,7 +725,8 @@ struct Server: cppcms::application {
 		if(!f) {
 			response().status(404);
 		} else {
-			response().content_type("application/octet-stream");
+			bool isCSS = file.substr(file.size()-4)==".css";
+			response().content_type(isCSS ? "text/css" : "application/octet-stream");
 			response().out() << f.rdbuf();
 		}
 	}

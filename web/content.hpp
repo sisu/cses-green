@@ -318,6 +318,7 @@ struct ScoresPage: InContestPage {
 	struct Cell {
 		bool has = 0;
 		int score = 0;
+		string color;
 	};
 	struct Row {
 		string user;
