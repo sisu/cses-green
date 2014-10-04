@@ -299,7 +299,7 @@ window.setInterval("update()", 500);
 <h2>View submissions</h2>
 
 <% foreach item in items %>
-  <table>
+  <table border="1" class="list">
   <tr><td width=150><b>task</b></td><td width=200><b>time</b></td><td width=150><b>status</b></td></tr>
   <% item %>
     <tr><td><a href="<% url "view" using item.id %>"><%= item.task %></a></td><td><%= item.time %></td><td><%= item.status %></td></tr>
